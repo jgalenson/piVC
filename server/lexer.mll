@@ -14,9 +14,10 @@ let alpha = ['a'-'z''A'-'Z']
 rule lang = parse
     digit+ as num			{T_Int(int_of_string num)}
   | alpha(alpha|digit|'_')* as ident 	{T_Ident(ident)}
-  | "/*"_*"*/"		       		{lang lexbuf}
-  | "//"['\n']*'\n'			{lang lexbuf}
-  |  "define"                  		{T_Define}
+  | "/*"_*"*/"		       		{lang lexbuf (*skip multi-line comments*)}
+  | "//"[^'\n']*'\n'			{lang lexbuf (*skip single-line comments*)}
+  | [' ''\t''\n']			{lang lexbuf (*skip whitespace*)}
+  | "define"                  		{T_Define}
   | "declare"				{T_Declare}
   | "pre"				{T_Pre}
   | "post"				{T_Post}
@@ -66,7 +67,7 @@ rule lang = parse
 
 let print_token_info token = 
   match token with
-    T_Int(int) -> print_string(string_of_int int ^ "\n")
+     T_Int(int) -> print_string(string_of_int int ^ "\n")
    | T_Ident(ident) -> print_string(ident ^ "\n")
    | _         -> print_string("")
 
