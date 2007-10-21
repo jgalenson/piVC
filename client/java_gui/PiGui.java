@@ -1,17 +1,17 @@
 import javax.swing.*;
 
-class PiGui extends JFrame {
+public class PiGui extends JFrame {
 
-    public PiGui() {
-	
-    }
+	public PiGui() {
+		super("PiVC");
+	}
 
-    public static void main(String[] args) {
-	javax.swing.SwingUtilities.invokeLater(new Runnable() {
-		public void run() {
-		    new PiGui();
-		}
-	    });
-    }
-    
+	public static void main(String[] args) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				new PiGui();
+			}
+		});
+	}
+
 }
