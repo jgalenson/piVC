@@ -5,6 +5,7 @@
 {
   open Printf
   open Parser
+  exception Eof
 }
 
 let digit  = ['0'-'9']
@@ -22,7 +23,7 @@ rule lang = parse
   | "pre"				{T_Pre}
   | "post"				{T_Post}
   | "bool"              		{T_Bool}
-  | "void" 				{T_Void}
+  | "void"				{T_Void}
   | "true"				{T_True}
   | "false"				{T_False}
   | "[]"				{T_Dims}
@@ -55,6 +56,7 @@ rule lang = parse
   | ')'					{T_RParen}
   | '{'					{T_LCurlyBracket}
   | '}'					{T_RCurlyBracket}
+  | '?'					{T_QuestionMark}
   | eof					{T_EOF}
   | _					{T_Unknown}
 
@@ -63,6 +65,7 @@ rule lang = parse
 
 
 (* This stuff is here for testing purposes. We will remove it later.*)
+(*
 {
 
 let print_token_info token = 
@@ -80,3 +83,4 @@ let rec iterate buffer =
 let _ = iterate(Lexing.from_channel stdin)
 
 }
+*)
