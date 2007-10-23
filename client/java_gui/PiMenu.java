@@ -9,6 +9,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
+import javax.swing.filechooser.FileFilter;
 
 
 public class PiMenu extends JMenuBar {
@@ -67,9 +68,29 @@ public class PiMenu extends JMenuBar {
 			ex.printStackTrace();
 			return;
 		}
+		chooser.addChoosableFileFilter(new PiFileFilter());
 		int status = chooser.showOpenDialog(piGui);
 		if (status == JFileChooser.APPROVE_OPTION)
 			piGui.load(chooser.getSelectedFile());
+	}
+	
+	private static class PiFileFilter extends FileFilter {
+
+		@Override
+		public boolean accept(File file) {
+            if (file.isDirectory()) return true;
+            String name = file.getName();
+            if (name.length() < 3) return true;
+            String extension = name.substring(name.length() - 2).toLowerCase();
+            return (extension != null && extension.equals("pi"));
+
+		}
+
+		@Override
+		public String getDescription() {
+			return "Pi programs";
+		}
+		
 	}
 	
 }

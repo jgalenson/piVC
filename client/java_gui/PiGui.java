@@ -1,7 +1,11 @@
 import java.awt.Dimension;
+import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 import javax.swing.*;
 
@@ -9,6 +13,8 @@ public class PiGui extends JFrame {
 	
 	private static final int DEFAULT_WIDTH = 500;
 	private static final int DEFAULT_HEIGHT = 500;
+	
+	private PiCode piCode;
 
 	public PiGui() {
 		super("PiVC");
@@ -37,15 +43,22 @@ public class PiGui extends JFrame {
 	}
 
 	public void load(File selectedFile) {
-		// TODO Auto-generated method stub
+        try {
+            BufferedReader in = new BufferedReader(new FileReader(selectedFile));
+            piCode.read(in, null);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 		
 	}
 	
 	private void installMain() {
 		JPanel codePanel = new JPanel();
-		PiCode piCode = new PiCode();
+		piCode = new PiCode();
 		JScrollPane codeScrollPane = new JScrollPane(piCode);
 		codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+		codePanel.setLayout(new GridLayout(1, 1));
 		codePanel.add(codeScrollPane);
         codePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Code"),
@@ -53,6 +66,7 @@ public class PiGui extends JFrame {
 		
 		PiTree piTree = new PiTree();
 		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+		piTree.setLayout(new GridLayout(1, 1));
 		piTree.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Tree"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
