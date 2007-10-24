@@ -5,9 +5,12 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 
 public class PiGui extends JFrame {
 	
@@ -15,10 +18,15 @@ public class PiGui extends JFrame {
 	private static final int DEFAULT_HEIGHT = 500;
 	
 	private PiCode piCode;
+	private JFileChooser fileChooser;
+	private File curFile;
+	private boolean dirty;
+	private ArrayList<DirtyChangedListener> dirtyChangedListeners;
 
 	public PiGui() {
 		super("PiVC");
 		
+		initData();
 		installMain();
 		installMenu();
 		setupWindow();
@@ -31,18 +39,42 @@ public class PiGui extends JFrame {
 			}
 		});
 	}
+	
+	public void open() {
+		if (dirty) {
+			boolean ok = askToSave();
+			if (!ok)
+				return;
+		}
+		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+			loadFile(fileChooser.getSelectedFile());
+            curFile = fileChooser.getSelectedFile();
+            setDirty(false);
+		}
+	}
 
 	public void save() {
-		// TODO Auto-generated method stub
-		
+		if (curFile == null)
+			saveAs();
+		else
+			saveFile(curFile);
+	}
+
+	public void saveAs () {
+		if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
+			saveFile(fileChooser.getSelectedFile());
 	}
 
 	public void doExit() {
-		// TODO Auto-generated method stub
+		if (dirty) {
+			boolean ok = askToSave();
+			if (!ok)
+				return;
+		}
 		System.exit(0);
 	}
 
-	public void load(File selectedFile) {
+	public void loadFile(File selectedFile) {
         try {
             BufferedReader in = new BufferedReader(new FileReader(selectedFile));
             piCode.read(in, null);
@@ -53,9 +85,51 @@ public class PiGui extends JFrame {
 		
 	}
 	
+	private void saveFile(File selectedFile) {
+        try {
+            FileWriter out = new FileWriter(selectedFile);
+            out.write(piCode.getText());
+            out.close();
+        }
+        catch (IOException e) {
+        	e.printStackTrace();
+        	return;
+        }
+		curFile = selectedFile;
+		setDirty(false);
+	}
+
+	private boolean askToSave() {
+		int result = JOptionPane.showConfirmDialog(this, "Save changes first?", "Save?", JOptionPane.YES_NO_CANCEL_OPTION);
+		if (result == JOptionPane.YES_OPTION)
+			save();
+		return (result != JOptionPane.CANCEL_OPTION);
+	}
+
+	public void setDirty(boolean b) {
+		dirty = b;
+		fireDirtyChanged();
+	}
+
+	private void initData() {
+		initFileChooser();
+		curFile = null;
+		dirty = false;
+		dirtyChangedListeners = new ArrayList<DirtyChangedListener>();
+	}
+	
+	private void initFileChooser() {
+		try {
+			fileChooser = new JFileChooser(new File(".").getCanonicalPath());
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
+		fileChooser.addChoosableFileFilter(new PiFileFilter());
+	}
+	
 	private void installMain() {
 		JPanel codePanel = new JPanel();
-		piCode = new PiCode();
+		piCode = new PiCode(this);
 		JScrollPane codeScrollPane = new JScrollPane(piCode);
 		codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		codePanel.setLayout(new GridLayout(1, 1));
@@ -108,6 +182,37 @@ public class PiGui extends JFrame {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception ignored) { }
+	}
+	
+	public void addDirtyChangedListener(DirtyChangedListener listener) {
+		dirtyChangedListeners.add(listener);
+	}
+	
+	private void fireDirtyChanged() {
+		for (DirtyChangedListener listener: dirtyChangedListeners)
+			listener.dirtyChanged(dirty);
+	}
+	
+	/**
+	 * A filter for a JFileChooser that selects .pi files.
+	 */
+	private static class PiFileFilter extends FileFilter {
+
+		@Override
+		public boolean accept(File file) {
+            if (file.isDirectory()) return true;
+            String name = file.getName();
+            if (name.length() < 3) return true;
+            String extension = name.substring(name.length() - 2).toLowerCase();
+            return (extension != null && extension.equals("pi"));
+
+		}
+
+		@Override
+		public String getDescription() {
+			return "Pi programs";
+		}
+		
 	}
 
 }

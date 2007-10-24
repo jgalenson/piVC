@@ -32,7 +32,7 @@ public class PiMenu extends JMenuBar {
 		open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
 		open.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				openFileChooser();
+				piGui.open();
 			}
 		});
 		file.add(open);
@@ -46,6 +46,14 @@ public class PiMenu extends JMenuBar {
 			}
 		});
 		file.add(save);		
+		
+		JMenuItem saveAs = new JMenuItem("Save As");
+		saveAs.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.saveAs();
+			}
+		});
+		file.add(saveAs);		
 
 		JMenuItem quit = new JMenuItem("Quit");
 		quit.setMnemonic(KeyEvent.VK_Q);
@@ -58,39 +66,6 @@ public class PiMenu extends JMenuBar {
 		file.add(quit);
 		
 		add(file);
-	}
-	
-	private void openFileChooser() {
-		JFileChooser chooser;
-		try {
-			chooser = new JFileChooser(new File(".").getCanonicalPath());
-		} catch (IOException ex) {
-			ex.printStackTrace();
-			return;
-		}
-		chooser.addChoosableFileFilter(new PiFileFilter());
-		int status = chooser.showOpenDialog(piGui);
-		if (status == JFileChooser.APPROVE_OPTION)
-			piGui.load(chooser.getSelectedFile());
-	}
-	
-	private static class PiFileFilter extends FileFilter {
-
-		@Override
-		public boolean accept(File file) {
-            if (file.isDirectory()) return true;
-            String name = file.getName();
-            if (name.length() < 3) return true;
-            String extension = name.substring(name.length() - 2).toLowerCase();
-            return (extension != null && extension.equals("pi"));
-
-		}
-
-		@Override
-		public String getDescription() {
-			return "Pi programs";
-		}
-		
 	}
 	
 }
