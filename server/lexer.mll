@@ -13,7 +13,7 @@ let alpha = ['a'-'z''A'-'Z']
 
 
 rule lang = parse
-    digit+ as num			{T_Int(int_of_string num)}
+    digit+ as num			{T_IntConstant(int_of_string num)}
   | alpha(alpha|digit|'_')* as ident 	{T_Identifier(ident)}
   | "/*"_*"*/"		       		{lang lexbuf (*skip multi-line comments*)}
   | "//"[^'\n']*'\n'			{lang lexbuf (*skip single-line comments*)}

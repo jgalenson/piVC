@@ -12,7 +12,8 @@
 %token T_LessEqual T_GreaterEqual T_Equal T_NotEqual
 %token T_And T_Or
 %token T_While T_For
-%token T_If T_Else
+%token T_Else
+%token T_If
 %token T_Return T_Break
 %token T_Break T_Return
 %token T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
@@ -22,8 +23,8 @@
 
 
 
-%type <declList>  DeclList 
-%type <decl>      Decl
+//%type <int>  DeclList //change these
+//%type <int>      Decl //change these
 
 %nonassoc '='
 %left T_Or
@@ -39,171 +40,141 @@
 %nonassoc T_Else
 
 
-%start Program             /* the entry point */
-%type <int> Program
+%start main             /* the entry point */
+%type <int> main
 
 %%
 
 
 
-Program   :    DeclList             {;}
+main      :    DeclList             {0}
           ;
 
-DeclList  :    DeclList Decl        {;}
-          |    Decl                 {;}
+DeclList  :    DeclList Decl        {}
+          |    Decl                 {}
           ;
 
-Decl      :    VarDecl              {;} 
-          |    FnDecl               {;}
+Decl      :    VarDecl              {} 
+          |    FnDecl               {}
           ;
 
-Type      : T_Int                   {;}
-          | T_Float                 {;}
-          | T_Bool                  {;}
-          | T_Identifier            {;}
-          | Type T_Dims             {;}
+Type      : T_Int                   {}
+          | T_Float                 {}
+          | T_Bool                  {}
+          | T_Identifier            {}
+          | Type T_Dims             {}
           ;
 
-FnDecl    : Type T_Identifier '(' FormalsOrEmpty ')' StmtBlock     {;}
-          | T_Void T_Identifier '(' FormalsOrEmpty ')' StmtBlock   {;}
+FnDecl    : Type T_Identifier '(' FormalsOrEmpty ')' StmtBlock     {}
+          | T_Void T_Identifier '(' FormalsOrEmpty ')' StmtBlock   {}
           ;
 
-FormalsOrEmpty : Formals {;}
-               |         {;}
+FormalsOrEmpty : Formals {}
+               |         {}
                ;
 
-Formals   : Var                {;}
-          | Formals ',' Var    {;}
+Formals   : Var                {}
+          | Formals ',' Var    {}
           ;
 
-
-Fields : Field Fields {;}
-       | {;}
-       ;
-
-
-Field : VarDecl {;}
-      | FnDecl {;}
-;
-
-Prototype : Type T_Identifier '(' Formals ')' ';' {;}
-          | T_Void T_Identifier '(' Formals ')' ';' {;}
-;
-
-PrototypeList : PrototypeList Prototype {;}
-              | {;}
+StmtBlock  : '{' VarDeclListAndFirstStatement StmtList '}' {} //has at least one statement
+           | '{' VarDeclList '}'                           {} //has no statements
 ;
 
 
-StmtBlock  : '{' VarDeclListAndFirstStatement StmtList '}' {;} //has at least one statement
-           | '{' VarDeclList '}'                           {;} //has no statements
+StmtList : StmtList Stmt {}
+         | {}
+;
+
+VarDeclList : VarDeclList VarDecl {}
+            | {}
 ;
 
 
-StmtList : StmtList Stmt {;}
-         | {;}
-;
-
-VarDeclList : VarDeclList VarDecl {;}
-            | {;}
-;
-
-
-VarDeclListAndFirstStatement : VarDeclList Stmt {;}
+VarDeclListAndFirstStatement : VarDeclList Stmt {}
 ;
 
           
-VarDecl   : Var ';'                 {;}
+VarDecl   : Var ';'                 {}
           ;
 
-Var       : Type T_Identifier       {;}
+Var       : Type T_Identifier       {}
           ;
 
 
-Stmt       : OptionalExpr ';' {;}
-           | IfStmt {;}
-           | WhileStmt {;}
-           | ForStmt {;}
-           | BreakStmt {;}
-           | ReturnStmt {;}
-           | StmtBlock {;}
+Stmt       : OptionalExpr ';' {}
+           | IfStmt {}
+           | WhileStmt {}
+           | ForStmt {}
+           | BreakStmt {}
+           | ReturnStmt {}
+           | StmtBlock {}
 ;
 
-IfStmt       : T_If '(' Expr ')' StmtWithoutDanglingElse {;}
-             | IfStmtWithElse {;}
+/* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
+IfStmt       : T_If '(' Expr ')' Stmt T_Else Stmt %prec T_Else {}
+             | T_If '(' Expr ')' Stmt %prec T_If {}
 ;
 
-IfStmtWithElse : T_If '(' Expr ')' StmtWithoutDanglingElse T_Else Stmt {;}
+WhileStmt  : T_While '(' Expr ')' Stmt {}
 ;
 
-StmtWithoutDanglingElse : OptionalExpr ';' {;}
-                        | IfStmtWithElse {;}
-                        | WhileStmt {;}
-                        | ForStmt {;}
-                        | BreakStmt {;}
-                        | ReturnStmt {;}
-                        | StmtBlock {;}
+ForStmt    : T_For '(' OptionalExpr ';' Expr ';' OptionalExpr ')' Stmt {}
 ;
 
-WhileStmt  : T_While '(' Expr ')' Stmt {;}
+ReturnStmt : T_Return OptionalExpr ';' {}
 ;
 
-ForStmt    : T_For '(' OptionalExpr ';' Expr ';' OptionalExpr ')' Stmt {;}
+OptionalExpr : Expr {}
+             | {}
 ;
 
-ReturnStmt : T_Return OptionalExpr ';' {;}
+BreakStmt : T_Break ';' {}
 ;
 
-OptionalExpr : Expr {;}
-             | {;}
+Expr     : LValue '=' Expr {}
+         | Constant {}
+         | LValue {}
+         | Call {}
+         | '(' Expr ')' {}
+         | Expr '+' Expr {}
+         | Expr '-' Expr {}
+         | Expr '*' Expr {}
+         | Expr '/' Expr {}
+         | Expr '%' Expr {}
+         | '-' Expr %prec UnaryMinus {}
+         | Expr '<' Expr {}
+         | Expr T_LessEqual Expr {}
+         | Expr '>' Expr {}
+         | Expr T_GreaterEqual Expr {}
+         | Expr T_Equal Expr {}
+         | Expr T_NotEqual Expr {}
+         | Expr T_And Expr {}
+         | Expr T_Or Expr {}
+         | '!' Expr {}
 ;
 
-BreakStmt : T_Break ';' {;}
+LValue   : T_Identifier                          {}
+         | Expr '.' T_Identifier                 {}
+         | Expr '[' Expr ']'                     {}
 ;
 
-Expr     : LValue '=' Expr {;}
-         | Constant {;}
-         | LValue {;}
-         | Call {;}
-         | '(' Expr ')' {;}
-         | Expr '+' Expr {;}
-         | Expr '-' Expr {;}
-         | Expr '*' Expr {;}
-         | Expr '/' Expr {;}
-         | Expr '%' Expr {;}
-         | '-' Expr %prec UnaryMinus {;}
-         | Expr '<' Expr {;}
-         | Expr T_LessEqual Expr {;}
-         | Expr '>' Expr {;}
-         | Expr T_GreaterEqual Expr {;}
-         | Expr T_Equal Expr {;}
-         | Expr T_NotEqual Expr {;}
-         | Expr T_And Expr {;}
-         | Expr T_Or Expr {;}
-         | '!' Expr {;}
+Call     : T_Identifier '(' Actuals ')'          {}
+         | Expr '.' T_Identifier '(' Actuals ')' {}
 ;
 
-LValue   : T_Identifier                          {;}
-         | Expr '.' T_Identifier                 {;}
-         | Expr '[' Expr ']'                     {;}
+ExprList : ExprList ',' Expr  {}
+         | Expr           {}
 ;
 
-Call     : T_Identifier '(' Actuals ')'          {;}
-         | Expr '.' T_Identifier '(' Actuals ')' {;}
+Actuals  : ExprList       {}
+         |                {}
 ;
 
-ExprList : ExprList ',' Expr  {;}
-         | Expr           {;}
-;
-
-Actuals  : ExprList       {;}
-         |                {;}
-;
-
-Constant : T_IntConstant    {;}
-         | T_FloatConstant  {;}
-         | T_BoolConstant   {;}
-         | T_Null           {;}
+Constant : T_IntConstant    {}
+         | T_FloatConstant  {}
+         | T_BoolConstant   {}
+         | T_Null           {}
 ;
 
 %%
