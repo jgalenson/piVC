@@ -1,4 +1,4 @@
-PROJ_DIR = . client server dp_server
+PROJ_DIR = . client server dp_server client/java_gui
 
 CCFLAGS =
 OCFLAGS =
@@ -7,8 +7,9 @@ INCDIR = $(PROJ_DIR:%=-I %)
 
 CC = gcc $(CCFLAGS) $(INCDIR)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
+JAVAC = javac
 
-default : pivc
+default : pivc gui
 
 pivc : parser
 
@@ -23,6 +24,11 @@ parser :
 	rm server/lexer.ml;
 	rm server/parser.mli;
 	rm server/parser.ml;
+
+gui :
+	cd client/java_gui; \
+	$(JAVAC) *.java; \
+	cd ../..
 
 clean :
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cma) \
