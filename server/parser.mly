@@ -1,3 +1,8 @@
+
+%{
+  open Printf
+%}
+
 %token T_Define
 %token T_Declare
 %token T_Pre T_Post
@@ -41,13 +46,13 @@
 
 
 %start main             /* the entry point */
-%type <int> main
+%type <unit> main
 
 %%
 
 
 
-main      :    DeclList             {0}
+main      :    DeclList             {printf("we're done");}
           ;
 
 DeclList  :    DeclList Decl        {}
@@ -179,3 +184,13 @@ Constant : T_IntConstant    {}
 
 %%
 
+
+let main () =
+  try
+    let lexbuf = Lexing.from_channel stdin in
+    while true do
+      Parser.main Lexer.token lexbuf
+    done
+  with End_of_file -> exit 0
+      
+let _ = Printexc.print main ()
