@@ -185,7 +185,7 @@ Constant : T_IntConstant    {}
 %%
 
 
-let main () =
+let goParse () =
   try
     let lexbuf = Lexing.from_channel stdin in
     while true do
@@ -193,4 +193,4 @@ let main () =
     done
   with End_of_file -> exit 0
       
-let _ = Printexc.print main ()
+let _ = Printexc.print goParse ()
