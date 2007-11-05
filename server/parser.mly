@@ -1,6 +1,10 @@
 
 %{
   open Printf
+
+  let parse_error s = (* Called by the parser function on error *)
+    print_endline s;
+    flush stdout
 %}
 
 %token T_Define
@@ -183,14 +187,4 @@ Constant : T_IntConstant    {}
 ;
 
 %%
-
-
-let goParse () =
-  try
-    let lexbuf = Lexing.from_channel stdin in
-    while true do
-      Parser.main Lexer.token lexbuf
-    done
-  with End_of_file -> exit 0
-      
-let _ = Printexc.print goParse ()
+	   

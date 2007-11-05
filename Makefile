@@ -14,14 +14,14 @@ default : pivc gui
 pivc : parser
 
 parser :
+	$(OC) -c server/ast.ml;
+
 	ocamlyacc server/parser.mly;
 	ocamllex server/lexer.mll;
 	$(OC) -c server/parser.mli;
-	$(OC) -c server/parser.ml;
 	$(OC) -c server/lexer.ml;
+	$(OC) -c server/parser.ml;
 	$(OC) -c server/test_parser.ml;
-
-	$(OC) -c server/ast.ml;
 
 	$(OC) -o server/test_parser server/lexer.cmo server/parser.cmo test_parser.cmo
 	rm server/lexer.ml;
