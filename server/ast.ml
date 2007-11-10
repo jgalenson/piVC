@@ -28,10 +28,7 @@ type decl =
   | FnDecl of fnDecl
 
 
-let printVarDecl = printf("hello");
+type program = {
+  functions : fnDecl list;
+}
 
-(*
-let rec to_s node = 
-  match node with
-    varType -> 
-*)

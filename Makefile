@@ -24,7 +24,7 @@ parser :
 	$(OC) -c server/parser.ml;
 	$(OC) -c server/test_parser.ml;
 	$(OC) -c server/ast.ml;
-	$(OC) -o server/test_parser server/global.cmo server/lexer.cmo server/parser.cmo server/test_parser.cmo
+	$(OC) -o server/test_parser server/global.cmo server/lexer.cmo server/parser.cmo server/test_parser.cmo server/ast.cmo
 
 	rm server/lexer.ml;
 	rm server/parser.mli;

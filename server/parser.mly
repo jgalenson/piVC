@@ -1,30 +1,13 @@
 
 %{
   open Printf
-
-
-
-let parse_error msg =
-  print_endline 
-    ("<error>\nLine <" ^ (string_of_int (Global.get_linenum ())) 
-     ^ ">: " ^ msg ^ "\n</error>");
-  print_endline ("Last token read: " ^ (Global.get_last ()));
-  parse_error msg
-
-
-
-(*
-  let parse_error s = (* Called by the parser function on error *)
-    print_endline s;
-    flush stdout
-*)
 %}
 
 %token T_Define
 %token T_Declare
 %token T_Pre T_Post
 %token T_Pre T_Post
-%token T_Bool T_Void T_Int T_Float
+%token T_Bool T_Void T_Int T_Float T_String
 %token <int> T_IntConstant
 %token <float> T_FloatConstant
 %token <bool> T_BoolConstant
@@ -38,7 +21,7 @@ let parse_error msg =
 %token T_If
 %token T_Return T_Break
 %token T_Break T_Return
-%token T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
+%token T_At T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
 %token T_Unknown
 %token T_EOF
 
@@ -48,28 +31,28 @@ let parse_error msg =
 //%type <int>  DeclList //change these
 //%type <int>      Decl //change these
 
-%nonassoc '='
+%nonassoc T_Assign
 %left T_Or
 %left T_And
 %nonassoc T_Equal T_NotEqual
-%nonassoc '<' '>' T_LessEqual T_GreaterEqual
-%left '+' '-'
-%left '*' '/' '%'
-%right '!' UnaryMinus
-%left '[' '.'
+%nonassoc T_Less T_Greater T_LessEqual T_GreaterEqual
+%left T_Plus T_Minus
+%left T_Star T_Slash '%'
+%right T_Not UnaryMinus
+%left T_LSquareBracket T_Period
 
 %nonassoc T_If
 %nonassoc T_Else
 
 
 %start main             /* the entry point */
-%type <unit> main
+%type <int> main
 
 %%
 
 
 
-main      :    DeclList             {printf("we're done");}
+main      :    DeclList T_EOF       {0;}
           ;
 
 DeclList  :    DeclList Decl        {}
@@ -87,8 +70,8 @@ Type      : T_Int                   {}
           | Type T_Dims             {}
           ;
 
-FnDecl    : Type T_Identifier '(' FormalsOrEmpty ')' StmtBlock     {}
-          | T_Void T_Identifier '(' FormalsOrEmpty ')' StmtBlock   {}
+FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {}
+          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {}
           ;
 
 FormalsOrEmpty : Formals {}
@@ -96,11 +79,11 @@ FormalsOrEmpty : Formals {}
                ;
 
 Formals   : Var                {}
-          | Formals ',' Var    {}
+          | Formals T_Comma Var    {}
           ;
 
-StmtBlock  : '{' VarDeclListAndFirstStatement StmtList '}' {} //has at least one statement
-           | '{' VarDeclList '}'                           {} //has no statements
+StmtBlock  : T_LCurlyBracket VarDeclListAndFirstStatement StmtList T_RCurlyBracket {} //has at least one statement
+           | T_LCurlyBracket VarDeclList T_RCurlyBracket                           {} //has no statements
 ;
 
 
@@ -117,14 +100,14 @@ VarDeclListAndFirstStatement : VarDeclList Stmt {}
 ;
 
           
-VarDecl   : Var ';'                 {}
+VarDecl   : Var T_Semicolon                 {}
           ;
 
 Var       : Type T_Identifier       {}
           ;
 
 
-Stmt       : OptionalExpr ';' {}
+Stmt       : OptionalExpr T_Semicolon {}
            | IfStmt {}
            | WhileStmt {}
            | ForStmt {}
@@ -134,58 +117,58 @@ Stmt       : OptionalExpr ';' {}
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
-IfStmt       : T_If '(' Expr ')' Stmt T_Else Stmt %prec T_Else {}
-             | T_If '(' Expr ')' Stmt %prec T_If {}
+IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else {}
+             | T_If T_LParen Expr T_RParen Stmt %prec T_If {}
 ;
 
-WhileStmt  : T_While '(' Expr ')' Stmt {}
+WhileStmt  : T_While T_LParen Expr T_RParen Stmt {}
 ;
 
-ForStmt    : T_For '(' OptionalExpr ';' Expr ';' OptionalExpr ')' Stmt {}
+ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt {}
 ;
 
-ReturnStmt : T_Return OptionalExpr ';' {}
+ReturnStmt : T_Return OptionalExpr T_Semicolon {}
 ;
 
 OptionalExpr : Expr {}
              | {}
 ;
 
-BreakStmt : T_Break ';' {}
+BreakStmt : T_Break T_Semicolon {}
 ;
 
-Expr     : LValue '=' Expr {}
+Expr     : LValue T_Assign Expr {}
          | Constant {}
          | LValue {}
          | Call {}
-         | '(' Expr ')' {}
-         | Expr '+' Expr {}
-         | Expr '-' Expr {}
-         | Expr '*' Expr {}
-         | Expr '/' Expr {}
+         | T_LParen Expr T_RParen {}
+         | Expr T_Plus Expr {}
+         | Expr T_Minus Expr {}
+         | Expr T_Star Expr {}
+         | Expr T_Slash Expr {}
          | Expr '%' Expr {}
-         | '-' Expr %prec UnaryMinus {}
-         | Expr '<' Expr {}
+         | T_Minus Expr %prec UnaryMinus {}
+         | Expr T_Less Expr {}
          | Expr T_LessEqual Expr {}
-         | Expr '>' Expr {}
+         | Expr T_Greater Expr {}
          | Expr T_GreaterEqual Expr {}
          | Expr T_Equal Expr {}
          | Expr T_NotEqual Expr {}
          | Expr T_And Expr {}
          | Expr T_Or Expr {}
-         | '!' Expr {}
+         | T_Not Expr {}
 ;
 
 LValue   : T_Identifier                          {}
-         | Expr '.' T_Identifier                 {}
-         | Expr '[' Expr ']'                     {}
+         | Expr T_Period T_Identifier                 {}
+         | Expr T_LSquareBracket Expr T_RSquareBracket                     {}
 ;
 
-Call     : T_Identifier '(' Actuals ')'          {}
-         | Expr '.' T_Identifier '(' Actuals ')' {}
+Call     : T_Identifier T_LParen Actuals T_RParen          {}
+         | Expr T_Period T_Identifier T_LParen Actuals T_RParen {}
 ;
 
-ExprList : ExprList ',' Expr  {}
+ExprList : ExprList T_Comma Expr  {}
          | Expr           {}
 ;
 
@@ -200,20 +183,3 @@ Constant : T_IntConstant    {}
 ;
 
 %%
-
-
-(*
-let goParse () =
-  try
-    let lexbuf = Lexing.from_channel stdin in
-    while true do
-      Parser.main Lexer.token lexbuf
-    done
-  with End_of_file -> exit 0
-      
-let _ = Printexc.print goParse ()
-*)
-
-	   
-
-

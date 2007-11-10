@@ -1,7 +1,5 @@
 (* The piVC lexer *)
 
-
-
 {
   open Printf
   open Parser
@@ -13,74 +11,63 @@ let alpha = ['a'-'z''A'-'Z']
 
 
 rule lang = parse
-    digit+ as num			{T_IntConstant(int_of_string num)}
-  | alpha(alpha|digit|'_')* as ident 	{T_Identifier(ident)}
-  | "/*"_*"*/"		       		{lang lexbuf (*skip multi-line comments*)}
-  | "//"[^'\n']*'\n'			{lang lexbuf (*skip single-line comments*)}
-  | [' ''\t''\n']			{lang lexbuf (*skip whitespace*)}
-  | "define"                  		{T_Define}
-  | "declare"				{T_Declare}
-  | "pre"				{T_Pre}
-  | "post"				{T_Post}
-  | "bool"              		{T_Bool}
-  | "void"				{T_Void}
-  | "true"				{T_True}
-  | "false"				{T_False}
-  | "[]"				{T_Dims}
-  | "<="				{T_LessEqual}
-  | ">="				{T_GreaterEqual}
-  | "=="				{T_Equal}
-  | "!="				{T_NotEqual}
-  | "&&"				{T_And}
-  | "||"				{T_Or}
-  | "while"				{T_While}
-  | "for"				{T_For}
-  | "if"				{T_If}
-  | "else"				{T_Else}
-  | "return"				{T_Return}
-  | "break"				{T_Break}
-  | '+'					{T_Plus}
-  | '-'					{T_Minus}
-  | '*'					{T_Star}
-  | '/'					{T_Slash}
-  | '<'					{T_Less}
-  | '>'					{T_Greater}
-  | '='					{T_Assign}
-  | '!'					{T_Not}
-  | ';'					{T_Semicolon}
-  | ','					{T_Comma}
-  | '.'					{T_Period}
-  | '['					{T_LSquareBracket}
-  | ']'					{T_RSquareBracket}
-  | '('					{T_LParen}
-  | ')'					{T_RParen}
-  | '{'					{T_LCurlyBracket}
-  | '}'					{T_RCurlyBracket}
-  | '?'					{T_QuestionMark}
-  | eof					{T_EOF}
-  | _					{T_Unknown}
+    digit+ as num			{Global.updateLocation(lexbuf); T_IntConstant(int_of_string num)}
+  | "/*"_*"*/"		       		{Global.updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
+  | "//"[^'\n']*'\n'			{Global.updateLocation(lexbuf); lang lexbuf (*skip single-line comments*)}
+  | [' ''\t''\n']			{Global.updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
+  | "define"                  		{Global.updateLocation(lexbuf); T_Define}
+  | "declare"				{Global.updateLocation(lexbuf); T_Declare}
+  | "pre"				{Global.updateLocation(lexbuf); T_Pre}
+  | "post"				{Global.updateLocation(lexbuf); T_Post}
+  | "bool"              		{Global.updateLocation(lexbuf); T_Bool}
+  | "void"				{Global.updateLocation(lexbuf); T_Void}
+  | "true"				{Global.updateLocation(lexbuf); T_True}
+  | "false"				{Global.updateLocation(lexbuf); T_False}
+  | "[]"				{Global.updateLocation(lexbuf); T_Dims}
+  | "<="				{Global.updateLocation(lexbuf); T_LessEqual}
+  | ">="				{Global.updateLocation(lexbuf); T_GreaterEqual}
+  | "=="				{Global.updateLocation(lexbuf); T_Equal}
+  | "!="				{Global.updateLocation(lexbuf); T_NotEqual}
+  | "&&"				{Global.updateLocation(lexbuf); T_And}
+  | "||"				{Global.updateLocation(lexbuf); T_Or}
+  | "while"				{Global.updateLocation(lexbuf); T_While}
+  | "for"				{Global.updateLocation(lexbuf); T_For}
+  | "if"				{Global.updateLocation(lexbuf); T_If}
+  | "else"				{Global.updateLocation(lexbuf); T_Else}
+  | "return"				{Global.updateLocation(lexbuf); T_Return}
+  | "break"				{Global.updateLocation(lexbuf); T_Break}
+  | "void"                              {Global.updateLocation(lexbuf); T_Void}
+  | "int"                       	{Global.updateLocation(lexbuf); T_Int}
+  | "float"            		        {Global.updateLocation(lexbuf); T_Float}
+  | "bool"                              {Global.updateLocation(lexbuf); T_Bool}
+  | "string"                            {Global.updateLocation(lexbuf); T_String}
+  | "null"                              {Global.updateLocation(lexbuf); T_Null}
+  | "while"                             {Global.updateLocation(lexbuf); T_While}
+  | "for"                               {Global.updateLocation(lexbuf); T_For}
+  | alpha(alpha|digit|'_')* as ident 	{Global.updateLocation(lexbuf); T_Identifier(ident)}
+  | '+'					{Global.updateLocation(lexbuf); T_Plus}
+  | '-'					{Global.updateLocation(lexbuf); T_Minus}
+  | '*'					{Global.updateLocation(lexbuf); T_Star}
+  | '/'					{Global.updateLocation(lexbuf); T_Slash}
+  | '<'					{Global.updateLocation(lexbuf); T_Less}
+  | '>'					{Global.updateLocation(lexbuf); T_Greater}
+  | '='					{Global.updateLocation(lexbuf); T_Assign}
+  | '!'					{Global.updateLocation(lexbuf); T_Not}
+  | ';'					{Global.updateLocation(lexbuf); T_Semicolon}
+  | ','					{Global.updateLocation(lexbuf); T_Comma}
+  | '.'					{Global.updateLocation(lexbuf); T_Period}
+  | '['					{Global.updateLocation(lexbuf); T_LSquareBracket}
+  | ']'					{Global.updateLocation(lexbuf); T_RSquareBracket}
+  | '('					{Global.updateLocation(lexbuf); T_LParen}
+  | ')'					{Global.updateLocation(lexbuf); T_RParen}
+  | '{'					{Global.updateLocation(lexbuf); T_LCurlyBracket}
+  | '}'					{Global.updateLocation(lexbuf); T_RCurlyBracket}
+  | '?'					{Global.updateLocation(lexbuf); T_QuestionMark}
+  | '@'					{Global.updateLocation(lexbuf); T_At}
+  | eof					{Global.updateLocation(lexbuf); T_EOF}
+  | '\n'                                {Global.updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
+  | _					{Global.updateLocation(lexbuf); print_string("read unknown");T_Unknown}
 
 
 
 
-
-(* This stuff is here for testing purposes. We will remove it later.*)
-(*
-{
-
-let print_token_info token = 
-  match token with
-     T_Int(int) -> print_string(string_of_int int ^ "\n")
-   | T_Ident(ident) -> print_string(ident ^ "\n")
-   | _         -> print_string("")
-
-
-let rec iterate buffer =
-  match lang buffer with
-    T_EOF -> 0
-  | j -> print_token_info(j);iterate buffer
-
-let _ = iterate(Lexing.from_channel stdin)
-
-}
-*)
