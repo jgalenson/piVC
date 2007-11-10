@@ -62,19 +62,19 @@ DeclList  :    DeclList Decl        {$1 @ [$2]}
           |    Decl                 {[$1]}
           ;
 
-Decl      :    VarDecl              {Ast.VarDecl (Ast.create_varDecl "name_goes_here")} 
-          |    FnDecl               {Ast.FnDecl  (Ast.create_fnDecl "name_goes_here")}
+Decl      :    VarDecl              {Ast.VarDecl ($1)} 
+          |    FnDecl               {Ast.FnDecl  ($1)}
           ;
 
-Type      : T_Int                   {}
-          | T_Float                 {}
-          | T_Bool                  {}
-          | T_Identifier            {}
-          | Type T_Dims             {}
+Type      : T_Int                   {Ast.Int}
+          | T_Float                 {Ast.Float}
+          | T_Bool                  {Ast.Bool}
+          | T_Identifier            {Ast.Ident($1)}
+          | Type T_Dims             {Ast.Array($1)}
           ;
 
-FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {}
-          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {}
+FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {Ast.create_fnDecl $2 $1}
+          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {Ast.create_fnDecl $2 Ast.Void}
           ;
 
 FormalsOrEmpty : Formals {}
@@ -103,7 +103,7 @@ VarDeclListAndFirstStatement : VarDeclList Stmt {}
 ;
 
           
-VarDecl   : Var T_Semicolon                 {}
+VarDecl   : Var T_Semicolon                 {Ast.create_varDecl "name_goes_here"}
           ;
 
 Var       : Type T_Identifier       {}

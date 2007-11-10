@@ -7,3 +7,9 @@ int simpleFunction(){
   c = a + b;
   return c;
 }
+
+void func2(){
+}
+
+float jason(){
+}
