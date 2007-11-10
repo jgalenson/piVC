@@ -18,12 +18,14 @@ parser :
 
 	ocamlyacc server/parser.mly;
 	ocamllex server/lexer.mll;
+	$(OC) -c server/global.ml;
 	$(OC) -c server/parser.mli;
 	$(OC) -c server/lexer.ml;
 	$(OC) -c server/parser.ml;
 	$(OC) -c server/test_parser.ml;
+	$(OC) -c server/ast.ml;
+	$(OC) -o server/test_parser server/global.cmo server/lexer.cmo server/parser.cmo server/test_parser.cmo
 
-	$(OC) -o server/test_parser server/lexer.cmo server/parser.cmo test_parser.cmo
 	rm server/lexer.ml;
 	rm server/parser.mli;
 	rm server/parser.ml;
