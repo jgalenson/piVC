@@ -3,7 +3,7 @@ open Ast
 
 let rec parseToken (lexbuf) = 
    let program = Parser.main Lexer.lang lexbuf in
-     print_string("All done!\n")
+     print_string (string_of_program program)
 
 let goParse () =
   let lexbuf = Lexing.from_channel stdin in
