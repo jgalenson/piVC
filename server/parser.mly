@@ -46,21 +46,24 @@
 
 
 %start main             /* the entry point */
-%type <int> main
+%type <Ast.program> main
 
 %%
 
 
 
-main      :    DeclList T_EOF       {0;}
+main      :    DeclList T_EOF 
+               {
+		 Ast.create_program($1);
+               }
           ;
 
-DeclList  :    DeclList Decl        {}
-          |    Decl                 {}
+DeclList  :    DeclList Decl        {$1 @ [$2]}
+          |    Decl                 {[$1]}
           ;
 
-Decl      :    VarDecl              {} 
-          |    FnDecl               {}
+Decl      :    VarDecl              {Ast.VarDecl (Ast.create_varDecl "name_goes_here")} 
+          |    FnDecl               {Ast.FnDecl  (Ast.create_fnDecl "name_goes_here")}
           ;
 
 Type      : T_Int                   {}

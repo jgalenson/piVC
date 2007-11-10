@@ -13,22 +13,31 @@ type varType =
   | Array of varType
 
 type varDecl = {
-  t    : varType;
-  name : string;
+(*  t    : varType;*)
+  varName : string;
 }
+let create_varDecl name = {varName=name};
 
 type fnDecl = {
-  returnType : varType;
-  name       : string;
-  formals    : varDecl list;
+(*  returnType : varType;*)
+  fnName       : string;
+(*  formals    : varDecl list;*)
 }
+let create_fnDecl name = {fnName=name};
 
 type decl = 
   | VarDecl of varDecl
   | FnDecl of fnDecl
-
+  | Jason of int
 
 type program = {
-  functions : fnDecl list;
+  decls : decl list;
+}
+let create_program decls = {decls=decls};
+
+type pair = {
+  a : int;
+  b : int;
 }
 
+let test = let p = {a=5; b=6} in p;
