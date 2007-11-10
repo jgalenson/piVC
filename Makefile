@@ -1,3 +1,6 @@
+DIRS	= server client
+
+
 PROJ_DIR = . client server dp_server client/java_gui
 
 CCFLAGS =
@@ -9,33 +12,19 @@ CC = gcc $(CCFLAGS) $(INCDIR)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 JAVAC = javac
 
-default : pivc gui
+default : make_all
 
-pivc : parser
+make_all :
+	cd server; \
+	make; \
 
-parser :
-	$(OC) -c server/ast.ml;
+	cd client; \
+	make; \
 
-	ocamlyacc server/parser.mly;
-	ocamllex server/lexer.mll;
-	$(OC) -c server/global.ml;
-	$(OC) -c server/parser.mli;
-	$(OC) -c server/lexer.ml;
-	$(OC) -c server/parser.ml;
-	$(OC) -c server/test_parser.ml;
-	$(OC) -c server/ast.ml;
-	$(OC) -o server/test_parser server/global.cmo server/ast.cmo server/lexer.cmo server/parser.cmo server/test_parser.cmo
-
-	rm server/lexer.ml;
-	rm server/parser.mli;
-	rm server/parser.ml;
-
-gui :
-	cd client/java_gui; \
-	$(JAVAC) *.java; \
-	cd ../..
 
 clean :
-	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cma) \
-		$(PROJ_DIR:%=%/*.cmx) $(PROJ_DIR:%=%/*.o) \
-		$(PROJ_DIR:%=%/*.class)
+	cd server; \
+	make clean; \
+
+	cd client; \
+	make clean; \
