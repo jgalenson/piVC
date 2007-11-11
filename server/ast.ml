@@ -45,7 +45,7 @@ let string_of_type typ =
 
 let string_of_decl d = match d with
   | VarDecl d ->
-      (string_of_type d.t) ^ " " ^ d.varName ^ ";\n"
+      (string_of_type d.varType) ^ " " ^ d.varName ^ "\n"
   | FnDecl d ->
       (string_of_type d.returnType) ^ " " ^ d.fnName ^ "\n"
 
