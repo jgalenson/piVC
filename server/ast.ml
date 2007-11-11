@@ -9,17 +9,17 @@ type varType =
   | Void
 
 type varDecl = {
-(*  t    : varType;*)
+  varType : varType;
   varName : string;
 }
-let create_varDecl name = {varName=name}
+let create_varDecl t name = {varType=t; varName=name}
 
 type fnDecl = {
-  returnType   : varType;
   fnName       : string;
-(*  formals    : varDecl list;*)
+  formals    : varDecl list;
+  returnType   : varType;
 }
-let create_fnDecl name returnType = {fnName=name; returnType = returnType}
+let create_fnDecl name formals returnType = {fnName=name; returnType = returnType; formals = formals}
 
 type decl = 
   | VarDecl of varDecl
@@ -45,7 +45,7 @@ let string_of_type typ =
 
 let string_of_decl d = match d with
   | VarDecl d ->
-      (*(string_of_type d.t) ^ " " ^*) d.varName ^ ";\n"
+      (string_of_type d.t) ^ " " ^ d.varName ^ ";\n"
   | FnDecl d ->
       (string_of_type d.returnType) ^ " " ^ d.fnName ^ "\n"
 

@@ -1,6 +1,7 @@
 
 %{
   open Printf
+  open Ast
 %}
 
 %token T_Define
@@ -73,16 +74,16 @@ Type      : T_Int                   {Ast.Int}
           | Type T_Dims             {Ast.Array($1)}
           ;
 
-FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {Ast.create_fnDecl $2 $1}
-          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {Ast.create_fnDecl $2 Ast.Void}
+FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {Ast.create_fnDecl $2 $4 $1}
+          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {Ast.create_fnDecl $2 $4 Ast.Void}
           ;
 
-FormalsOrEmpty : Formals {}
-               |         {}
+FormalsOrEmpty : Formals {$1}
+               |         {[]}
                ;
 
-Formals   : Var                {}
-          | Formals T_Comma Var    {}
+Formals   : Var                    {[$1]}
+          | Formals T_Comma Var    {$1 @ [$3]}
           ;
 
 StmtBlock  : T_LCurlyBracket VarDeclListAndFirstStatement StmtList T_RCurlyBracket {} //has at least one statement
@@ -103,10 +104,10 @@ VarDeclListAndFirstStatement : VarDeclList Stmt {}
 ;
 
           
-VarDecl   : Var T_Semicolon                 {Ast.create_varDecl "name_goes_here"}
+VarDecl   : Var T_Semicolon                 {$1}
           ;
 
-Var       : Type T_Identifier       {}
+Var       : Type T_Identifier               {Ast.create_varDecl $1 $2}
           ;
 
 
