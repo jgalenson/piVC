@@ -86,23 +86,13 @@ Formals   : Var                    {[$1]}
           | Formals T_Comma Var    {$1 @ [$3]}
           ;
 
-StmtBlock  : T_LCurlyBracket VarDeclListAndFirstStatement StmtList T_RCurlyBracket {$2 @ $3} //has at least one statement
-           | T_LCurlyBracket VarDeclList T_RCurlyBracket                           {$2} //has no statements
+StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket {$2}
 ;
 
 
-StmtList : StmtList Stmt {$1 @ $2}
+StmtList : StmtList Stmt {$1 @ [$2]}
          | {[]}
 ;
-
-VarDeclList : VarDeclList VarDecl {$1 @ [Ast.varDeclStmt $2]}
-            | {[]}
-;
-
-
-VarDeclListAndFirstStatement : VarDeclList Stmt { $1 @ $2 }
-;
-
           
 VarDecl   : Var T_Semicolon                 { $1 }
           ;
@@ -110,14 +100,14 @@ VarDecl   : Var T_Semicolon                 { $1 }
 Var       : Type T_Identifier               { Ast.create_varDecl $1 $2 }
           ;
 
-
-Stmt       : OptionalExpr T_Semicolon { [Ast.exprStmt $1] }
-           | IfStmt { [Ast.unimplementedStmt $1] }
-           | WhileStmt { [Ast.unimplementedStmt $1] }
-           | ForStmt { [Ast.unimplementedStmt $1] }
-           | BreakStmt { [Ast.unimplementedStmt $1] }
-           | ReturnStmt { [Ast.unimplementedStmt $1] }
-           | StmtBlock { $1 }
+Stmt       : VarDecl { Ast.varDeclStmt $1 }
+           | OptionalExpr T_Semicolon { Ast.exprStmt $1 }
+           | IfStmt { Ast.unimplementedStmt $1 }
+           | WhileStmt { Ast.unimplementedStmt $1 }
+           | ForStmt { Ast.unimplementedStmt $1 }
+           | BreakStmt { Ast.unimplementedStmt $1 }
+           | ReturnStmt { Ast.unimplementedStmt $1 }
+           | StmtBlock { Ast.stmtBlock $1 }
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/

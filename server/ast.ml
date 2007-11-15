@@ -27,9 +27,11 @@ let unimplementedExprB e = UnimplementedExprB (e)
 type stmt =
   | Expr of expr
   | VarDeclStmt of varDecl
+  | StmtBlock of stmt list
   | UnimplementedStmt of unit
 let exprStmt e = Expr (e)
 let varDeclStmt vd = VarDeclStmt (vd)
+let stmtBlock sb = StmtBlock (sb)
 let unimplementedStmt u = UnimplementedStmt (u)
 	
 type fnDecl = {
@@ -49,7 +51,10 @@ type program = {
 }
 let create_program decls = {decls=decls}
 
-(* Printing functions *)
+
+(******************
+Printing functions
+*******************)
 
 let insert_tabs num_tabs = String.make num_tabs '\t'
 
