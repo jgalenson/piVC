@@ -59,39 +59,39 @@ main      :    DeclList T_EOF
                }
           ;
 
-DeclList  :    DeclList Decl        {$1 @ [$2]}
-          |    Decl                 {[$1]}
+DeclList  :    DeclList Decl        { $1 @ [$2] }
+          |    Decl                 { [$1] }
           ;
 
-Decl      :    VarDecl              {Ast.VarDecl ($1)} 
-          |    FnDecl               {Ast.FnDecl  ($1)}
+Decl      :    VarDecl              { Ast.VarDecl ($1) } 
+          |    FnDecl               { Ast.FnDecl  ($1) }
           ;
 
-Type      : T_Int                   {Ast.Int}
-          | T_Float                 {Ast.Float}
-          | T_Bool                  {Ast.Bool}
-          | T_Identifier            {Ast.Ident($1)}
-          | Type T_Dims             {Ast.Array($1)}
+Type      : T_Int                   { Ast.Int }
+          | T_Float                 { Ast.Float }
+          | T_Bool                  { Ast.Bool }
+          | T_Identifier            { Ast.Ident($1) }
+          | Type T_Dims             { Ast.Array($1) }
           ;
 
-FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {Ast.create_fnDecl $2 $4 $1 $6}
-          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {Ast.create_fnDecl $2 $4 Ast.Void $6}
+FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 }
+          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 Ast.Void $6 }
           ;
 
-FormalsOrEmpty : Formals {$1}
-               |         {[]}
+FormalsOrEmpty : Formals { $1 }
+               |         { [] }
                ;
 
-Formals   : Var                    {[$1]}
-          | Formals T_Comma Var    {$1 @ [$3]}
+Formals   : Var                    { [$1] }
+          | Formals T_Comma Var    { $1 @ [$3] }
           ;
 
-StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket {$2}
+StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { $2 }
 ;
 
 
-StmtList : StmtList Stmt {$1 @ [$2]}
-         | {[]}
+StmtList : StmtList Stmt { $1 @ [$2] }
+         | { [] }
 ;
           
 VarDecl   : Var T_Semicolon                 { $1 }
@@ -102,64 +102,65 @@ Var       : Type T_Identifier               { Ast.create_varDecl $1 $2 }
 
 Stmt       : VarDecl { Ast.varDeclStmt $1 }
            | OptionalExpr T_Semicolon { Ast.exprStmt $1 }
-           | IfStmt { Ast.unimplementedStmt $1 }
-           | WhileStmt { Ast.unimplementedStmt $1 }
-           | ForStmt { Ast.unimplementedStmt $1 }
-           | BreakStmt { Ast.unimplementedStmt $1 }
-           | ReturnStmt { Ast.unimplementedStmt $1 }
-           | StmtBlock { Ast.stmtBlock $1 }
+           | IfStmt { $1 }
+           | WhileStmt { $1 }
+           | ForStmt { $1 }
+           | BreakStmt { $1 }
+           | ReturnStmt { $1 }
+           | StmtBlock { Ast.StmtBlock ($1) }
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
-IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else {}
-             | T_If T_LParen Expr T_RParen Stmt %prec T_If {}
+IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.IfStmt ($3, $5, $7) }
+             | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ($3, $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While T_LParen Expr T_RParen Stmt {}
+WhileStmt  : T_While T_LParen Expr T_RParen Stmt { Ast.WhileStmt ($3, $5) }
 ;
 
-ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt {}
+ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt { Ast.ForStmt ($3, $5, $7, $9) }
 ;
 
-ReturnStmt : T_Return OptionalExpr T_Semicolon {}
+ReturnStmt : T_Return OptionalExpr T_Semicolon { Ast.ReturnStmt ($2) }
 ;
 
 OptionalExpr : Expr { $1 }
              | { Ast.emptyExpr }
 ;
 
-BreakStmt : T_Break T_Semicolon {}
+BreakStmt : T_Break T_Semicolon { Ast.BreakStmt }
 ;
 
-Expr     : LValue T_Assign Expr { Ast.unimplementedExprB $3 }
-         | Constant { Ast.unimplementedExprA $1 }
-         | LValue { Ast.unimplementedExprA $1 }
-         | Call { Ast.unimplementedExprA $1 }
+Expr     : LValue T_Assign Expr { Ast.Assign ($1, $3) }
+         | Constant { Ast.Constant ($1) }
+         | LValue { Ast.LValue ($1) }
+         | Call { $1 }
          | T_LParen Expr T_RParen { $2 }
-         | Expr T_Plus Expr { Ast.plus $1 $3 }
-         | Expr T_Minus Expr { Ast.unimplementedExprB $1 }
-         | Expr T_Star Expr { Ast.unimplementedExprB $1 }
-         | Expr T_Slash Expr { Ast.unimplementedExprB $1 }
-         | Expr '%' Expr { Ast.unimplementedExprB $1 }
-         | T_Minus Expr %prec UnaryMinus { Ast.unimplementedExprB $2 }
-         | Expr T_Less Expr { Ast.unimplementedExprB $1 }
-         | Expr T_LessEqual Expr { Ast.unimplementedExprB $1 }
-         | Expr T_Greater Expr { Ast.unimplementedExprB $1 }
-         | Expr T_GreaterEqual Expr { Ast.unimplementedExprB $1 }
-         | Expr T_Equal Expr { Ast.unimplementedExprB $1 }
-         | Expr T_NotEqual Expr { Ast.unimplementedExprB $1 }
-         | Expr T_And Expr { Ast.unimplementedExprB $1 }
-         | Expr T_Or Expr { Ast.unimplementedExprB $1 }
-         | T_Not Expr { Ast.unimplementedExprB $2 }
+         | Expr T_Plus Expr { Ast.Plus ($1, $3) }
+         | Expr T_Minus Expr { Ast.Minus ($1, $3) }
+         | Expr T_Star Expr { Ast.Times ($1, $3) }
+         | Expr T_Slash Expr { Ast.Div ($1, $3) }
+	     /* integerdivision */
+         | Expr '%' Expr { Ast.Mod ($1, $3) }
+         | T_Minus Expr %prec UnaryMinus { Ast.UMinus ($2) }
+         | Expr T_Less Expr { Ast.LT ($1, $3) }
+         | Expr T_LessEqual Expr { Ast.LE ($1, $3) }
+         | Expr T_Greater Expr { Ast.GT ($1, $3) }
+         | Expr T_GreaterEqual Expr { Ast.GE ($1, $3) }
+         | Expr T_Equal Expr { Ast.EQ ($1, $3) }
+         | Expr T_NotEqual Expr { Ast.NE ($1, $3) }
+         | Expr T_And Expr { Ast.And ($1, $3) }
+         | Expr T_Or Expr { Ast.Or ($1, $3) }
+         | T_Not Expr { Ast.Not ($2) }
 ;
 
-LValue   : T_Identifier                          {}
-         | Expr T_Period T_Identifier                 {}
-         | Expr T_LSquareBracket Expr T_RSquareBracket                     {}
+LValue   : T_Identifier                          { Ast.LvalA ($1) }
+/*         | Expr T_Period T_Identifier                 {}*/
+         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.UnimplementedLval }
 ;
 
-Call     : T_Identifier T_LParen Actuals T_RParen          {}
-         | Expr T_Period T_Identifier T_LParen Actuals T_RParen {}
+Call     : T_Identifier T_LParen Actuals T_RParen          { Ast.Call ($1, $3) }
+/*         | Expr T_Period T_Identifier T_LParen Actuals T_RParen {}*/
 ;
 
 ExprList : ExprList T_Comma Expr  {}
@@ -170,10 +171,10 @@ Actuals  : ExprList       {}
          |                {}
 ;
 
-Constant : T_IntConstant    {}
-         | T_FloatConstant  {}
-         | T_BoolConstant   {}
-         | T_Null           {}
+Constant : T_IntConstant    { ConstInt ($1) }
+         | T_FloatConstant  { ConstFloat ($1) }
+         | T_BoolConstant   { ConstBool ($1) }
+/*         | T_Null           { $1 }*/
 ;
 
 %%

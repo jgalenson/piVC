@@ -14,8 +14,36 @@ type varDecl = {
 }
 let create_varDecl t name = {varType=t; varName=name}
 
+(* temp declarations: changeme todo *)
+type lval =
+  | LvalA of string
+  | UnimplementedLval
+type constant =
+  | ConstInt of int
+  | ConstFloat of float
+  | ConstBool of bool
+type formals = unit
+    
 type expr =
+  | Assign of lval * expr
+  | Constant of constant
+  | LValue of lval
+  | Call of string * formals
   | Plus of expr * expr
+  | Minus of expr * expr
+  | Times of expr * expr
+  | Div of expr * expr
+  | Mod of expr * expr
+  | UMinus of expr
+  | LT of expr * expr
+  | LE of expr * expr
+  | GT of expr * expr
+  | GE of expr * expr
+  | EQ of expr * expr
+  | NE of expr * expr
+  | And of expr * expr
+  | Or of expr * expr
+  | Not of expr
   | EmptyExpr
   | UnimplementedExprA of unit
   | UnimplementedExprB of expr	
@@ -26,13 +54,16 @@ let unimplementedExprB e = UnimplementedExprB (e)
     
 type stmt =
   | Expr of expr
+  | EmptyStmt
   | VarDeclStmt of varDecl
+  | IfStmt of expr * stmt * stmt
+  | WhileStmt of expr * stmt
+  | ForStmt of expr * expr * expr * stmt
+  | BreakStmt
+  | ReturnStmt of expr
   | StmtBlock of stmt list
-  | UnimplementedStmt of unit
 let exprStmt e = Expr (e)
 let varDeclStmt vd = VarDeclStmt (vd)
-let stmtBlock sb = StmtBlock (sb)
-let unimplementedStmt u = UnimplementedStmt (u)
 	
 type fnDecl = {
   fnName       : string;
