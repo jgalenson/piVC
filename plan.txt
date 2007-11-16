@@ -1,0 +1,8 @@
+Fix productions
+Finish ast
+Write to_string/to_c
+Do semantic checks
+Gui: tree (Joel tree, not Jason tree)
+Server: start it
+
+Use emails for semaphores.
