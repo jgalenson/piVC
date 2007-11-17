@@ -1,6 +1,7 @@
 Fix productions
 Finish ast
 Write to_string/to_c
+Deal with storing locations
 Do semantic checks
 Gui: tree (Joel tree, not Jason tree)
 Server: start it
