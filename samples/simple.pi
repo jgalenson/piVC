@@ -2,15 +2,33 @@ int global;
 
 int simpleFunction(){
   int a;
-  int b;
-  int c;
   a = 5;
-  b = 10;
   c = a + b;
+  a + 5;
+  if (a > 5) {
+    a;
+    b = b - 5;
+  }
+  while (a < b) {
+    foo();
+    if (x != y) {
+      bar();
+      foo();
+    } else {
+      meow();
+    }
+  }
+  for (i = 0; i < 10; i = i + 1)
+    a = 5;
+  for (joel = 42; joel >= 0; joel = joel / 2) {
+    meow();
+    code(pivc, joel, jason);
+  }
   return c;
+  return;
 }
 
-void func2(){
+void func2(int a, int foobar){
 }
 
 float jason(){

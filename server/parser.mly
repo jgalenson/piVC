@@ -86,7 +86,7 @@ Formals   : Var                    { [$1] }
           | Formals T_Comma Var    { $1 @ [$3] }
           ;
 
-StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { $2 }
+StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock $2 }
 ;
 
 
@@ -100,14 +100,14 @@ VarDecl   : Var T_Semicolon                 { $1 }
 Var       : Type T_Identifier               { Ast.create_varDecl $1 $2 }
           ;
 
-Stmt       : VarDecl { Ast.varDeclStmt $1 }
-           | OptionalExpr T_Semicolon { Ast.exprStmt $1 }
+Stmt       : VarDecl { Ast.VarDeclStmt $1 }
+           | OptionalExpr T_Semicolon { Ast.Expr $1 }
            | IfStmt { $1 }
            | WhileStmt { $1 }
            | ForStmt { $1 }
            | BreakStmt { $1 }
            | ReturnStmt { $1 }
-           | StmtBlock { Ast.StmtBlock ($1) }
+           | StmtBlock { $1 }
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
@@ -125,7 +125,7 @@ ReturnStmt : T_Return OptionalExpr T_Semicolon { Ast.ReturnStmt ($2) }
 ;
 
 OptionalExpr : Expr { $1 }
-             | { Ast.emptyExpr }
+             | { Ast.EmptyExpr }
 ;
 
 BreakStmt : T_Break T_Semicolon { Ast.BreakStmt }
@@ -163,12 +163,12 @@ Call     : T_Identifier T_LParen Actuals T_RParen          { Ast.Call ($1, $3) }
 /*         | Expr T_Period T_Identifier T_LParen Actuals T_RParen {}*/
 ;
 
-ExprList : ExprList T_Comma Expr  {}
-         | Expr           {}
+ExprList : ExprList T_Comma Expr  { $1 @ [$3] }
+         | Expr           { [$1] }
 ;
 
-Actuals  : ExprList       {}
-         |                {}
+Actuals  : ExprList       { $1 }
+         |                { [] }
 ;
 
 Constant : T_IntConstant    { ConstInt ($1) }
