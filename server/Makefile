@@ -22,7 +22,9 @@ parser :
 	$(OC) -c parser.ml;
 	$(OC) -c test_parser.ml;
 	$(OC) -c ast.ml;
+	$(OC) -c server.ml;
 	$(OC) -o test_parser global.cmo ast.cmo lexer.cmo parser.cmo test_parser.cmo
+	$(OC) -o server unix.cma global.cmo ast.cmo lexer.cmo parser.cmo server.cmo
 
 	rm lexer.ml;
 	rm parser.mli;
