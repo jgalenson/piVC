@@ -68,20 +68,29 @@ Decl      :    VarDecl              { Ast.VarDecl ($1) }
           |    FnDecl               { Ast.FnDecl  ($1) }
           ;
 
-Type      : T_Int                   { Ast.Int (Global.getCurrLocation )}
-          | T_Float                 { Ast.Float (Global.getCurrLocation) }
-          | T_Bool                  { Ast.Bool (Global.getCurrLocation) }
-          | T_Identifier            { Ast.Ident($1, Global.getCurrLocation) }
-          | Type T_Dims             { Ast.Array($1, Global.getCurrLocation) }
+Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
+          | T_Float                 { Ast.Float(create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
+          | T_Bool                  { Ast.Bool (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
+          | Identifier              { Ast.Identifier $1 }
+          | Type T_Dims             { Ast.Array($1, create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
           ;
 
-FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 }
-          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (getCurrLocation )) $6 } //TODO: this getCurrLocation isn't going to work
+
+Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
+
+
+FnDecl    : Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 }
+          | T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1))) $6 }
           ;
 
 FormalsOrEmpty : Formals { $1 }
                |         { [] }
                ;
+
+
+Var       : Type Identifier               { Ast.create_varDecl $1 $2 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
+          ;
+
 
 Formals   : Var                    { [$1] }
           | Formals T_Comma Var    { $1 @ [$3] }
@@ -96,9 +105,6 @@ StmtList : StmtList Stmt { $1 @ [$2] }
 ;
           
 VarDecl   : Var T_Semicolon                 { $1 }
-          ;
-
-Var       : Type T_Identifier               { Ast.create_varDecl $1 $2 }
           ;
 
 Stmt       : VarDecl { Ast.VarDeclStmt $1 }
@@ -155,13 +161,13 @@ Expr     : LValue T_Assign Expr { Ast.Assign ($1, $3) }
          | T_Not Expr { Ast.Not ($2) }
 ;
 
-LValue   : T_Identifier                          { Ast.LvalA ($1) }
-/*         | Expr T_Period T_Identifier                 {}*/
+LValue   : Identifier                          { Ast.LvalA ($1) }
+/*         | Expr T_Period Identifier                 {}*/
          | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.UnimplementedLval }
 ;
 
-Call     : T_Identifier T_LParen Actuals T_RParen          { Ast.Call ($1, $3) }
-/*         | Expr T_Period T_Identifier T_LParen Actuals T_RParen {}*/
+Call     : Identifier T_LParen Actuals T_RParen          { Ast.Call ($1, $3) }
+/*         | Expr T_Period Identifier T_LParen Actuals T_RParen {}*/
 ;
 
 ExprList : ExprList T_Comma Expr  { $1 @ [$3] }

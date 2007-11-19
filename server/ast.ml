@@ -1,31 +1,54 @@
 open Printf
+open Lexing
 
 type location = {
-  lineStart : int;
-  lineEnd : int;
-  colStart : int;
-  colEnd : int;
-  byteStart : int;
-  byteEnd : int;
+  loc_start  : Lexing.position;
+  loc_end    : Lexing.position;
 }
+let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_end}
+let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol) + 1
+let location_union loc1 loc2 = {
+  loc_start = 
+    if loc1.loc_start.pos_cnum < loc2.loc_start.pos_cnum then
+      loc1.loc_start
+    else
+      loc2.loc_start
+    ;
+  loc_end = 
+    if loc1.loc_end.pos_cnum > loc2.loc_end.pos_cnum then
+      loc1.loc_end
+    else
+      loc2.loc_end
+    ;
+}
+
+type identifier = {
+  name: string;
+  location: location;
+}
+let create_identifier name location =
+  {name = name; location = location;}
 
 type varType = 
   | Bool of location
   | Int of location
   | Float of location
-  | Ident of string * location
+  | Identifier of identifier
   | Array of varType * location
   | Void of location
 
 type varDecl = {
   varType : varType;
-  varName : string;
+  varName : identifier;
+  location : location
 }
-let create_varDecl t name = {varType=t; varName=name}
+let create_varDecl t name location = {varType=t; varName=name; location=location;}
+
+
 
 (* temp declarations: changeme todo *)
 type lval =
-  | LvalA of string
+  | LvalA of identifier
   | UnimplementedLval
 type constant =
   | ConstInt of int
@@ -36,7 +59,7 @@ type expr =
   | Assign of lval * expr
   | Constant of constant
   | LValue of lval
-  | Call of string * expr list
+  | Call of identifier * expr list
   | Plus of expr * expr
   | Minus of expr * expr
   | Times of expr * expr
@@ -66,7 +89,7 @@ type stmt =
   | EmptyStmt
 	
 type fnDecl = {
-  fnName       : string;
+  fnName       : identifier;
   formals    : varDecl list;
   returnType   : varType;
   stmtBlock : stmt;
@@ -90,22 +113,26 @@ Printing functions
 let insert_tabs num_tabs = String.make num_tabs '\t'
 
 let string_of_location loc =
-    "(" ^ string_of_int loc.lineStart ^ ", " ^ string_of_int loc.colStart ^ ")"
+    "(" ^ string_of_int loc.loc_start.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_start) ^ ")"
+
+let string_of_identifier id =
+  id.name
 
 let string_of_type typ =
   let rec sot = function
     | Bool l -> "bool"
-    | Int l -> "int" ^ " " ^ string_of_location l
+    | Int l -> "int"
     | Float l -> "float"
-    | Ident (i, l) -> i
+    | Identifier id -> string_of_identifier id
     | Array (t, l) -> (sot t) ^ "[]"
     | Void l -> "void"
   in
   sot typ
+   
 
 (* temp *)
 let string_of_lval lval = match lval with
-  | LvalA (s) -> s
+  | LvalA (s) -> string_of_identifier s
   | _ -> "[Unimplemented]"
 (* temp *)
 let string_of_constant c = match c with
@@ -118,7 +145,7 @@ let string_of_expr e =
     | Assign (l, e) -> (string_of_lval l) ^ " = " ^ (soe e)
     | Constant (c) -> (string_of_constant c)
     | LValue (l) -> (string_of_lval l)
-    | Call (s, el) -> s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
+    | Call (s, el) -> string_of_identifier s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
     | Plus (t1, t2) -> (soe t1) ^ " + " ^ (soe t2)
     | Minus (t1, t2) -> (soe t1) ^ " - " ^ (soe t2)
     | Times (t1, t2) -> (soe t1) ^ " * " ^ (soe t2)
@@ -139,7 +166,7 @@ let string_of_expr e =
   soe e
 
 let string_of_var_decl d =
-  (string_of_type d.varType) ^ " " ^ d.varName
+  (string_of_type d.varType) ^ " " ^ string_of_identifier d.varName
 			     
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
@@ -181,7 +208,7 @@ let string_of_decl d num_tabs = match d with
   | VarDecl d ->
       (string_of_var_decl d) ^ ";\n"
   | FnDecl d ->
-      (string_of_type d.returnType) ^ " " ^ d.fnName ^ "("
+      (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
       ^ (string_of_stmt d.stmtBlock num_tabs) ^ "\n"
 

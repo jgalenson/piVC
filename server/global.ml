@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *)
 
+(*
 open Ast
 
 let lineNum = ref 1
@@ -29,7 +30,7 @@ let currLocation = ref {lineStart = 1; lineEnd = 1; colStart = 0; colEnd = 0; by
 let getCurrLocation = 
   !currLocation
 
-
+*)
 (*
 let s = ref []
 
@@ -59,7 +60,7 @@ let pln () = print_endline (string_of_int !line_num)
 
 
 *)
-
+(*
 let countNewLines str  = 
   let numNewLines = ref 0 in
   let countFunction c = match c with
@@ -85,7 +86,7 @@ let updateLocation (lexbuf) =
      } in
   print_string("hiya");
   ignore (currLocation = newLocation) (*ignore fact that assignment does not return unit*)
-
+*)
 (*   print_int(lexbuf.Lexing.lex_curr_p.Lexing.pos_cnum);
    print_string(Lexing.lexeme lexbuf);
    print_string("\n");
