@@ -2,6 +2,7 @@
 %{
   open Printf
   open Ast
+  open Global
 %}
 
 %token T_Define
@@ -67,15 +68,15 @@ Decl      :    VarDecl              { Ast.VarDecl ($1) }
           |    FnDecl               { Ast.FnDecl  ($1) }
           ;
 
-Type      : T_Int                   { Ast.Int }
-          | T_Float                 { Ast.Float }
-          | T_Bool                  { Ast.Bool }
-          | T_Identifier            { Ast.Ident($1) }
-          | Type T_Dims             { Ast.Array($1) }
+Type      : T_Int                   { Ast.Int (Global.getCurrLocation )}
+          | T_Float                 { Ast.Float (Global.getCurrLocation) }
+          | T_Bool                  { Ast.Bool (Global.getCurrLocation) }
+          | T_Identifier            { Ast.Ident($1, Global.getCurrLocation) }
+          | Type T_Dims             { Ast.Array($1, Global.getCurrLocation) }
           ;
 
 FnDecl    : Type T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 }
-          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 Ast.Void $6 }
+          | T_Void T_Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (getCurrLocation )) $6 } //TODO: this getCurrLocation isn't going to work
           ;
 
 FormalsOrEmpty : Formals { $1 }

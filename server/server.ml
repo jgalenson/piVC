@@ -20,3 +20,7 @@ let _ = bind socket_incoming (ADDR_INET(inet_addr_any, port));
             (*connect socket_outgoing (ADDR_INET((gethostbyname ip_address*)
             close u;
         done
+
+
+(* Thanks go:
+http://abaababa.ouvaton.org/caml/intercept.ml*)

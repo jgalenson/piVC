@@ -1,12 +1,21 @@
 open Printf
 
+type location = {
+  lineStart : int;
+  lineEnd : int;
+  colStart : int;
+  colEnd : int;
+  byteStart : int;
+  byteEnd : int;
+}
+
 type varType = 
-  | Bool
-  | Int
-  | Float
-  | Ident of string
-  | Array of varType
-  | Void
+  | Bool of location
+  | Int of location
+  | Float of location
+  | Ident of string * location
+  | Array of varType * location
+  | Void of location
 
 type varDecl = {
   varType : varType;
@@ -22,7 +31,6 @@ type constant =
   | ConstInt of int
   | ConstFloat of float
   | ConstBool of bool
-type formals = unit
     
 type expr =
   | Assign of lval * expr
@@ -81,14 +89,17 @@ Printing functions
 
 let insert_tabs num_tabs = String.make num_tabs '\t'
 
+let string_of_location loc =
+    "(" ^ string_of_int loc.lineStart ^ ", " ^ string_of_int loc.colStart ^ ")"
+
 let string_of_type typ =
   let rec sot = function
-    | Bool -> "bool"
-    | Int -> "int"
-    | Float -> "float"
-    | Ident i -> i
-    | Array t -> (sot t) ^ "[]"
-    | Void -> "void"
+    | Bool l -> "bool"
+    | Int l -> "int" ^ " " ^ string_of_location l
+    | Float l -> "float"
+    | Ident (i, l) -> i
+    | Array (t, l) -> (sot t) ^ "[]"
+    | Void l -> "void"
   in
   sot typ
 
