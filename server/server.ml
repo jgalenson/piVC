@@ -22,5 +22,4 @@ let _ = bind socket_incoming (ADDR_INET(inet_addr_any, port));
         done
 
 
-(* Thanks go:
-http://abaababa.ouvaton.org/caml/intercept.ml*)
+(*Based on the public domain example at http://abaababa.ouvaton.org/caml/intercept.ml*)
