@@ -56,7 +56,7 @@
 
 main      :    DeclList T_EOF 
                {
-		 Ast.create_program($1);
+		 Ast.create_program $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1));
                }
           ;
 
@@ -64,8 +64,8 @@ DeclList  :    DeclList Decl        { $1 @ [$2] }
           |    Decl                 { [$1] }
           ;
 
-Decl      :    VarDecl              { Ast.VarDecl ($1) } 
-          |    FnDecl               { Ast.FnDecl  ($1) }
+Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1)  } 
+          |    FnDecl               { Ast.FnDecl ($1.location_fd, $1) }
           ;
 
 Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
@@ -79,8 +79,8 @@ Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_sta
 Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
 
 
-FnDecl    : Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 }
-          | T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1))) $6 }
+FnDecl    : Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
+          | T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1))) $6 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
           ;
 
 FormalsOrEmpty : Formals { $1 }
@@ -96,7 +96,7 @@ Formals   : Var                    { [$1] }
           | Formals T_Comma Var    { $1 @ [$3] }
           ;
 
-StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock $2 }
+StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $2) }
 ;
 
 
@@ -107,8 +107,8 @@ StmtList : StmtList Stmt { $1 @ [$2] }
 VarDecl   : Var T_Semicolon                 { $1 }
           ;
 
-Stmt       : VarDecl { Ast.VarDeclStmt $1 }
-           | OptionalExpr T_Semicolon { Ast.Expr $1 }
+Stmt       : VarDecl { Ast.VarDeclStmt($1.location_vd, $1) }
+           | OptionalExpr T_Semicolon {Ast.Expr((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1) }
            | IfStmt { $1 }
            | WhileStmt { $1 }
            | ForStmt { $1 }
@@ -118,55 +118,55 @@ Stmt       : VarDecl { Ast.VarDeclStmt $1 }
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
-IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.IfStmt ($3, $5, $7) }
-             | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ($3, $5, EmptyStmt) }
+IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 7)), $3, $5, $7) }
+             | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), $3, $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While T_LParen Expr T_RParen Stmt { Ast.WhileStmt ($3, $5) }
+WhileStmt  : T_While T_LParen Expr T_RParen Stmt { Ast.WhileStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), $3, $5) }
 ;
 
-ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt { Ast.ForStmt ($3, $5, $7, $9) }
+ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt { Ast.ForStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 9)), $3, $5, $7, $9) }
 ;
 
-ReturnStmt : T_Return OptionalExpr T_Semicolon { Ast.ReturnStmt ($2) }
+ReturnStmt : T_Return OptionalExpr T_Semicolon {Ast.ReturnStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $2) }
 ;
 
 OptionalExpr : Expr { $1 }
              | { Ast.EmptyExpr }
 ;
 
-BreakStmt : T_Break T_Semicolon { Ast.BreakStmt }
+BreakStmt : T_Break T_Semicolon { Ast.BreakStmt  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)) }
 ;
 
-Expr     : LValue T_Assign Expr { Ast.Assign ($1, $3) }
-         | Constant { Ast.Constant ($1) }
-         | LValue { Ast.LValue ($1) }
+Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
+         | Constant { Ast.Constant ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
+         | LValue { Ast.LValue ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
          | Call { $1 }
-         | T_LParen Expr T_RParen { $2 }
-         | Expr T_Plus Expr { Ast.Plus ($1, $3) }
-         | Expr T_Minus Expr { Ast.Minus ($1, $3) }
-         | Expr T_Star Expr { Ast.Times ($1, $3) }
-         | Expr T_Slash Expr { Ast.Div ($1, $3) }
+         | T_LParen Expr T_RParen {$2}
+         | Expr T_Plus Expr { Ast.Plus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
+         | Expr T_Minus Expr { Ast.Minus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Star Expr { Ast.Times((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Slash Expr { Ast.Div((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
 	     /* integerdivision */
-         | Expr '%' Expr { Ast.Mod ($1, $3) }
-         | T_Minus Expr %prec UnaryMinus { Ast.UMinus ($2) }
-         | Expr T_Less Expr { Ast.LT ($1, $3) }
-         | Expr T_LessEqual Expr { Ast.LE ($1, $3) }
-         | Expr T_Greater Expr { Ast.GT ($1, $3) }
-         | Expr T_GreaterEqual Expr { Ast.GE ($1, $3) }
-         | Expr T_Equal Expr { Ast.EQ ($1, $3) }
-         | Expr T_NotEqual Expr { Ast.NE ($1, $3) }
-         | Expr T_And Expr { Ast.And ($1, $3) }
-         | Expr T_Or Expr { Ast.Or ($1, $3) }
-         | T_Not Expr { Ast.Not ($2) }
+         | Expr '%' Expr { Ast.Mod ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | T_Minus Expr %prec UnaryMinus {Ast.UMinus ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
+         | Expr T_Less Expr { Ast.LT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_LessEqual Expr { Ast.LE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Greater Expr { Ast.GT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_GreaterEqual Expr { Ast.GE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | Expr T_Equal Expr { Ast.EQ ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | Expr T_NotEqual Expr { Ast.NE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | Expr T_And Expr { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | Expr T_Or Expr { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | T_Not Expr { Ast.Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)),$2) }
 ;
 
-LValue   : Identifier                          { Ast.LvalA ($1) }
+LValue   : Identifier                          { Ast.LvalA ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)),$1) }
 /*         | Expr T_Period Identifier                 {}*/
          | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.UnimplementedLval }
 ;
 
-Call     : Identifier T_LParen Actuals T_RParen          { Ast.Call ($1, $3) }
+Call     : Identifier T_LParen Actuals T_RParen          { Ast.Call ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
 /*         | Expr T_Period Identifier T_LParen Actuals T_RParen {}*/
 ;
 
@@ -178,9 +178,9 @@ Actuals  : ExprList       { $1 }
          |                { [] }
 ;
 
-Constant : T_IntConstant    { ConstInt ($1) }
-         | T_FloatConstant  { ConstFloat ($1) }
-         | T_BoolConstant   { ConstBool ($1) }
+Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }
+         | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }
+         | T_BoolConstant   { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), $1) }
 /*         | T_Null           { $1 }*/
 ;
 

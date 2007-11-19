@@ -40,52 +40,52 @@ type varType =
 type varDecl = {
   varType : varType;
   varName : identifier;
-  location : location
+  location_vd : location
 }
-let create_varDecl t name location = {varType=t; varName=name; location=location;}
+let create_varDecl t name location = {varType=t; varName=name; location_vd=location;}
 
 
 
 (* temp declarations: changeme todo *)
 type lval =
-  | LvalA of identifier
+  | LvalA of location * identifier
   | UnimplementedLval
 type constant =
-  | ConstInt of int
-  | ConstFloat of float
-  | ConstBool of bool
+  | ConstInt of location * int
+  | ConstFloat of location * float
+  | ConstBool of location * bool
     
 type expr =
-  | Assign of lval * expr
-  | Constant of constant
-  | LValue of lval
-  | Call of identifier * expr list
-  | Plus of expr * expr
-  | Minus of expr * expr
-  | Times of expr * expr
-  | Div of expr * expr
-  | Mod of expr * expr
-  | UMinus of expr
-  | LT of expr * expr
-  | LE of expr * expr
-  | GT of expr * expr
-  | GE of expr * expr
-  | EQ of expr * expr
-  | NE of expr * expr
-  | And of expr * expr
-  | Or of expr * expr
-  | Not of expr
+  | Assign of location * lval * expr
+  | Constant of location * constant
+  | LValue of location * lval
+  | Call of location * identifier * expr list
+  | Plus of location * expr * expr
+  | Minus of location * expr * expr
+  | Times of location * expr * expr
+  | Div of location * expr * expr
+  | Mod of location * expr * expr
+  | UMinus of location * expr
+  | LT of location * expr * expr
+  | LE of location * expr * expr
+  | GT of location * expr * expr
+  | GE of location * expr * expr
+  | EQ of location * expr * expr
+  | NE of location * expr * expr
+  | And of location * expr * expr
+  | Or of location * expr * expr
+  | Not of location * expr
   | EmptyExpr
     
 type stmt =
-  | Expr of expr
-  | VarDeclStmt of varDecl
-  | IfStmt of expr * stmt * stmt
-  | WhileStmt of expr * stmt
-  | ForStmt of expr * expr * expr * stmt
-  | BreakStmt
-  | ReturnStmt of expr
-  | StmtBlock of stmt list
+  | Expr of location * expr
+  | VarDeclStmt of location * varDecl
+  | IfStmt of location * expr * stmt * stmt
+  | WhileStmt of location * expr * stmt
+  | ForStmt of location * expr * expr * expr * stmt
+  | BreakStmt of location
+  | ReturnStmt of location * expr
+  | StmtBlock of location * stmt list
   | EmptyStmt
 	
 type fnDecl = {
@@ -93,17 +93,19 @@ type fnDecl = {
   formals    : varDecl list;
   returnType   : varType;
   stmtBlock : stmt;
+  location_fd : location;
 }
-let create_fnDecl name formals returnType stmtBlock = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock}
+let create_fnDecl name formals returnType stmtBlock location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; location_fd = location;}
 
 type decl = 
-  | VarDecl of varDecl
-  | FnDecl of fnDecl
+  | VarDecl of location * varDecl
+  | FnDecl of location * fnDecl
 
 type program = {
   decls : decl list;
+  location : location;
 }
-let create_program decls = {decls=decls}
+let create_program decls location = {decls=decls; location = location;}
 
 
 (******************
@@ -132,35 +134,35 @@ let string_of_type typ =
 
 (* temp *)
 let string_of_lval lval = match lval with
-  | LvalA (s) -> string_of_identifier s
+  | LvalA (loc,s) -> string_of_identifier s
   | _ -> "[Unimplemented]"
 (* temp *)
 let string_of_constant c = match c with
-   | ConstInt (c) -> string_of_int c
-   | ConstFloat (c) -> string_of_float c
-   | ConstBool (c) -> string_of_bool c
+   | ConstInt (loc,c) -> string_of_int c
+   | ConstFloat (loc,c) -> string_of_float c
+   | ConstBool (loc,c) -> string_of_bool c
     
 let string_of_expr e =
   let rec soe = function
-    | Assign (l, e) -> (string_of_lval l) ^ " = " ^ (soe e)
-    | Constant (c) -> (string_of_constant c)
-    | LValue (l) -> (string_of_lval l)
-    | Call (s, el) -> string_of_identifier s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
-    | Plus (t1, t2) -> (soe t1) ^ " + " ^ (soe t2)
-    | Minus (t1, t2) -> (soe t1) ^ " - " ^ (soe t2)
-    | Times (t1, t2) -> (soe t1) ^ " * " ^ (soe t2)
-    | Div (t1, t2) -> (soe t1) ^ " / " ^ (soe t2)
-    | Mod (t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
-    | UMinus (t) -> "-" ^ (soe t)
-    | LT (t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
-    | LE (t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
-    | GT (t1, t2) -> (soe t1) ^ " > " ^ (soe t2)
-    | GE (t1, t2) -> (soe t1) ^ " >= " ^ (soe t2)
-    | EQ (t1, t2) -> (soe t1) ^ " == " ^ (soe t2)
-    | NE (t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
-    | And (t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
-    | Or (t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
-    | Not (t) -> " !" ^ (soe t)
+    | Assign (loc,l, e) -> (string_of_lval l) ^ " = " ^ (soe e)
+    | Constant (loc,c) -> (string_of_constant c)
+    | LValue (loc,l) -> (string_of_lval l)
+    | Call (loc,s, el) -> string_of_identifier s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
+    | Plus (loc,t1, t2) -> (soe t1) ^ " + " ^ (soe t2)
+    | Minus (loc,t1, t2) -> (soe t1) ^ " - " ^ (soe t2)
+    | Times (loc,t1, t2) -> (soe t1) ^ " * " ^ (soe t2)
+    | Div (loc,t1, t2) -> (soe t1) ^ " / " ^ (soe t2)
+    | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
+    | UMinus (loc,t) -> "-" ^ (soe t)
+    | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
+    | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
+    | GT (loc,t1, t2) -> (soe t1) ^ " > " ^ (soe t2)
+    | GE (loc,t1, t2) -> (soe t1) ^ " >= " ^ (soe t2)
+    | EQ (loc,t1, t2) -> (soe t1) ^ " == " ^ (soe t2)
+    | NE (loc,t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
+    | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
+    | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
+    | Not (loc,t) -> " !" ^ (soe t)
     | EmptyExpr -> ""
   in
   soe e
@@ -171,28 +173,28 @@ let string_of_var_decl d =
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
   let rec sos = function
-    | Expr e -> (soe e) ^ ";"
-    | VarDeclStmt d -> (string_of_var_decl d) ^ ";"
-    | IfStmt (test, then_block, else_block) ->
+    | Expr (loc, e) -> (soe e) ^ ";"
+    | VarDeclStmt (loc, d) -> (string_of_var_decl d) ^ ";"
+    | IfStmt (loc, test, then_block, else_block) ->
 	let else_part else_block = match else_block with
 	| EmptyStmt -> ""
 	| _ -> " else " ^ (sos else_block)
 	in
 	"if (" ^ (soe test) ^ ") "
 	^ (sos then_block) ^ (else_part else_block)
-    | WhileStmt (test, block) ->
+    | WhileStmt (loc, test, block) ->
 	"while (" ^ (soe test) ^ ") " ^ (sos block)
-    | ForStmt (init, test, incr, block) ->
+    | ForStmt (loc, init, test, incr, block) ->
 	"if (" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
 	^ (soe incr) ^ ") " ^ (sos block)
-    | BreakStmt -> "break;"
-    | ReturnStmt (t) ->
+    | BreakStmt loc -> "break;"
+    | ReturnStmt (loc, t) ->
 	let space t = match t with
 	| EmptyExpr -> ""
 	| _ -> " "
 	in
 	"return" ^ (space t) ^ (soe t) ^ ";"
-    | StmtBlock (tl) ->
+    | StmtBlock (loc, tl) ->
       let map_fn s =
 	(string_of_stmt s (num_tabs + 1))
       in	
@@ -201,13 +203,13 @@ let rec string_of_stmt s num_tabs =
     | EmptyStmt -> ""
   in
   match s with
-  | StmtBlock (tl) -> (sos s)
+  | StmtBlock (loc, tl) -> (sos s)
   | _ -> (insert_tabs num_tabs) ^ (sos s)
 			     
 let string_of_decl d num_tabs = match d with
-  | VarDecl d ->
+  | VarDecl (loc, d) ->
       (string_of_var_decl d) ^ ";\n"
-  | FnDecl d ->
+  | FnDecl  (loc, d) ->
       (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
       ^ (string_of_stmt d.stmtBlock num_tabs) ^ "\n"
