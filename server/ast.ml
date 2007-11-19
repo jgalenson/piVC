@@ -173,7 +173,7 @@ let string_of_var_decl d =
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
   let rec sos = function
-    | Expr (loc, e) -> (soe e) ^ string_of_location loc ^ ";"
+    | Expr (loc, e) -> (soe e) ^ ";"
     | VarDeclStmt (loc, d) -> (string_of_var_decl d) ^ ";"
     | IfStmt (loc, test, then_block, else_block) ->
 	let else_part else_block = match else_block with
