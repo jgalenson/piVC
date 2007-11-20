@@ -1,15 +1,18 @@
 int global;
 
+@pre true
+@post rv = 42
 int simpleFunction(){
   int a;
-  a = 5;
-  c = a + b;
+  a := 5;
+  c := a + b;
   a + 5;
   if (a > 5) {
     a;
-    b = b - 5;
+    b := b - 5;
   }
-  while (a < b) {
+  while @true
+    (a = b) {
     foo();
     if (x != y) {
       bar();
@@ -18,18 +21,30 @@ int simpleFunction(){
       meow();
     }
   }
-  for (i = 0; i < 10; i = i + 1)
-    a = 5;
-  for (joel = 42; joel >= 0; joel = joel / 2) {
+  @ a = 7;
+  for @true
+    (i := 0; i < 10; i := i + 1)
+    a := 5;
+  for @true
+    (joel := 42; joel >= 0; joel := joel / 2) {
     meow();
     code(pivc, joel, jason);
   }
+  if (true)
+    a := 7;
+  /*float f;
+  f = 3.14159;*/
   return c;
   return;
+  @ false;
 }
 
+@pre a = 7 && foobar = 42
+@post true
 void func2(int a, int foobar){
 }
 
+@pre true
+@post true
 float jason(){
 }
