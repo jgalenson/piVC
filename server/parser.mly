@@ -35,6 +35,7 @@
 //%type <int>      Decl //change these
 
 %nonassoc T_Assign
+%nonassoc T_Iff T_Implies
 %left T_Or
 %left T_And
 %nonassoc T_Equal T_NotEqual
@@ -161,6 +162,8 @@ Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_sta
          | Expr T_GreaterEqual Expr { Ast.GE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | Expr T_Equal Expr { Ast.EQ ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | Expr T_NotEqual Expr { Ast.NE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
+         | Expr T_Iff Expr         { Ast.Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+         | Expr T_Implies Expr     { Ast.Implies ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
          | Expr T_And Expr { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | Expr T_Or Expr { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | T_Not Expr { Ast.Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)),$2) }
@@ -190,13 +193,14 @@ Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 
 /*         | T_Null           { $1 }*/
 ;
 
-Annotation : Annotation T_And Annotation         { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+Annotation : Expr                                { $1 }
+/*	   | Annotation T_And Annotation         { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | Annotation T_Or Annotation          { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | Annotation T_Iff Annotation         { Ast.Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | Annotation T_Implies Annotation     { Ast.Implies ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | T_Not Annotation                    { Ast.Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), $2) }
-	   | T_LParen Annotation T_RParen        { $2 } /* Source of shift/reduce conflict says Aaron */
-	   | Expr                                { $1 }
+	   | T_LParen Annotation T_RParen        { $2 } // Source of shift/reduce conflict says Aaron
+*/
 	   ;
 
 %%
