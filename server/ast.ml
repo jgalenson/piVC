@@ -75,16 +75,19 @@ type expr =
   | And of location * expr * expr
   | Or of location * expr * expr
   | Not of location * expr
+  | Iff of location * expr * expr
+  | Implies of location * expr * expr
   | EmptyExpr
     
 type stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt
-  | ForStmt of location * expr * expr * expr * stmt
+  | WhileStmt of location * expr * stmt * expr
+  | ForStmt of location * expr * expr * expr * stmt * expr
   | BreakStmt of location
   | ReturnStmt of location * expr
+  | AssertStmt of location * expr
   | StmtBlock of location * stmt list
   | EmptyStmt
 	
@@ -93,9 +96,11 @@ type fnDecl = {
   formals    : varDecl list;
   returnType   : varType;
   stmtBlock : stmt;
+  preCondition : expr;
+  postCondition : expr;
   location_fd : location;
 }
-let create_fnDecl name formals returnType stmtBlock location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; location_fd = location;}
+let create_fnDecl name formals returnType stmtBlock preCondition postCondition location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; location_fd = location;}
 
 type decl = 
   | VarDecl of location * varDecl
@@ -144,7 +149,7 @@ let string_of_constant c = match c with
     
 let string_of_expr e =
   let rec soe = function
-    | Assign (loc,l, e) -> (string_of_lval l) ^ " = " ^ (soe e)
+    | Assign (loc,l, e) -> (string_of_lval l) ^ " := " ^ (soe e)
     | Constant (loc,c) -> (string_of_constant c)
     | LValue (loc,l) -> (string_of_lval l)
     | Call (loc,s, el) -> string_of_identifier s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
@@ -158,11 +163,13 @@ let string_of_expr e =
     | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
     | GT (loc,t1, t2) -> (soe t1) ^ " > " ^ (soe t2)
     | GE (loc,t1, t2) -> (soe t1) ^ " >= " ^ (soe t2)
-    | EQ (loc,t1, t2) -> (soe t1) ^ " == " ^ (soe t2)
+    | EQ (loc,t1, t2) -> (soe t1) ^ " = " ^ (soe t2)
     | NE (loc,t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
     | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
     | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
     | Not (loc,t) -> " !" ^ (soe t)
+    | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
+    | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
     | EmptyExpr -> ""
   in
   soe e
@@ -172,6 +179,7 @@ let string_of_var_decl d =
 			     
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
+  let ins_tabs n = insert_tabs (num_tabs + n) in
   let rec sos = function
     | Expr (loc, e) -> (soe e) ^ ";"
     | VarDeclStmt (loc, d) -> (string_of_var_decl d) ^ ";"
@@ -182,10 +190,14 @@ let rec string_of_stmt s num_tabs =
 	in
 	"if (" ^ (soe test) ^ ") "
 	^ (sos then_block) ^ (else_part else_block)
-    | WhileStmt (loc, test, block) ->
-	"while (" ^ (soe test) ^ ") " ^ (sos block)
-    | ForStmt (loc, init, test, incr, block) ->
-	"if (" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
+    | WhileStmt (loc, test, block, annotation) ->
+	"while\n"
+	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (ins_tabs 1)
+	^ "(" ^ (soe test) ^ ") " ^ (sos block)
+    | ForStmt (loc, init, test, incr, block, annotation) ->
+	"for\n"
+	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (ins_tabs 1)
+	^ "(" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
 	^ (soe incr) ^ ") " ^ (sos block)
     | BreakStmt loc -> "break;"
     | ReturnStmt (loc, t) ->
@@ -194,6 +206,7 @@ let rec string_of_stmt s num_tabs =
 	| _ -> " "
 	in
 	"return" ^ (space t) ^ (soe t) ^ ";"
+    | AssertStmt (loc, e) -> "@ " ^ (soe e) ^ ";"
     | StmtBlock (loc, tl) ->
       let map_fn s =
 	(string_of_stmt s (num_tabs + 1))
@@ -210,7 +223,8 @@ let string_of_decl d num_tabs = match d with
   | VarDecl (loc, d) ->
       (string_of_var_decl d) ^ ";\n"
   | FnDecl  (loc, d) ->
-      (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
+      "@pre " ^ (string_of_expr d.preCondition) ^ "\n@post " ^ (string_of_expr d.postCondition) ^ "\n"
+      ^ (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
       ^ (string_of_stmt d.stmtBlock num_tabs) ^ "\n"
 

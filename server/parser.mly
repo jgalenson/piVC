@@ -23,7 +23,8 @@
 %token T_If
 %token T_Return T_Break
 %token T_Break T_Return
-%token T_At T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
+%token T_Assert T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
+%token T_ForAll T_Exists T_Iff T_Implies T_Pre T_Post
 %token T_Unknown
 %token T_EOF
 
@@ -79,8 +80,8 @@ Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_sta
 Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
 
 
-FnDecl    : Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $2 $4 $1 $6 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
-          | T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $2 $4 (Ast.Void (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1))) $6 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
+FnDecl    : T_Pre Annotation T_Post Annotation Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $6 $8 $5 $10 $2 $4 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
+          | T_Pre Annotation T_Post Annotation T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $6 $8 (Ast.Void (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1))) $10 $2 $4 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 6)) }
           ;
 
 FormalsOrEmpty : Formals { $1 }
@@ -114,6 +115,7 @@ Stmt       : VarDecl { Ast.VarDeclStmt($1.location_vd, $1) }
            | ForStmt { $1 }
            | BreakStmt { $1 }
            | ReturnStmt { $1 }
+	   | AssertStmt { $1 }
            | StmtBlock { $1 }
 ;
 
@@ -122,10 +124,10 @@ IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.I
              | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), $3, $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While T_LParen Expr T_RParen Stmt { Ast.WhileStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), $3, $5) }
+WhileStmt  : T_While T_Assert Annotation T_LParen Expr T_RParen Stmt { Ast.WhileStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), $5, $7, $3) }
 ;
 
-ForStmt    : T_For T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt { Ast.ForStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 9)), $3, $5, $7, $9) }
+ForStmt    : T_For T_Assert Annotation T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen Stmt { Ast.ForStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 9)), $5, $7, $9, $11, $3) }
 ;
 
 ReturnStmt : T_Return OptionalExpr T_Semicolon {Ast.ReturnStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $2) }
@@ -135,14 +137,17 @@ OptionalExpr : Expr { $1 }
              | { Ast.EmptyExpr }
 ;
 
-BreakStmt : T_Break T_Semicolon { Ast.BreakStmt  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)) }
+BreakStmt : T_Break T_Semicolon { Ast.BreakStmt (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)) }
 ;
 
+AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $2) }
+           ;
+  
 Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
          | Constant { Ast.Constant ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
          | LValue { Ast.LValue ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
          | Call { $1 }
-         | T_LParen Expr T_RParen {$2}
+         | T_LParen Expr T_RParen { $2 }
          | Expr T_Plus Expr { Ast.Plus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
          | Expr T_Minus Expr { Ast.Minus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Star Expr { Ast.Times((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
@@ -179,9 +184,19 @@ Actuals  : ExprList       { $1 }
 ;
 
 Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }
-         | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }
-         | T_BoolConstant   { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), $1) }
+/*         | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }*/
+         | T_True           { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), true) }
+         | T_False          { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), false) }	     
 /*         | T_Null           { $1 }*/
 ;
+
+Annotation : Annotation T_And Annotation         { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+           | Annotation T_Or Annotation          { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+           | Annotation T_Iff Annotation         { Ast.Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+           | Annotation T_Implies Annotation     { Ast.Implies ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
+           | T_Not Annotation                    { Ast.Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), $2) }
+	   | T_LParen Annotation T_RParen        { $2 } /* Source of shift/reduce conflict says Aaron */
+	   | Expr                                { $1 }
+	   ;
 
 %%

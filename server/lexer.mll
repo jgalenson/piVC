@@ -52,9 +52,10 @@ rule lang = parse
   | "true"				{updateLocation(lexbuf); T_True}
   | "false"				{updateLocation(lexbuf); T_False}
   | "[]"				{updateLocation(lexbuf); T_Dims}
+  | ":="				{updateLocation(lexbuf); T_Assign}
   | "<="				{updateLocation(lexbuf); T_LessEqual}
   | ">="				{updateLocation(lexbuf); T_GreaterEqual}
-  | "=="				{updateLocation(lexbuf); T_Equal}
+  | "="				        {updateLocation(lexbuf); T_Equal}
   | "!="				{updateLocation(lexbuf); T_NotEqual}
   | "&&"				{updateLocation(lexbuf); T_And}
   | "||"				{updateLocation(lexbuf); T_Or}
@@ -72,6 +73,12 @@ rule lang = parse
   | "null"                              {updateLocation(lexbuf); T_Null}
   | "while"                             {updateLocation(lexbuf); T_While}
   | "for"                               {updateLocation(lexbuf); T_For}
+  | "forall"                            {updateLocation(lexbuf); T_ForAll}
+  | "exists"                            {updateLocation(lexbuf); T_Exists}
+  | "<->"                               {updateLocation(lexbuf); T_Iff}
+  | "->"                                {updateLocation(lexbuf); T_Implies}
+  | "@pre"                              {updateLocation(lexbuf); T_Pre}
+  | "@post"                             {updateLocation(lexbuf); T_Post}      
   | alpha(alpha|digit|'_')* as ident 	{updateLocation(lexbuf); T_Identifier(ident)}
   | '+'					{updateLocation(lexbuf); T_Plus}
   | '-'					{updateLocation(lexbuf); T_Minus}
@@ -79,7 +86,6 @@ rule lang = parse
   | '/'					{updateLocation(lexbuf); T_Slash}
   | '<'					{updateLocation(lexbuf); T_Less}
   | '>'					{updateLocation(lexbuf); T_Greater}
-  | '='					{updateLocation(lexbuf); T_Assign}
   | '!'					{updateLocation(lexbuf); T_Not}
   | ';'					{updateLocation(lexbuf); T_Semicolon}
   | ','					{updateLocation(lexbuf); T_Comma}
@@ -91,7 +97,7 @@ rule lang = parse
   | '{'					{updateLocation(lexbuf); T_LCurlyBracket}
   | '}'					{updateLocation(lexbuf); T_RCurlyBracket}
   | '?'					{updateLocation(lexbuf); T_QuestionMark}
-  | '@'					{updateLocation(lexbuf); T_At}
+  | '@'					{updateLocation(lexbuf); T_Assert}
   | eof					{updateLocation(lexbuf); T_EOF}
   | '\n'                                {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
   | _					{updateLocation(lexbuf); print_string("read unknown");T_Unknown}
