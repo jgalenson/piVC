@@ -41,7 +41,7 @@
 %nonassoc T_Equal T_NotEqual
 %nonassoc T_Less T_Greater T_LessEqual T_GreaterEqual
 %left T_Plus T_Minus
-%left T_Star T_Slash '%'
+%left T_Star T_Slash T_Div '%'
 %right T_Not UnaryMinus
 %left T_LSquareBracket T_Period
 
@@ -153,7 +153,7 @@ Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_sta
          | Expr T_Minus Expr { Ast.Minus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Star Expr { Ast.Times((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Slash Expr { Ast.Div((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
-         | Expr T_Div Expr { Ast.IDiv((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }	     
+         | Expr T_Div Expr { Ast.IDiv((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr '%' Expr { Ast.Mod ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | T_Minus Expr %prec UnaryMinus { Ast.UMinus ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
          | Expr T_Less Expr { Ast.LT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
