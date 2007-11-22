@@ -17,6 +17,7 @@ parser :
 	ocamlyacc parser.mly;
 	ocamllex lexer.mll;
 	$(OC) -c global.ml;
+	$(OC) -c scope_stack.ml;
 	$(OC) -c ast.ml;
 	$(OC) -c parser.mli;
 	$(OC) -c lexer.ml;
