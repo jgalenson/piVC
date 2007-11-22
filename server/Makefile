@@ -18,7 +18,6 @@ parser :
 	ocamllex lexer.mll;
 	$(OC) -c global.ml;
 	$(OC) -c scope_stack.ml;
-	$(OC) -c ast.ml;
 	$(OC) -c semantic_checking.ml;
 	$(OC) -c parser.mli;
 	$(OC) -c lexer.ml;

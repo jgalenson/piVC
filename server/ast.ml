@@ -49,6 +49,7 @@ let create_varDecl t name location = {varType=t; varName=name; location_vd=locat
 (* temp declarations: changeme todo *)
 type lval =
   | LvalA of location * identifier
+(*  | ArrayLVal of location * expr * expr*)
   | UnimplementedLval
 type constant =
   | ConstInt of location * int
@@ -64,6 +65,7 @@ type expr =
   | Minus of location * expr * expr
   | Times of location * expr * expr
   | Div of location * expr * expr
+  | IDiv of location * expr * expr	
   | Mod of location * expr * expr
   | UMinus of location * expr
   | LT of location * expr * expr
@@ -75,6 +77,7 @@ type expr =
   | And of location * expr * expr
   | Or of location * expr * expr
   | Not of location * expr
+  | Length of location * expr
   | Iff of location * expr * expr
   | Implies of location * expr * expr
   | EmptyExpr
@@ -161,6 +164,7 @@ let string_of_expr e =
     | Minus (loc,t1, t2) -> (soe t1) ^ " - " ^ (soe t2)
     | Times (loc,t1, t2) -> (soe t1) ^ " * " ^ (soe t2)
     | Div (loc,t1, t2) -> (soe t1) ^ " / " ^ (soe t2)
+    | IDiv (loc,t1, t2) -> (soe t1) ^ " div " ^ (soe t2)					       
     | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
     | UMinus (loc,t) -> "-" ^ (soe t)
     | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
@@ -172,6 +176,7 @@ let string_of_expr e =
     | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
     | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
     | Not (loc,t) -> " !" ^ (soe t)
+    | Length (loc, t) -> "|" ^ (soe t) ^ "|"
     | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
     | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
     | EmptyExpr -> ""

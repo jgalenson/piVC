@@ -42,6 +42,14 @@ int simpleFunction(){
 @pre a = 7 && foobar = 42
 @post true
 void func2(int a, int foobar){
+  int[] foo;
+  if (|foo| = 10)
+    foo[0] := 42;
+  int b;
+  int c;
+  b := 42;
+  c := a div b;
+  c := a / b;
 }
 
 @pre true

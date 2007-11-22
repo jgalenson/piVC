@@ -23,7 +23,7 @@
 %token T_If
 %token T_Return T_Break
 %token T_Break T_Return
-%token T_Assert T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
+%token T_Assert T_Bar T_Div T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
 %token T_ForAll T_Exists T_Iff T_Implies T_Pre T_Post
 %token T_Unknown
 %token T_EOF
@@ -153,9 +153,9 @@ Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_sta
          | Expr T_Minus Expr { Ast.Minus((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Star Expr { Ast.Times((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Slash Expr { Ast.Div((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
-	     /* integerdivision */
+         | Expr T_Div Expr { Ast.IDiv((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }	     
          | Expr '%' Expr { Ast.Mod ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
-         | T_Minus Expr %prec UnaryMinus {Ast.UMinus ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
+         | T_Minus Expr %prec UnaryMinus { Ast.UMinus ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
          | Expr T_Less Expr { Ast.LT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_LessEqual Expr { Ast.LE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Greater Expr { Ast.GT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
@@ -167,6 +167,7 @@ Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_sta
          | Expr T_And Expr { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | Expr T_Or Expr { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
          | T_Not Expr { Ast.Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)),$2) }
+	 | T_Bar Expr T_Bar { Ast.Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
 ;
 
 LValue   : Identifier                          { Ast.LvalA ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)),$1) }

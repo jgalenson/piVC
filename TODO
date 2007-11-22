@@ -1,6 +1,6 @@
 -Things to add to the lexer and parser
- Parser: forall/exists, length expr (|a| in book), global typedefs (structs: see book chapter 5), global defines
- Lexer: div (p 116).    T (true), And (&&), etc?
+ Parser: global typedefs (structs: see book chapter 5), global defines
+ Lexer: Maybe: T (true), And (&&), etc?
 
 Floats/decimals don't work
-We don't support array accesses yet, I think.
+We don't support array accesses yet (due to circular type dependencies)

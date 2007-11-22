@@ -78,7 +78,8 @@ rule lang = parse
   | "<->"                               {updateLocation(lexbuf); T_Iff}
   | "->"                                {updateLocation(lexbuf); T_Implies}
   | "@pre"                              {updateLocation(lexbuf); T_Pre}
-  | "@post"                             {updateLocation(lexbuf); T_Post}      
+  | "@post"                             {updateLocation(lexbuf); T_Post}
+  | "div"                               {updateLocation(lexbuf); T_Div}
   | alpha(alpha|digit|'_')* as ident 	{updateLocation(lexbuf); T_Identifier(ident)}
   | '+'					{updateLocation(lexbuf); T_Plus}
   | '-'					{updateLocation(lexbuf); T_Minus}
@@ -98,6 +99,7 @@ rule lang = parse
   | '}'					{updateLocation(lexbuf); T_RCurlyBracket}
   | '?'					{updateLocation(lexbuf); T_QuestionMark}
   | '@'					{updateLocation(lexbuf); T_Assert}
+  | '|'					{updateLocation(lexbuf); T_Bar}
   | eof					{updateLocation(lexbuf); T_EOF}
   | '\n'                                {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
   | _					{updateLocation(lexbuf); print_string("read unknown");T_Unknown}
