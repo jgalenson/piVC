@@ -1,0 +1,28 @@
+int global;
+int global;
+
+@pre true
+@post true
+int simpleFunction(){
+    int global;
+    int global;
+    {
+        int global;
+        int global;
+    }
+    global = 5+3;
+    int yep;
+    int yep;
+}
+@pre true
+@post true
+void func2(){
+}
+@pre true
+@post true
+void global(){
+}
+@pre true
+@post true
+float jason(){
+}

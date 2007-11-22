@@ -112,6 +112,10 @@ type program = {
 }
 let create_program decls location = {decls=decls; location = location;}
 
+let location_of_decl decl = 
+  match decl with
+    VarDecl(l,d) -> l
+    | FnDecl(l,d) -> l
 
 (******************
 Printing functions

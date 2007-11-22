@@ -2,10 +2,12 @@
 
 open Parser
 open Ast
+open Semantic_checking
 
 let rec parseToken (lexbuf) = 
    let program = Parser.main Lexer.lang lexbuf in
-     print_string (string_of_program program)
+(*     print_string (string_of_program program);*)
+     check_program program
 
 let goParse () =
   let lexbuf = Lexing.from_channel stdin in

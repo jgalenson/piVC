@@ -1,59 +1,39 @@
 open Hashtbl
 open Ast
+open Stack
 
-let scope_stack = [Hashtbl.create 5]
+let create_scope_stack : (string, Ast.decl) Hashtbl.t Stack.t = (Stack.create ())
 
-let enter_scope = 
-  scope_stack = List.append [Hashtbl.create 5] scope_stack
+let enter_scope s = 
+  Stack.push (Hashtbl.create 5) s
 
-let exit_scope = 
-  match scope_stack with
-   elem :: list -> scope_stack = list
-    | _ -> raise (Invalid_argument "Can't remove scope.")
-(*TODO: more appropraite exception*)
+let exit_scope s = 
+  ignore(Stack.pop s)
 
-let getDeclName decl =
+let get_decl_name decl =
   match decl with
       Ast.VarDecl(l, d) -> d.varName.name
     | Ast.FnDecl(l, d) -> d.fnName.name
   
-let insertDecl decl = Hashtbl.add (List.nth scope_stack 5) (getDeclName decl) decl
+let insert_decl decl s = Hashtbl.add (Stack.top s) (get_decl_name decl) decl
 
-let lookupDecl decl declName =
-  let rec lookupRecursive level = 
-    let exists = Hashtbl.mem (List.nth scope_stack level) declName in
+let lookup_decl declName s =
+  let copy = Stack.copy s in
+  let rec lookupRecursive copy = 
+    if (Stack.is_empty copy) then None else
+    let exists = Hashtbl.mem (Stack.top copy) declName in
       if exists then
-	Some (Hashtbl.find (List.nth scope_stack level) declName)
+	Some (Hashtbl.find (Stack.top copy) declName)
       else
-	if (level == List.length scope_stack - 1) then
-	  None
-	else
-	  lookupRecursive (level + 1)
+	lookupRecursive copy
   in
-  lookupRecursive 0
+  lookupRecursive copy
 
 
-
-
-
-
-
-
-
-
-
-
-(*
-let lookupDeclInScopeNOrAbove declName N = 
-  let exists = Hashtbl.mem (List.nth scope_stack Nab) declName in
-    match exists with
-	true -> Hashtbl.find (List.nth scope_stack N) declName
-      | false -> let highestElemInScopeStack = (List.length scope_stack)-1 in
-	    match N with
-	           highestElemInScopeStack -> None
-                   | _ -> lookupDeclInScopeNOrAbove declName (N-1)
-
-let lookupDecl declName = lookupDeclInScopeNOrAbove declName 0
-
-let test = lookupDeclInScopeNOrAbove "hi" 5
-*)
+let lookup_decl_in_curr_scope decl s = 
+  let declName = get_decl_name decl in
+   let exists = Hashtbl.mem (Stack.top s) declName in
+      if exists then
+	Some (Hashtbl.find (Stack.top s) declName)
+      else
+	None
