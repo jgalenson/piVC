@@ -5,6 +5,12 @@ type location = {
   loc_start  : Lexing.position;
   loc_end    : Lexing.position;
 }
+
+let get_dummy_location = {
+  loc_start={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
+  loc_end={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
+}
+
 let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_end}
 let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol) + 1
 let location_union loc1 loc2 = {
@@ -33,9 +39,16 @@ type varType =
   | Bool of location
   | Int of location
   | Float of location
-  | Identifier of identifier
   | Array of varType * location
   | Void of location
+
+(*TODO: is there a better way to write this?*)
+let rec types_equal t1 t2 = match t1 with
+    Bool(loc1) -> (match t2 with Bool(loc2) -> true | _ -> false)
+  | Int(loc1) -> (match t2 with Int(loc2) -> true | _ -> false)
+  | Float(loc1) -> (match t2 with Float(loc2) -> true | _ -> false)
+  | Array(arrType1, loc1) -> (match t2 with Array(arrType2, loc2) -> (types_equal arrType1 arrType2) | _ -> false)
+  | Void(loc1) -> (match t2 with Void(loc2) -> true | _ -> false)
 
 type varDecl = {
   varType : varType;
@@ -120,6 +133,44 @@ let location_of_decl decl =
     VarDecl(l,d) -> l
     | FnDecl(l,d) -> l
 
+let location_of_stmt stmt = function
+  | Expr (loc, e) -> loc
+  | VarDeclStmt (loc, d) -> loc
+  | IfStmt (loc, e, s1, s2) -> loc
+  | WhileStmt (loc, e1, s, e2) -> loc
+  | ForStmt (loc, e1, e2, e3, s, e4) -> loc
+  | BreakStmt (loc) -> loc
+  | ReturnStmt (loc, e) -> loc
+  | AssertStmt (loc, e) -> loc
+  | StmtBlock (loc, s) -> loc
+  | EmptyStmt -> get_dummy_location
+
+let location_of_expr expr = function
+    | Assign (loc,l, e) -> loc
+    | Constant (loc,c) -> loc
+    | LValue (loc,l) -> loc
+    | Call (loc,s, el) -> loc
+    | Plus (loc,t1, t2) -> loc
+    | Minus (loc,t1, t2) -> loc
+    | Times (loc,t1, t2) -> loc
+    | Div (loc,t1, t2) -> loc
+    | IDiv (loc,t1, t2) -> loc
+    | Mod (loc,t1, t2) -> loc
+    | UMinus (loc,t) -> loc
+    | LT (loc,t1, t2) -> loc
+    | LE (loc,t1, t2) -> loc
+    | GT (loc,t1, t2) -> loc
+    | GE (loc,t1, t2) -> loc
+    | EQ (loc,t1, t2) -> loc
+    | NE (loc,t1, t2) -> loc
+    | And (loc,t1, t2) -> loc
+    | Or (loc,t1, t2) -> loc
+    | Not (loc,t) -> loc
+    | Length (loc, t) -> loc
+    | Iff (loc,t1, t2) -> loc
+    | Implies (loc,t1, t2) -> loc
+    | EmptyExpr -> get_dummy_location
+
 (******************
 Printing functions
 *******************)
@@ -137,7 +188,7 @@ let string_of_type typ =
     | Bool l -> "bool"
     | Int l -> "int"
     | Float l -> "float"
-    | Identifier id -> string_of_identifier id
+(*    | Identifier id -> string_of_identifier id*)
     | Array (t, l) -> (sot t) ^ "[]"
     | Void l -> "void"
   in
@@ -179,7 +230,7 @@ and string_of_expr e =
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"
     | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
     | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
-    | EmptyExpr -> ""
+    | EmptyExpr  -> ""
   in
   soe e
 
