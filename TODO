@@ -3,4 +3,3 @@
  Lexer: Maybe: T (true), And (&&), etc?
 
 Floats/decimals don't work
-We don't support array accesses yet (due to circular type dependencies)

@@ -170,9 +170,9 @@ Expr     : LValue T_Assign Expr { Ast.Assign ( (create_location (Parsing.rhs_sta
 	 | T_Bar Expr T_Bar { Ast.Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
 ;
 
-LValue   : Identifier                          { Ast.LvalA ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)),$1) }
+LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
 /*         | Expr T_Period Identifier                 {}*/
-         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.UnimplementedLval }
+         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1, $3) }
 ;
 
 Call     : Identifier T_LParen Actuals T_RParen          { Ast.Call ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }

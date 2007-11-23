@@ -48,15 +48,15 @@ let create_varDecl t name location = {varType=t; varName=name; location_vd=locat
 
 (* temp declarations: changeme todo *)
 type lval =
-  | LvalA of location * identifier
-(*  | ArrayLVal of location * expr * expr*)
-  | UnimplementedLval
-type constant =
+  | NormLval of location * identifier
+  | ArrayLval of location * expr * expr
+
+and constant =
   | ConstInt of location * int
   | ConstFloat of location * float
   | ConstBool of location * bool
     
-type expr =
+and expr =
   | Assign of location * lval * expr
   | Constant of location * constant
   | LValue of location * lval
@@ -82,7 +82,7 @@ type expr =
   | Implies of location * expr * expr
   | EmptyExpr
     
-type stmt =
+and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
@@ -145,16 +145,16 @@ let string_of_type typ =
    
 
 (* temp *)
-let string_of_lval lval = match lval with
-  | LvalA (loc,s) -> string_of_identifier s
-  | _ -> "[Unimplemented]"
+let rec string_of_lval lval = match lval with
+  | NormLval (loc, s) -> string_of_identifier s
+  | ArrayLval (loc, t1, t2) -> (string_of_expr t1) ^ "[" ^ (string_of_expr t2) ^ "]"
 (* temp *)
-let string_of_constant c = match c with
+and string_of_constant c = match c with
    | ConstInt (loc,c) -> string_of_int c
    | ConstFloat (loc,c) -> string_of_float c
    | ConstBool (loc,c) -> string_of_bool c
     
-let string_of_expr e =
+and string_of_expr e =
   let rec soe = function
     | Assign (loc,l, e) -> (string_of_lval l) ^ " := " ^ (soe e)
     | Constant (loc,c) -> (string_of_constant c)
