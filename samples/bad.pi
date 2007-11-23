@@ -3,7 +3,7 @@ int global;
 
 @pre true
 @post true
-int simpleFunction(){
+void simpleFunction(){
     int global;
     int global;
     {
