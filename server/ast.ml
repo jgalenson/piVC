@@ -57,9 +57,6 @@ type varDecl = {
 }
 let create_varDecl t name location = {varType=t; varName=name; location_vd=location;}
 
-
-
-(* temp declarations: changeme todo *)
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr

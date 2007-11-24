@@ -25,9 +25,16 @@ let insert_var_decls s decls =
   List.iter (insert_var_decl s) decls 
 
 (*TODO: finish writing*)
-let check_and_get_return_type = function
+let check_and_get_return_type e =
+  let rec cagrt = function
     | Assign (loc,l, e) -> Void(loc)
-    | Constant (loc,c) -> Void(loc)
+    | Constant (loc,c) ->
+	begin
+	  match c with
+	  | ConstInt (l, i) -> Int (loc)
+	  | ConstFloat (l, f) -> Float (loc)
+	  | ConstBool (l, b) -> Bool (loc)
+	end
     | LValue (loc,l) -> Void(loc)
     | Call (loc,s, el) -> Void(loc)
     | Plus (loc,t1, t2) -> Void(loc)
@@ -50,11 +57,13 @@ let check_and_get_return_type = function
     | Iff (loc,t1, t2) -> Void(loc)
     | Implies (loc,t1, t2) -> Void(loc)
     | EmptyExpr -> Void(Ast.get_dummy_location)
+  in
+  cagrt e
 
 (*TODO: finish writing*)
 let rec check_stmt s returnType stmt = match stmt with
 
-    Expr (loc, e) -> print_string ""
+    Expr (loc, e) -> ignore (check_and_get_return_type e);
 
   | VarDeclStmt(loc,d) -> (insert_decl s (VarDecl(loc,d))) 
 

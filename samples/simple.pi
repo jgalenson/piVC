@@ -34,8 +34,7 @@ int simpleFunction(){
     a := 7;
   /*float f;
   f = 3.14159;*/
-  return c;
-  return;
+  return a;
   @ false;
 }
 
@@ -50,6 +49,7 @@ void func2(int a, int foobar){
   b := 42;
   c := a div b;
   c := a / b;
+  return;
 }
 
 @pre true
