@@ -25,7 +25,10 @@ let lookup_decl s declName =
       if exists then
 	Some (Hashtbl.find (Stack.top copy) declName)
       else
+        (
+        ignore (Stack.pop copy);
 	lookupRecursive copy
+        )
   in
   lookupRecursive copy
 

@@ -24,31 +24,28 @@ let insert_decls s decls =
 let insert_var_decls s decls = 
   List.iter (insert_var_decl s) decls 
 
-let check_and_get_return_type_of_identifier s identifier = 
-  let lookupResult = (lookup_decl s identifier.name) in
-    match lookupResult with
-        None -> print_error "Not defined" (identifier.location_id); create_error_type
-      | Some(decl) -> type_of_decl decl
+let rec check_and_get_return_type_lval s lval = match lval with
+    NormLval(loc, id) -> let lookupResult = (lookup_decl s id.name) in
+                           (match lookupResult with
+                               None -> (print_error "Not defined" loc; create_error_type)
+                             | Some(decl) -> type_of_decl decl
+                           )
+  | ArrayLval(loc, arr, index) ->
+      let typeOfArray = check_and_get_return_type s arr in
+      let typeOfIndex = check_and_get_return_type s index in
+        (match typeOfIndex with
+             Int(l) -> print_string ""
+           | _ -> (print_error "Array index must be an integer" loc)
+        );
+        (match typeOfArray with
+            Array(t, l) -> t
+          | _ -> (print_error "This is not an array" loc;
+                  create_error_type
+                 )
+        )
 
-let rec check_and_get_return_type_lval s l = create_error_type
-
-(* TODO: come back and finish later
-let rec check_and_get_return_type_lval s = function
-    NormLval(loc, id) -> check_and_get_return_type_of_identifier s id
-  | ArrayLval(loc, exp1, exp2) -> let typeOfIndex = check_and_get_return_type s exp2 in
-                                    match typeOfIndex with
-			              Int(l) -> print_string ""
-			              | _ -> print_error "Array index must be an integer" loc
-			          ;
-                                  let typeOfArray = check_and_get_return_type s exp1 in
-                                    match typeOfArray with
-                                        Array(t, loc) -> t
-                                      | _ -> print_error "This is not an array" loc; create_error_type
-*)
-
-(*TODO: finish writing*)
 and check_and_get_return_type s e =
-  let rec cagrt = function
+  let rec cagrt e = match e with
     | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval s l in
                           let rhsType = cagrt e in
 			  if types_equal lhsType rhsType then
@@ -64,7 +61,7 @@ and check_and_get_return_type s e =
 	  | ConstFloat (l, f) -> Float (loc)
 	  | ConstBool (l, b) -> Bool (loc)
 	end
-    | LValue (loc,l) -> Void(loc)
+    | LValue (loc,l) -> check_and_get_return_type_lval s l
     | Call (loc,s, el) -> Void(loc)
     | Plus (loc,t1, t2) -> Void(loc)
     | Minus (loc,t1, t2) -> Void(loc)
@@ -90,9 +87,9 @@ and check_and_get_return_type s e =
   cagrt e
 
 (*TODO: finish writing*)
-let rec check_stmt s returnType stmt = match stmt with
-
-    Expr (loc, e) -> ignore (check_and_get_return_type s e);
+let rec check_stmt s returnType stmt =
+  match stmt with
+    Expr (loc, e) -> ignore (check_and_get_return_type s e)
 
   | VarDeclStmt(loc,d) -> (insert_decl s (VarDecl(loc,d))) 
 

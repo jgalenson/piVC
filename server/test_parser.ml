@@ -6,6 +6,7 @@ open Semantic_checking
 
 let rec parseToken (lexbuf) = 
    let program = Parser.main Lexer.lang lexbuf in
+     print_string "\n---------\n";
      print_string (string_of_program program);
      print_string "\n---------\n";
      check_program program
