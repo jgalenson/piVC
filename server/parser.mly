@@ -73,7 +73,7 @@ Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1)  }
 Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
           | T_Float                 { Ast.Float(create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
           | T_Bool                  { Ast.Bool (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
-/*          | Identifier              { Ast.Identifier $1 }*/
+          | Identifier              { Ast.Identifier($1, (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )) }
           | Type T_Dims             { Ast.Array($1, create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
           ;
 

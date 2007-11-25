@@ -43,6 +43,7 @@ type varType =
   | Float of location
   | Array of varType * location
   | Void of location
+  | Identifier of identifier * location
   | ErrorType
 
 let create_error_type = ErrorType
@@ -54,6 +55,7 @@ let rec types_equal t1 t2 = match t1 with
   | Float(loc1) -> (match t2 with Float(loc2) -> true | ErrorType -> true | _ -> false)
   | Array(arrType1, loc1) -> (match t2 with Array(arrType2, loc2) -> (types_equal arrType1 arrType2) | ErrorType -> true | _ -> false)
   | Void(loc1) -> (match t2 with Void(loc2) -> true | ErrorType -> true | _ -> false)
+  | Identifier(type1, loc1) -> true (*TODO: finish this off*)
   | ErrorType -> true
 
 type varDecl = {
@@ -195,7 +197,7 @@ let string_of_type typ =
     | Bool l -> "bool"
     | Int l -> "int"
     | Float l -> "float"
-(*    | Identifier id -> string_of_identifier id*)
+    | Identifier (id, loc) -> string_of_identifier id
     | Array (t, l) -> (sot t) ^ "[]"
     | Void l -> "void"
     | ErrorType -> "error"
