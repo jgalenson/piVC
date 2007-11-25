@@ -24,10 +24,34 @@ let insert_decls s decls =
 let insert_var_decls s decls = 
   List.iter (insert_var_decl s) decls 
 
+(* Functions on types *)
+let rec types_equal t1 t2 = match (t1, t2) with
+  | (Bool(loc1), Bool(loc2)) -> true
+  | (Int(loc1), Int(loc2)) -> true
+  | (Float(loc1), Float(loc2)) -> true
+  | (Array(aType1, loc1), Array(aType2, loc2)) -> (types_equal aType1 aType2)
+  | (Void(loc1), Void(loc2)) -> true
+  | (Identifier(t1, loc1), Identifier(t2, loc2)) -> true (* TODO finish off *)
+  | (ErrorType, _) -> true
+  | (_, ErrorType) -> true
+  | (_, _) -> false
+
+and is_numeric_type t1 = match t1 with
+  | Int (loc) -> true
+  | Float (loc) -> true
+  | Array (aType, loc) -> (is_numeric_type aType)
+  | Identifier (t, loc) -> true (* TODO finish off like above *)
+  | _ -> false
+
+(* Is this too hacky? *)
+and is_boolean_type t1 loc = let b = Bool(loc) in (types_equal t1 b)
+	
+(* CAGRT *)
+	
 let rec check_and_get_return_type_lval s lval = match lval with
     NormLval(loc, id) -> let lookupResult = (lookup_decl s id.name) in
                            (match lookupResult with
-                               None -> (print_error "Not defined" loc; create_error_type)
+                               None -> (print_error "Not defined" loc; ErrorType)
                              | Some(decl) -> type_of_decl decl
                            )
   | ArrayLval(loc, arr, index) ->
@@ -40,19 +64,26 @@ let rec check_and_get_return_type_lval s lval = match lval with
         (match typeOfArray with
             Array(t, l) -> t
           | _ -> (print_error "This is not an array" loc;
-                  create_error_type
+                  ErrorType
                  )
         )
-
-and check_and_get_return_type s e =
-  let rec cagrt e = match e with
-    | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval s l in
+	
+and check_for_same_type t1 t2 loc = 
+  if not (types_equal t1 t2) then
+    print_error "LHS and RHS are of different types" loc;
+  
+and check_and_get_return_type scope_stack e =
+  let rec check_and_get_return_type_relational loc t1 t2 =
+    let lhsType = cagrt t1
+    and rhsType = cagrt t2 in
+    check_for_same_type lhsType rhsType loc;
+    if not (is_numeric_type lhsType) or not (is_numeric_type rhsType) then
+      print_error "Relational expr type is not numeric" loc;
+    Bool(loc)
+  and cagrt e = match e with
+    | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval scope_stack l in
                           let rhsType = cagrt e in
-			  if types_equal lhsType rhsType then
-			    print_string("")
-			  else
-                            print_error "LHS and RHS are of different types" loc
-			  ;
+			  check_for_same_type lhsType rhsType loc;
                           lhsType
     | Constant (loc,c) ->
 	begin
@@ -61,7 +92,7 @@ and check_and_get_return_type s e =
 	  | ConstFloat (l, f) -> Float (loc)
 	  | ConstBool (l, b) -> Bool (loc)
 	end
-    | LValue (loc,l) -> check_and_get_return_type_lval s l
+    | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
     | Call (loc,s, el) -> Void(loc)
     | Plus (loc,t1, t2) -> Void(loc)
     | Minus (loc,t1, t2) -> Void(loc)
@@ -70,10 +101,10 @@ and check_and_get_return_type s e =
     | IDiv (loc,t1, t2) -> Void(loc)
     | Mod (loc,t1, t2) -> Void(loc)
     | UMinus (loc,t) -> Void(loc)
-    | LT (loc,t1, t2) -> Void(loc)
-    | LE (loc,t1, t2) -> Void(loc)
-    | GT (loc,t1, t2) -> Void(loc)
-    | GE (loc,t1, t2) -> Void(loc)
+    | LT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
+    | LE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
+    | GT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
+    | GE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | EQ (loc,t1, t2) -> Void(loc)
     | NE (loc,t1, t2) -> Void(loc)
     | And (loc,t1, t2) -> Void(loc)
@@ -87,13 +118,18 @@ and check_and_get_return_type s e =
   cagrt e
 
 (*TODO: finish writing*)
-let rec check_stmt s returnType stmt =
+let rec check_stmt scope_stack returnType stmt =
   match stmt with
-    Expr (loc, e) -> ignore (check_and_get_return_type s e)
+    Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e)
 
-  | VarDeclStmt(loc,d) -> (insert_decl s (VarDecl(loc,d))) 
+  | VarDeclStmt(loc,d) -> (insert_decl scope_stack (VarDecl(loc,d))) 
 
-  | IfStmt (loc, test, then_block, else_block) -> print_string ""
+  | IfStmt (loc, test, then_block, else_block) ->
+      let testType = check_and_get_return_type scope_stack test in
+      if not (is_boolean_type testType loc) then
+	print_error "Test not boolean" loc;
+      check_stmt scope_stack returnType then_block;
+      check_stmt scope_stack returnType else_block;
 
   | WhileStmt (loc, test, block, annotation) -> print_string ""
 
@@ -101,17 +137,15 @@ let rec check_stmt s returnType stmt =
 
   | BreakStmt (loc) -> print_string ""
 
-  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type s e) in
-                          if (types_equal type_of_return returnType) then
-                            print_string("")
-			  else
+  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e) in
+                          if not (types_equal type_of_return returnType) then
                             print_error "Incorrect return type" loc
 
   | AssertStmt (loc, e) -> print_string ""
 
-  | StmtBlock(loc,st) -> enter_scope s;
-                      List.iter (check_stmt s returnType) st;
-                      exit_scope s
+  | StmtBlock(loc,st) -> enter_scope scope_stack;
+                      List.iter (check_stmt scope_stack returnType) st;
+                      exit_scope scope_stack
 
   | EmptyStmt -> print_string ""
 

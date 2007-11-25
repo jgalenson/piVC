@@ -3,3 +3,4 @@
  Lexer: Maybe: T (true), And (&&), etc?
 
 Floats/decimals don't work
+Get locations working for syntax errors

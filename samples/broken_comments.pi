@@ -1,0 +1,8 @@
+@pre ture
+@post true
+void foo() {
+	/* test */
+	int x;
+	/* test */
+	int y;
+}
