@@ -77,6 +77,7 @@ and check_for_same_type t1 t2 loc =
     print_error "LHS and RHS are of different types" loc;
   
 and check_and_get_return_type scope_stack e =
+  
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
@@ -84,11 +85,13 @@ and check_and_get_return_type scope_stack e =
     if not (is_numeric_type lhsType) or not (is_numeric_type rhsType) then
       print_error "Relational expr type is not numeric" loc;
     Bool(loc)
+      
   and check_and_get_return_type_equality loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
     check_for_same_type lhsType rhsType loc;
     Bool(loc)
+      
   and check_and_get_return_type_arithmetic loc t1 t2 =
     let leftType = cagrt t1
     and rightType = cagrt t2 in
@@ -96,11 +99,13 @@ and check_and_get_return_type scope_stack e =
     if not (is_numeric_type leftType) or not (is_numeric_type rightType) then
       print_error "Arithmetic expr type is not numeric" loc;
     rightType
+      
   and cagrt e = match e with
-    | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval scope_stack l in
-                          let rhsType = cagrt e in
-			  check_for_same_type lhsType rhsType loc;
-                          lhsType
+    | Assign (loc,l,e) ->
+	let lhsType = check_and_get_return_type_lval scope_stack l in
+        let rhsType = cagrt e in
+	check_for_same_type lhsType rhsType loc;
+        lhsType
     | Constant (loc,c) ->
 	begin
 	  match c with
@@ -154,23 +159,36 @@ let rec check_stmt scope_stack returnType stmt =
       check_stmt scope_stack returnType then_block;
       check_stmt scope_stack returnType else_block;
 
-  | WhileStmt (loc, test, block, annotation) -> print_string ""
-
-  | ForStmt (loc, init, test, incr, block, annotation) -> print_string ""
-
+  | WhileStmt (loc, test, block, annotation) -> 
+      let testType = check_and_get_return_type scope_stack test in
+      if not (is_boolean_type testType loc) then
+	print_error "Test not boolean" loc;
+      ignore (check_and_get_return_type scope_stack annotation);
+      check_stmt scope_stack returnType block;
+      
+  | ForStmt (loc, init, test, incr, block, annotation) ->
+      ignore (check_and_get_return_type scope_stack annotation);
+      ignore (check_and_get_return_type scope_stack init);
+      let testType = check_and_get_return_type scope_stack test in
+      if not (is_boolean_type testType loc) then
+	print_error "Test not boolean" loc;
+      ignore (check_and_get_return_type scope_stack incr);
+      check_stmt scope_stack returnType block;
+      
   | BreakStmt (loc) -> print_string ""
 
   | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e) in
                           if not (types_equal type_of_return returnType) then
                             print_error "Incorrect return type" loc
 
-  | AssertStmt (loc, e) -> print_string ""
+  | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e)
+	(* TODO: Do semantic checking for asserts vs. exprs *)
 
   | StmtBlock(loc,st) -> enter_scope scope_stack;
                       List.iter (check_stmt scope_stack returnType) st;
                       exit_scope scope_stack
 
-  | EmptyStmt -> print_string ""
+  | EmptyStmt -> ignore ()
 
 
 
