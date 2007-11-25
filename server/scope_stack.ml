@@ -17,7 +17,7 @@ let get_decl_name decl =
   
 let insert_decl decl s = Hashtbl.add (Stack.top s) (get_decl_name decl) decl
 
-let lookup_decl declName s =
+let lookup_decl s declName =
   let copy = Stack.copy s in
   let rec lookupRecursive copy = 
     if (Stack.is_empty copy) then None else

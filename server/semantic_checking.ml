@@ -1,7 +1,7 @@
 open Ast
 open Scope_stack
 
-let print_error node message location =
+let print_error message location =
 print_string("**Semantic Error**\n");
 print_string(string_of_location location);
 print_string("\n");
@@ -13,7 +13,7 @@ let insert_decl s decl =
   let curr = lookup_decl_in_curr_scope decl s in
     match curr with
 	None -> insert_decl decl s
-      | _ -> print_error decl "Already defined" (location_of_decl decl)
+      | _ -> print_error "Already defined" (location_of_decl decl)
 
 let insert_var_decl s decl = 
   insert_decl s (Ast.VarDecl(decl.location_vd, decl))
@@ -24,10 +24,39 @@ let insert_decls s decls =
 let insert_var_decls s decls = 
   List.iter (insert_var_decl s) decls 
 
+let check_and_get_return_type_of_identifier s identifier = 
+  let lookupResult = (lookup_decl s identifier.name) in
+    match lookupResult with
+        None -> print_error "Not defined" (identifier.location_id); create_error_type
+      | Some(decl) -> type_of_decl decl
+
+let rec check_and_get_return_type_lval s l = create_error_type
+
+(* TODO: come back and finish later
+let rec check_and_get_return_type_lval s = function
+    NormLval(loc, id) -> check_and_get_return_type_of_identifier s id
+  | ArrayLval(loc, exp1, exp2) -> let typeOfIndex = check_and_get_return_type s exp2 in
+                                    match typeOfIndex with
+			              Int(l) -> print_string ""
+			              | _ -> print_error "Array index must be an integer" loc
+			          ;
+                                  let typeOfArray = check_and_get_return_type s exp1 in
+                                    match typeOfArray with
+                                        Array(t, loc) -> t
+                                      | _ -> print_error "This is not an array" loc; create_error_type
+*)
+
 (*TODO: finish writing*)
-let check_and_get_return_type e =
+and check_and_get_return_type s e =
   let rec cagrt = function
-    | Assign (loc,l, e) -> Void(loc)
+    | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval s l in
+                          let rhsType = cagrt e in
+			  if types_equal lhsType rhsType then
+			    print_string("")
+			  else
+                            print_error "LHS and RHS are of different types" loc
+			  ;
+                          lhsType
     | Constant (loc,c) ->
 	begin
 	  match c with
@@ -63,7 +92,7 @@ let check_and_get_return_type e =
 (*TODO: finish writing*)
 let rec check_stmt s returnType stmt = match stmt with
 
-    Expr (loc, e) -> ignore (check_and_get_return_type e);
+    Expr (loc, e) -> ignore (check_and_get_return_type s e);
 
   | VarDeclStmt(loc,d) -> (insert_decl s (VarDecl(loc,d))) 
 
@@ -75,11 +104,11 @@ let rec check_stmt s returnType stmt = match stmt with
 
   | BreakStmt (loc) -> print_string ""
 
-  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type e) in
+  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type s e) in
                           if (types_equal type_of_return returnType) then
                             print_string("")
 			  else
-	                    print_error stmt "Incorrect return type" loc
+                            print_error "Incorrect return type" loc
 
   | AssertStmt (loc, e) -> print_string ""
 

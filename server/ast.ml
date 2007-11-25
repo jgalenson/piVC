@@ -12,7 +12,9 @@ let get_dummy_location = {
 }
 
 let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_end}
+
 let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol) + 1
+
 let location_union loc1 loc2 = {
   loc_start = 
     if loc1.loc_start.pos_cnum < loc2.loc_start.pos_cnum then
@@ -30,10 +32,10 @@ let location_union loc1 loc2 = {
 
 type identifier = {
   name: string;
-  location: location;
+  location_id: location;
 }
 let create_identifier name location =
-  {name = name; location = location;}
+  {name = name; location_id = location;}
 
 type varType = 
   | Bool of location
@@ -41,14 +43,18 @@ type varType =
   | Float of location
   | Array of varType * location
   | Void of location
+  | ErrorType
+
+let create_error_type = ErrorType
 
 (*TODO: is there a better way to write this?*)
 let rec types_equal t1 t2 = match t1 with
-    Bool(loc1) -> (match t2 with Bool(loc2) -> true | _ -> false)
-  | Int(loc1) -> (match t2 with Int(loc2) -> true | _ -> false)
-  | Float(loc1) -> (match t2 with Float(loc2) -> true | _ -> false)
-  | Array(arrType1, loc1) -> (match t2 with Array(arrType2, loc2) -> (types_equal arrType1 arrType2) | _ -> false)
-  | Void(loc1) -> (match t2 with Void(loc2) -> true | _ -> false)
+    Bool(loc1) -> (match t2 with Bool(loc2) -> true | ErrorType -> true | _ -> false)
+  | Int(loc1) -> (match t2 with Int(loc2) -> true | ErrorType -> true | _ -> false)
+  | Float(loc1) -> (match t2 with Float(loc2) -> true | ErrorType -> true | _ -> false)
+  | Array(arrType1, loc1) -> (match t2 with Array(arrType2, loc2) -> (types_equal arrType1 arrType2) | ErrorType -> true | _ -> false)
+  | Void(loc1) -> (match t2 with Void(loc2) -> true | ErrorType -> true | _ -> false)
+  | ErrorType -> true
 
 type varDecl = {
   varType : varType;
@@ -119,6 +125,10 @@ type decl =
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
 
+let type_of_decl = function
+  | VarDecl (loc, d) -> d.varType
+  | FnDecl (loc, d) -> d.returnType
+
 type program = {
   decls : decl list;
   location : location;
@@ -188,6 +198,7 @@ let string_of_type typ =
 (*    | Identifier id -> string_of_identifier id*)
     | Array (t, l) -> (sot t) ^ "[]"
     | Void l -> "void"
+    | ErrorType -> "error"
   in
   sot typ
    
