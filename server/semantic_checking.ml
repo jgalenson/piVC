@@ -91,6 +91,13 @@ and check_and_get_return_type scope_stack e =
     and rhsType = cagrt t2 in
     check_for_same_type lhsType rhsType loc;
     Bool(loc)
+
+  and check_and_get_return_type_logical loc t1 t2 =
+    let lhsType = cagrt t1
+    and rhsType = cagrt t2 in
+    if not (is_boolean_type lhsType loc) or not (is_boolean_type rhsType loc) then
+      print_error "Logical expr type is not boolean" loc;
+    Bool(loc)
       
   and check_and_get_return_type_arithmetic loc t1 t2 =
     let leftType = cagrt t1
@@ -114,7 +121,7 @@ and check_and_get_return_type scope_stack e =
 	  | ConstBool (l, b) -> Bool (loc)
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
-    | Call (loc,s, el) -> Void(loc)
+    | Call (loc,s, el) -> Void(loc) (* TODO: this *)
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Times (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
@@ -135,12 +142,16 @@ and check_and_get_return_type scope_stack e =
     | GE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | EQ (loc,t1, t2) -> check_and_get_return_type_equality loc t1 t2
     | NE (loc,t1, t2) -> check_and_get_return_type_equality loc t1 t2
-    | And (loc,t1, t2) -> Void(loc)
-    | Or (loc,t1, t2) -> Void(loc)
-    | Not (loc,t) -> Void(loc)
-    | Length (loc, t) -> Void(loc)
-    | Iff (loc,t1, t2) -> Void(loc)
-    | Implies (loc,t1, t2) -> Void(loc)
+    | And (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
+    | Or (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
+    | Not (loc,t) ->
+	let ltype = cagrt t in
+	if not (is_boolean_type ltype loc) then
+	  print_error "Not expr type is not boolean" loc;
+	Bool(loc)
+    | Iff (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
+    | Implies (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
+    | Length (loc, t) -> Void(loc) (* TODO: this *)
     | EmptyExpr -> Void(Ast.get_dummy_location)
   in
   cagrt e

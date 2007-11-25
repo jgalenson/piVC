@@ -83,9 +83,9 @@ and expr =
   | And of location * expr * expr
   | Or of location * expr * expr
   | Not of location * expr
-  | Length of location * expr
   | Iff of location * expr * expr
   | Implies of location * expr * expr
+  | Length of location * expr
   | EmptyExpr
     
 and stmt =
@@ -225,9 +225,9 @@ and string_of_expr e =
     | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
     | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
     | Not (loc,t) -> " !" ^ (soe t)
-    | Length (loc, t) -> "|" ^ (soe t) ^ "|"
     | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
     | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
+    | Length (loc, t) -> "|" ^ (soe t) ^ "|"
     | EmptyExpr  -> ""
   in
   soe e

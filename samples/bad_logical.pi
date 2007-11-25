@@ -1,0 +1,17 @@
+@pre true
+@post true
+void foobar() {
+	bool a;
+	bool b;
+	int z;
+	if (a && b) {}
+	if (a || true) {}
+	if (a && z) {} // bad
+	if (!a) {}
+	if (!z) {}  // bad
+	if (a && !z) {} // bad
+	@ true;
+	@ a && b;
+	@ a <-> b;
+	@ a -> z; // bad
+}
