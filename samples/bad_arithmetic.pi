@@ -1,0 +1,16 @@
+@pre true
+@post false
+void foo() {
+	int a;
+	int b;
+	float c;
+	float d;
+	bool q;
+	a + b;
+	c + d;
+	a + c; // bad
+	d + q; // bad
+	a + -b;
+	c + -d;
+	a + -q; // bad
+}

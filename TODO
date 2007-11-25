@@ -4,3 +4,4 @@
 
 Floats/decimals don't work
 Get locations working for syntax errors
+Cascading errors e.g. in arithmetic

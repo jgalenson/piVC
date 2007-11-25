@@ -1,0 +1,15 @@
+@pre true
+@post false
+void foo() {
+	int a;
+	int b;
+	float c;
+	if (a < b) {} // good
+	if (a > c) {} // bad
+	bool d;
+	bool f;
+	if (d < f) {} // bad
+	if (a = b) {} // good
+	if (d != f) {} // good
+	if (a = c) {} // bad
+}

@@ -43,6 +43,10 @@ and is_numeric_type t1 = match t1 with
   | Identifier (t, loc) -> true (* TODO finish off like above *)
   | _ -> false
 
+and is_error_type t1 = match t1 with
+  | ErrorType -> true
+  | _ -> false
+	
 (* Is this too hacky? *)
 and is_boolean_type t1 loc = let b = Bool(loc) in (types_equal t1 b)
 	
@@ -80,6 +84,18 @@ and check_and_get_return_type scope_stack e =
     if not (is_numeric_type lhsType) or not (is_numeric_type rhsType) then
       print_error "Relational expr type is not numeric" loc;
     Bool(loc)
+  and check_and_get_return_type_equality loc t1 t2 =
+    let lhsType = cagrt t1
+    and rhsType = cagrt t2 in
+    check_for_same_type lhsType rhsType loc;
+    Bool(loc)
+  and check_and_get_return_type_arithmetic loc t1 t2 =
+    let leftType = cagrt t1
+    and rightType = cagrt t2 in
+    check_for_same_type leftType rightType loc;
+    if not (is_numeric_type leftType) or not (is_numeric_type rightType) then
+      print_error "Arithmetic expr type is not numeric" loc;
+    rightType
   and cagrt e = match e with
     | Assign (loc,l,e) -> let lhsType = check_and_get_return_type_lval scope_stack l in
                           let rhsType = cagrt e in
@@ -94,19 +110,26 @@ and check_and_get_return_type scope_stack e =
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
     | Call (loc,s, el) -> Void(loc)
-    | Plus (loc,t1, t2) -> Void(loc)
-    | Minus (loc,t1, t2) -> Void(loc)
-    | Times (loc,t1, t2) -> Void(loc)
-    | Div (loc,t1, t2) -> Void(loc)
-    | IDiv (loc,t1, t2) -> Void(loc)
-    | Mod (loc,t1, t2) -> Void(loc)
-    | UMinus (loc,t) -> Void(loc)
+    | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | Times (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | Div (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | IDiv (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | Mod (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | UMinus (loc,t) ->
+	let rtype = cagrt t in
+	if not (is_numeric_type rtype) then
+	  begin
+	    (print_error "Unary minus type is not numeric" loc);
+	    ignore ErrorType
+	  end;
+	    rtype
     | LT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | LE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | GT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | GE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
-    | EQ (loc,t1, t2) -> Void(loc)
-    | NE (loc,t1, t2) -> Void(loc)
+    | EQ (loc,t1, t2) -> check_and_get_return_type_equality loc t1 t2
+    | NE (loc,t1, t2) -> check_and_get_return_type_equality loc t1 t2
     | And (loc,t1, t2) -> Void(loc)
     | Or (loc,t1, t2) -> Void(loc)
     | Not (loc,t) -> Void(loc)
