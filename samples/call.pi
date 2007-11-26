@@ -18,7 +18,7 @@ void voidOneArg(int x) {
 
 @pre true
 @post true
-void intTwoArg(int x, bool y) {
+int intTwoArg(int z, bool y) {
 
 }
 
@@ -40,4 +40,7 @@ void foo() {
 	intTwoArg(a, b);
 	intTwoArg(b, a); // bad x 2
 	intTwoArg(a, a); // bad
+	a = intNoArg();
+	a = voidNoArg(); // bad
+	b = intNoArg();  // bad
 }

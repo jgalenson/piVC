@@ -246,9 +246,11 @@ let rec check_stmt scope_stack returnType stmt =
 
 
 
-let check_function func s = 
+let check_function func s =
+  enter_scope s;
   insert_var_decls s func.formals;
-  check_stmt s func.returnType func.stmtBlock
+  check_stmt s func.returnType func.stmtBlock;
+  exit_scope s
 
 let check_program program =
   print_string("Checking...\n");
