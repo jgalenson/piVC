@@ -39,6 +39,7 @@ let rec types_equal t1 t2 = match (t1, t2) with
 and is_numeric_type t1 = match t1 with
   | Int (loc) -> true
   | Float (loc) -> true
+  | ErrorType -> true (* So cascading errors work *)
   | Identifier (t, loc) -> true (* TODO finish off like above *)
   | _ -> false
 
@@ -107,8 +108,12 @@ and check_and_get_return_type scope_stack e =
     and rightType = cagrt t2 in
     check_for_same_type leftType rightType loc;
     if not (is_numeric_type leftType) or not (is_numeric_type rightType) then
-      print_error "Arithmetic expr type is not numeric" loc;
-    rightType
+      begin
+	print_error "Arithmetic expr type is not numeric" loc;
+	ErrorType
+      end
+    else
+      rightType
       
   and cagrt e = match e with
     | Assign (loc,l,e) ->
@@ -167,9 +172,10 @@ and check_and_get_return_type scope_stack e =
 	if not (is_numeric_type rtype) then
 	  begin
 	    (print_error "Unary minus type is not numeric" loc);
-	    ignore ErrorType
-	  end;
-	    rtype
+	     ErrorType;
+	  end
+	else
+	  rtype
     | LT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | LE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | GT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2

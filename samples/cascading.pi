@@ -1,0 +1,7 @@
+@pre true
+@post true
+void foo() {
+	int a;
+	float b;
+	a + (a + (a=a));  // bad x2 (for inner arithmetic: not outer)
+}
