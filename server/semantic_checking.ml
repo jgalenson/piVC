@@ -48,7 +48,11 @@ and is_error_type t1 = match t1 with
 	
 (* Is this too hacky? *)
 and is_boolean_type t1 loc = let b = Bool(loc) in (types_equal t1 b)
-	
+
+and is_array_type t = match t with
+  | Array(atype, loc) -> true
+  | _ -> false
+  
 (* CAGRT *)
 	
 let rec check_and_get_return_type_lval s lval = match lval with
@@ -120,7 +124,7 @@ and check_and_get_return_type scope_stack e =
 	  | ConstBool (l, b) -> Bool (loc)
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
-    | Call (loc, ident, ac) ->
+    | Call (loc, ident, ac) -> (* Check this more? *)
 	let map_fn e = ignore (cagrt e) in
 	let check_actuals = List.iter (map_fn) ac in
 	let lookup_result = (lookup_decl scope_stack ident.name) in
@@ -181,12 +185,15 @@ and check_and_get_return_type scope_stack e =
 	Bool(loc)
     | Iff (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
     | Implies (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
-    | Length (loc, t) -> Void(loc) (* TODO: this *)
+    | Length (loc, t) ->
+	let atype = cagrt t in
+	if not (is_array_type atype) then
+	  print_error "Trying to take length of something not an array" loc;
+	Int(loc)
     | EmptyExpr -> Void(Ast.get_dummy_location)
   in
   cagrt e
 
-(*TODO: finish writing*)
 let rec check_stmt scope_stack returnType stmt =
   match stmt with
     Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e)
@@ -216,7 +223,7 @@ let rec check_stmt scope_stack returnType stmt =
       ignore (check_and_get_return_type scope_stack incr);
       check_stmt scope_stack returnType block;
       
-  | BreakStmt (loc) -> print_string ""
+  | BreakStmt (loc) -> print_string "" (* TODO: Break stmts *)
 
   | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e) in
                           if not (types_equal type_of_return returnType) then
