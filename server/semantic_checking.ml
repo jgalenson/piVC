@@ -39,7 +39,6 @@ let rec types_equal t1 t2 = match (t1, t2) with
 and is_numeric_type t1 = match t1 with
   | Int (loc) -> true
   | Float (loc) -> true
-  | Array (aType, loc) -> (is_numeric_type aType)
   | Identifier (t, loc) -> true (* TODO finish off like above *)
   | _ -> false
 

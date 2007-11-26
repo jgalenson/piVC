@@ -1,0 +1,7 @@
+@pre true
+@post true
+void foo() {
+	int[] a;
+	a[0] := 42;
+	a := a + a;  // bad
+}
