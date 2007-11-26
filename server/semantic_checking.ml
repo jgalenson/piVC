@@ -131,8 +131,8 @@ and check_and_get_return_type scope_stack e =
     | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
     | Call (loc, ident, ac) -> (* Check this more? *)
 	let map_fn e = ignore (cagrt e) in
-	let check_actuals = List.iter (map_fn) ac in
-	let lookup_result = (lookup_decl scope_stack ident.name) in
+	let check_actuals = List.iter (map_fn) ac
+	and lookup_result = (lookup_decl scope_stack ident.name) in
 	(* Check if there is a function with that name *)
 	let isfndecl =
 	  begin
@@ -150,7 +150,9 @@ and check_and_get_return_type scope_stack e =
 		(* Check a call to a valid function *)
 		if List.length ac != List.length fndecl.formals then
 		  begin
-		    print_error "Incorrect number of arguments" loc; check_actuals; ErrorType;
+		    print_error "Incorrect number of arguments" loc;
+		    check_actuals;
+		    ErrorType
 		  end
 		else
 		  let check_formal given expected =
@@ -159,7 +161,7 @@ and check_and_get_return_type scope_stack e =
 		    check_for_same_type given_type expected_type loc
 		  in
 		  List.iter2 check_formal ac fndecl.formals;
-		  fndecl.returnType;
+		  fndecl.returnType
 	end
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
@@ -172,7 +174,7 @@ and check_and_get_return_type scope_stack e =
 	if not (is_numeric_type rtype) then
 	  begin
 	    (print_error "Unary minus type is not numeric" loc);
-	     ErrorType;
+	     ErrorType
 	  end
 	else
 	  rtype
