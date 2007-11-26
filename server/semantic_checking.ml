@@ -120,7 +120,38 @@ and check_and_get_return_type scope_stack e =
 	  | ConstBool (l, b) -> Bool (loc)
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l
-    | Call (loc,s, el) -> Void(loc) (* TODO: this *)
+    | Call (loc, ident, ac) ->
+	let map_fn e = ignore (cagrt e) in
+	let check_actuals = List.iter (map_fn) ac in
+	let lookup_result = (lookup_decl scope_stack ident.name) in
+	(* Check if there is a function with that name *)
+	let isfndecl =
+	  begin
+	    match lookup_result with
+	      | None -> print_error "Function name not defined." loc; check_actuals; None
+	      | Some (d) -> match d with
+		| VarDecl (l, vd) -> print_error "Not a function" loc; check_actuals; None
+		| FnDecl (loc, fd) -> Some (fd)
+	  end
+	in
+	begin
+	  match isfndecl with
+	    | None -> ErrorType
+	    | Some (fndecl) ->
+		(* Check a call to a valid function *)
+		if List.length ac != List.length fndecl.formals then
+		  begin
+		    print_error "Incorrect number of arguments" loc; check_actuals; ErrorType;
+		  end
+		else
+		  let check_formal given expected =
+		    let given_type = cagrt given
+		    and expected_type = expected.varType in
+		    check_for_same_type given_type expected_type loc
+		  in
+		  List.iter2 check_formal ac fndecl.formals;
+		  fndecl.returnType;
+	end
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Times (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2

@@ -1,0 +1,43 @@
+@pre true
+@post true
+void voidNoArg() {
+
+}
+
+@pre true
+@post true
+int intNoArg() {
+
+}
+
+@pre true
+@post true
+void voidOneArg(int x) {
+
+}
+
+@pre true
+@post true
+void intTwoArg(int x, bool y) {
+
+}
+
+int globalVar;
+
+@pre true
+@post true
+void foo() {
+	int a;
+	bool b;
+	voidNoArg();
+	intNoArg();
+	voidOneArg(a);
+	iDontExist();  // bad
+	voidNoArg(a);  // bad
+	globalVar(a);  // bad
+	voidOneArg(a, a);  // bad
+	voidOneArg(b);  // bad
+	intTwoArg(a, b);
+	intTwoArg(b, a); // bad x 2
+	intTwoArg(a, a); // bad
+}
