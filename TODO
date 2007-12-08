@@ -1,5 +1,6 @@
 - fix /* */ comments
 
+
 -Things to add to the lexer and parser
 
 Parser: assertions (functions, for loops, while loops, as stmts, and the rules for them), global typedefs (structs: see book chapter 5), global defines, length expr (|a| in book)
