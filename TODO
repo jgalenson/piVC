@@ -1,21 +1,17 @@
-- fix /* */ comments
-
-
--Things to add to the lexer and parser
-
-Parser: assertions (functions, for loops, while loops, as stmts, and the rules for them), global typedefs (structs: see book chapter 5), global defines, length expr (|a| in book)
-Lexer: T (true), := vs =, <->, ->, forall, exists, div (p 116)
-
-- Fix the conflict in the parser=======
+Things to add to the lexer and parser
  Parser: global typedefs (structs: see book chapter 5), global defines
+	Should typedefs be like VarDecls or should they only be globals?
+	Can you typedef things other than structs?
+	Should we use defines?  Are they even in the book?
  Lexer: Maybe: T (true), And (&&), etc?
 
+Fix the conflict in the parser
+Do assertions
+fix /* */ comments
 Floats/decimals don't work
 Get locations working for syntax errors
 Cascading errors e.g. in arithmetic
 Put comments in the ast so we can print them out in to-C++ printing.
-
-
 
 Long Term
 - "definitions" file (see Aaron's email 12/6/07)

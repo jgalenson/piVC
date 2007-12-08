@@ -80,6 +80,8 @@ rule lang = parse
   | "@pre"                              {updateLocation(lexbuf); T_Pre}
   | "@post"                             {updateLocation(lexbuf); T_Post}
   | "div"                               {updateLocation(lexbuf); T_Div}
+  | "typedef"                           {updateLocation(lexbuf); T_Typedef}
+  | "struct"                            {updateLocation(lexbuf); T_Struct}
   | alpha(alpha|digit|'_')* as ident 	{updateLocation(lexbuf); T_Identifier(ident)}
   | '+'					{updateLocation(lexbuf); T_Plus}
   | '-'					{updateLocation(lexbuf); T_Minus}

@@ -23,6 +23,7 @@
 %token T_If
 %token T_Return T_Break
 %token T_Break T_Return
+%token T_Typedef T_Struct
 %token T_Assert T_Bar T_Div T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
 %token T_ForAll T_Exists T_Iff T_Implies T_Pre T_Post
 %token T_Unknown
