@@ -6,7 +6,7 @@ type location = {
   loc_end    : Lexing.position;
 }
 
-let get_dummy_location = {
+let get_dummy_location () = {
   loc_start={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
   loc_end={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
 }
@@ -115,6 +115,12 @@ type decl =
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
 
+let name_of_decl decl =
+  match decl with
+      VarDecl(l, d) -> d.varName.name
+    | FnDecl(l, d) -> d.fnName.name
+
+
 let type_of_decl = function
   | VarDecl (loc, d) -> d.varType
   | FnDecl (loc, d) -> d.returnType
@@ -130,7 +136,7 @@ let location_of_decl decl =
     VarDecl(l,d) -> l
     | FnDecl(l,d) -> l
 
-let location_of_stmt stmt = function
+let location_of_stmt = function
   | Expr (loc, e) -> loc
   | VarDeclStmt (loc, d) -> loc
   | IfStmt (loc, e, s1, s2) -> loc
@@ -140,9 +146,9 @@ let location_of_stmt stmt = function
   | ReturnStmt (loc, e) -> loc
   | AssertStmt (loc, e) -> loc
   | StmtBlock (loc, s) -> loc
-  | EmptyStmt -> get_dummy_location
+  | EmptyStmt -> get_dummy_location ()
 
-let location_of_expr expr = function
+let location_of_expr = function
     | Assign (loc,l, e) -> loc
     | Constant (loc,c) -> loc
     | LValue (loc,l) -> loc
@@ -166,7 +172,7 @@ let location_of_expr expr = function
     | Length (loc, t) -> loc
     | Iff (loc,t1, t2) -> loc
     | Implies (loc,t1, t2) -> loc
-    | EmptyExpr -> get_dummy_location
+    | EmptyExpr -> get_dummy_location ()
 
 (******************
 Printing functions

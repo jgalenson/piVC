@@ -2,7 +2,9 @@ open Hashtbl
 open Ast
 open Stack
 
-let create_scope_stack : (string, Ast.decl) Hashtbl.t Stack.t = (Stack.create ())
+type t = (string, Ast.decl) Hashtbl.t Stack.t
+
+let create () = (Stack.create ())
 
 let enter_scope s = 
   Stack.push (Hashtbl.create 5) s
@@ -10,14 +12,9 @@ let enter_scope s =
 let exit_scope s = 
   ignore(Stack.pop s)
 
-let get_decl_name decl =
-  match decl with
-      Ast.VarDecl(l, d) -> d.varName.name
-    | Ast.FnDecl(l, d) -> d.fnName.name
-  
-let insert_decl decl s = Hashtbl.add (Stack.top s) (get_decl_name decl) decl
+let insert_decl decl s = Hashtbl.add (Stack.top s) (Ast.name_of_decl decl) decl
 
-let lookup_decl s declName =
+let lookup_decl declName s =
   let copy = Stack.copy s in
   let rec lookupRecursive copy = 
     if (Stack.is_empty copy) then None else
@@ -33,10 +30,9 @@ let lookup_decl s declName =
   lookupRecursive copy
 
 
-let lookup_decl_in_curr_scope decl s = 
-  let declName = get_decl_name decl in
-   let exists = Hashtbl.mem (Stack.top s) declName in
-      if exists then
-	Some (Hashtbl.find (Stack.top s) declName)
-      else
-	None
+let lookup_decl_in_curr_scope_only declName s = 
+  let exists = Hashtbl.mem (Stack.top s) declName in
+     if exists then
+       Some (Hashtbl.find (Stack.top s) declName)
+     else
+       None

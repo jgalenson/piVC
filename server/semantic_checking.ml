@@ -1,18 +1,17 @@
 open Ast
-open Scope_stack
 
 let print_error message location =
-print_string("**Semantic Error**\n");
-print_string(string_of_location location);
-print_string("\n");
-print_string(message);
-print_string("\n")
+print_string "**Semantic Error**\n";
+print_string (string_of_location location);
+print_string "\n";
+print_string message;
+print_string "\n"
 
 
 let insert_decl s decl = 
-  let curr = lookup_decl_in_curr_scope decl s in
+  let curr = Scope_stack.lookup_decl_in_curr_scope_only (Ast.name_of_decl decl) s in
     match curr with
-	None -> insert_decl decl s
+	None -> Scope_stack.insert_decl decl s
       | _ -> print_error "Already defined" (location_of_decl decl)
 
 let insert_var_decl s decl = 
@@ -57,7 +56,7 @@ and is_array_type t = match t with
 (* CAGRT *)
 	
 let rec check_and_get_return_type_lval s lval = match lval with
-    NormLval(loc, id) -> let lookupResult = (lookup_decl s id.name) in
+    NormLval(loc, id) -> let lookupResult = (Scope_stack.lookup_decl id.name s) in
                            (match lookupResult with
                                None -> (print_error "Not defined" loc; ErrorType)
                              | Some(decl) -> type_of_decl decl
@@ -132,7 +131,7 @@ and check_and_get_return_type scope_stack e =
     | Call (loc, ident, ac) -> (* Check this more? *)
 	let map_fn e = ignore (cagrt e) in
 	let check_actuals = List.iter (map_fn) ac
-	and lookup_result = (lookup_decl scope_stack ident.name) in
+	and lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
 	(* Check if there is a function with that name *)
 	let isfndecl =
 	  begin
@@ -198,7 +197,7 @@ and check_and_get_return_type scope_stack e =
 	if not (is_array_type atype) then
 	  print_error "Trying to take length of something not an array" loc;
 	Int(loc)
-    | EmptyExpr -> Void(Ast.get_dummy_location)
+    | EmptyExpr -> Void (Ast.get_dummy_location ())
   in
   cagrt e
 
@@ -240,24 +239,24 @@ let rec check_stmt scope_stack returnType stmt =
   | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e)
 	(* TODO: Do semantic checking for asserts vs. exprs *)
 
-  | StmtBlock(loc,st) -> enter_scope scope_stack;
+  | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
                       List.iter (check_stmt scope_stack returnType) st;
-                      exit_scope scope_stack
+                      Scope_stack.exit_scope scope_stack
 
   | EmptyStmt -> ignore ()
 
 
 
 let check_function func s =
-  enter_scope s;
+  Scope_stack.enter_scope s;
   insert_var_decls s func.formals;
   check_stmt s func.returnType func.stmtBlock;
-  exit_scope s
+  Scope_stack.exit_scope s
 
 let check_program program =
   print_string("Checking...\n");
-  let s = create_scope_stack in
-  enter_scope s;
+  let s = Scope_stack.create () in
+  Scope_stack.enter_scope s;
   insert_decls s program.decls;
   let check_decl_if_necessary decl = 
     match decl with
@@ -265,4 +264,4 @@ let check_program program =
         | _ -> print_string("")
   in
   List.iter (check_decl_if_necessary) program.decls;
-  exit_scope s
+  Scope_stack.exit_scope s

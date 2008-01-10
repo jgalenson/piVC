@@ -2,7 +2,6 @@
 %{
   open Printf
   open Ast
-  open Global
 %}
 
 %token T_Define
