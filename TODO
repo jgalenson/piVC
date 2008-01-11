@@ -16,3 +16,12 @@ Put comments in the ast so we can print them out in to-C++ printing.
 Long Term
 - "definitions" file (see Aaron's email 12/6/07)
 - Hashtables, sets, multisets (see Aaron's email 12/6/07)
+
+
+
+
+
+
+Notes
+-----
+See http://www.ocaml-programming.de/packages/documentation/findlib/guide-html/quickstart.html for info on findlib

@@ -27,9 +27,9 @@ parser :
 	$(OC) -c parser.ml;
 	$(OC) -c lexer.ml;
 	$(OC) -c test_parser.ml;
-	$(OC) -c server.ml;
+	$(OC) -I xml-light -c server.ml;
 	$(OC) -o test_parser ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo test_parser.cmo 
-	$(OC) -o server unix.cma ast.cmo lexer.cmo parser.cmo server.cmo
+	$(OC) -I xml-light -o server unix.cma xml-light.cma ast.cmo lexer.cmo parser.cmo server.cmo
 
 	rm lexer.ml;
 	rm parser.mli;

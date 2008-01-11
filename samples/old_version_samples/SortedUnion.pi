@@ -1,0 +1,47 @@
+#include "arrays.pi"
+
+define int ix = ?;
+define int e = ?;
+
+@pre  sorted(a, 0, length(a) - 1) 
+      && sorted(b, 0, length(b) - 1)
+@post sorted(rv, 0, length(rv) - 1) 
+      && ((exists(ix, 0, length(a) - 1, a[ix] == e)
+           || exists(ix, 0, length(b) - 1, b[ix] == e))
+          -> exists(ix, 0, length(rv) - 1, rv[ix] == e))
+      && (exists(ix, 0, length(rv) - 1, rv[ix] == e)
+          -> (exists(ix, 0, length(a) - 1, a[ix] == e)
+              || exists(ix, 0, length(b) - 1, b[ix] == e)))
+int[] union(int[] a, int[] b)
+declare
+  int i, j, k;
+  int[] u;
+{
+  u = new int[length(a) + length(b)];
+  i = 0;
+  j = 0;
+
+  for
+    @ true
+    (k = 0; k < length(u); k = k + 1)
+  {
+    if (i >= length(a)) {
+      u[k] = b[j];
+      j = j + 1;
+    }
+    else if (j >= length(b)) {
+      u[k] = a[i];
+      i = i + 1;
+    }
+    else if (a[i] <= b[j]) {
+      u[k] = a[i];
+      i = i + 1;
+    }
+    else {
+      u[k] = b[j];
+      j = j + 1;
+    }
+  }
+
+  return u;
+}
