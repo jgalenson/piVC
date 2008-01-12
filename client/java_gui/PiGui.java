@@ -1,5 +1,9 @@
+import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -7,17 +11,21 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
-
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
 public class PiGui extends JFrame {
 	
-	private static final int DEFAULT_WIDTH = 500;
-	private static final int DEFAULT_HEIGHT = 500;
+	private static final int DEFAULT_WIDTH = 800;
+	private static final int DEFAULT_HEIGHT = 800;
 	
 	private PiCode piCode;
+	private PiCompilerOutput piCompilerOutput;
+	private PiTree piTree;
 	private JFileChooser fileChooser;
 	private File curFile;
 	private boolean dirty;
@@ -25,10 +33,12 @@ public class PiGui extends JFrame {
 
 	public PiGui() {
 		super("PiVC");
+		setLayout(new BorderLayout());
 		
 		initDataPre();
 		installMain();
 		installMenu();
+		installTop();
 		initDataPost();
 		setupWindow();
 	}
@@ -144,6 +154,31 @@ public class PiGui extends JFrame {
 		dirty = b;
 		fireDirtyChanged();
 	}
+	
+	public void doCompile() {
+		String result = JOptionPane.showInputDialog("Connect to host:port", "myth.stanford.edu:4242");
+		if (result != null) {
+			String[] parts = result.split(":");
+			String name = parts[0].trim();
+			int port = Integer.parseInt(parts[1].trim());
+			try {
+				Socket toServer = new Socket(name, port);
+				ObjectOutputStream out = new ObjectOutputStream(toServer.getOutputStream());
+				out.writeUnshared(piCode.getText());
+				out.writeUnshared("\n" + '\04' + "\n");
+				out.flush();
+				ObjectInputStream in = new ObjectInputStream(toServer.getInputStream());
+				String text = (String)in.readObject();
+				handleServerResponse(text);
+			} catch (Exception ex) { // IOException and ClassNotFoundException
+				ex.printStackTrace();
+			}
+		}
+	}
+
+	private void handleServerResponse(String text) {
+		piCompilerOutput.setText(text);
+	}
 
 	/**
 	 * Inits some data before we install the GUI elements. 
@@ -187,14 +222,23 @@ public class PiGui extends JFrame {
                 BorderFactory.createTitledBorder("Code"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
-		PiTree piTree = new PiTree();
-		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
-		piTree.setLayout(new GridLayout(1, 1));
+        JTabbedPane rightTabbedPane = new JTabbedPane();
+        rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+		piTree = new PiTree();
+		//piTree.setLayout(new GridLayout(1, 1));
 		piTree.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Tree"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		piCompilerOutput = new PiCompilerOutput();
+		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Compiler output"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
+		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_R);
+		rightTabbedPane.addTab("Tree", new JScrollPane(piTree));
+		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_D);
 		
-		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, piTree);
+		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);
 		//sp.setDividerLocation(.5);
 		
@@ -207,6 +251,20 @@ public class PiGui extends JFrame {
 	private void installMenu() {
 		PiMenu menu = new PiMenu(this);
 		setJMenuBar(menu);
+	}
+	
+	private void installTop() {
+		Box box = Box.createHorizontalBox();
+		
+		JButton compile = new JButton("Compile");
+		compile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doCompile();
+			}
+		});
+		box.add(compile);
+		
+		add(box, BorderLayout.NORTH);
 	}
 	
 	/**

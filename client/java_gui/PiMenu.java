@@ -1,16 +1,10 @@
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.File;
-import java.io.IOException;
-
-import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-import javax.swing.filechooser.FileFilter;
-
 
 public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	
@@ -22,6 +16,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		this.piGui = piGui;
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
+		addCompileMenu();
 	}
 	
 	/**
@@ -71,6 +66,23 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		file.add(quit);
 		
 		add(file);
+	}
+	
+	private void addCompileMenu() {
+		JMenu compileMenu = new JMenu("Compile");
+		compileMenu.setMnemonic(KeyEvent.VK_F);
+		
+		JMenuItem compile = new JMenuItem("Compile");
+		compile.setMnemonic(KeyEvent.VK_C);
+		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+		compile.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doCompile();
+			}
+		});
+		compileMenu.add(compile);
+		
+		add(compileMenu);
 	}
 
 	/**
