@@ -73,31 +73,33 @@ and is_array_type t = match t with
 (* CAGRT *)
 	
 let rec check_and_get_return_type_lval s lval errors = match lval with
-    NormLval(loc, id) -> let lookupResult = (Scope_stack.lookup_decl id.name s) in
-                           (match lookupResult with
-                               None -> (add_error SemanticError "Not defined" loc errors; ErrorType)
-                             | Some(decl) -> type_of_decl decl
-                           )
-  | ArrayLval(loc, arr, index) ->(
-
-                                  let typeOfIndex = check_and_get_return_type s index errors in
-                                  (match typeOfIndex with
-                                      Int(l) -> print_string ""
-                                    | _ -> (add_error SemanticError "Array index must be an integer" loc errors)
-                                  );
-
-                         let lookupResult = (Scope_stack.lookup_decl arr.name s) in
-                           (match lookupResult with
-                               None -> (add_error SemanticError "Not defined" loc errors; ErrorType)
-                             | Some(decl) -> let typeOfArray = type_of_decl decl in 
-                                (match typeOfArray with
-                                    Array(t, l) -> t
-                                  | _ -> (add_error SemanticError "This is not an array" loc errors;
-                                    ErrorType)
-                                )
-                           )
-
-                           )
+  | NormLval(loc, id) ->
+      let lookupResult = Scope_stack.lookup_decl id.name s in
+      begin
+	match lookupResult with
+          | None -> add_error SemanticError "Not defined" loc errors; ErrorType
+	  | Some(decl) -> type_of_decl decl
+      end
+  | ArrayLval(loc, arr, index) ->
+      begin
+        let typeOfIndex = check_and_get_return_type s index errors in
+        begin
+	  match typeOfIndex with
+            | Int(l) -> ()
+            | _ -> add_error SemanticError "Array index must be an integer" loc errors
+        end;
+        let lookupResult = (Scope_stack.lookup_decl arr.name s) in
+        begin
+	  match lookupResult with
+           | None -> add_error SemanticError "Not defined" loc errors; ErrorType
+           | Some(decl) -> let typeOfArray = type_of_decl decl in
+	     begin
+               match typeOfArray with
+                 | Array(t, l) -> t
+                 | _ -> add_error SemanticError "This is not an array" loc errors; ErrorType
+             end
+        end
+      end
  
 	
 and check_for_same_type t1 t2 loc errors = 
