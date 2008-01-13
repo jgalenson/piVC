@@ -2,12 +2,16 @@
 
 @pre true
 @post true
-float jason(){
-int i;
-while
-@hello(bah)
-(i<4.234){
-i = i + 1;
-asdfasdf;
-}
+void jason(){
+  int i;
+  if(true){
+    i = i + 10;
+  }else{
+    i = i - 10;
+  }
+  i = i + 1;
+  while
+  @true
+  (true){
+  }
 }

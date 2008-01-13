@@ -170,7 +170,10 @@ public class PiGui extends JFrame {
 				ObjectInputStream in = new ObjectInputStream(toServer.getInputStream());
 				String text = (String)in.readObject();
 				handleServerResponse(text);
-			} catch (Exception ex) { // IOException and ClassNotFoundException
+			} catch (java.net.ConnectException ex){
+				JOptionPane.showMessageDialog(null, ex.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
+			}
+			catch (Exception ex) { // IOException and ClassNotFoundException
 				ex.printStackTrace();
 			}
 		}
