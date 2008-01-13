@@ -19,6 +19,7 @@ parser :
 	$(OC) -c scope_stack.mli;
 	$(OC) -c semantic_checking.mli;
 	$(OC) -c parser.mli;
+	$(OC) -c parse_utils.mli;
 	$(OC) -c test_parser.mli;
 	$(OC) -c server.mli;
 	$(OC) -c ast.ml;
@@ -26,10 +27,11 @@ parser :
 	$(OC) -c semantic_checking.ml;
 	$(OC) -c parser.ml;
 	$(OC) -c lexer.ml;
+	$(OC) -c parse_utils.ml;
 	$(OC) -c test_parser.ml;
 	$(OC) -I xml-light -c server.ml;
-	$(OC) -o test_parser ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo test_parser.cmo 
-	$(OC) -I xml-light -o server unix.cma xml-light.cma ast.cmo lexer.cmo parser.cmo server.cmo
+	$(OC) -o test_parser ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo test_parser.cmo 
+	$(OC) -I xml-light -o server unix.cma xml-light.cma ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo server.cmo
 
 	rm lexer.ml;
 	rm parser.mli;

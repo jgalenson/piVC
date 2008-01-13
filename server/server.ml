@@ -46,5 +46,8 @@ let get_code ic =
 let echo_service ic oc =
   let input = get_code ic in
   output_string oc input ; flush oc
+
+(*let compile_service ic oc =
+  Test_parser.goParse ic*)
     
 let _ = Unix.handle_unix_error main_server echo_service
