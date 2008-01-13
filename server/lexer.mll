@@ -39,72 +39,73 @@ let alpha = ['a'-'z''A'-'Z']
 
 
 rule lang = parse
-    digit+ as num			{updateLocation(lexbuf); T_IntConstant(int_of_string num)}
-  | "/*"_*"*/"		       		{updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
-  | "//"[^'\n']*'\n'			{updateLocation(lexbuf); lang lexbuf (*skip single-line comments*)}
-  | [' ''\t''\n']			{updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
-  | "define"                  		{updateLocation(lexbuf); T_Define}
-  | "declare"				{updateLocation(lexbuf); T_Declare}
-  | "pre"				{updateLocation(lexbuf); T_Pre}
-  | "post"				{updateLocation(lexbuf); T_Post}
-  | "bool"              		{updateLocation(lexbuf); T_Bool}
-  | "void"				{updateLocation(lexbuf); T_Void}
-  | "true"				{updateLocation(lexbuf); T_True}
-  | "false"				{updateLocation(lexbuf); T_False}
-  | "[]"				{updateLocation(lexbuf); T_Dims}
-  | ":="				{updateLocation(lexbuf); T_Assign}
-  | "<="				{updateLocation(lexbuf); T_LessEqual}
-  | ">="				{updateLocation(lexbuf); T_GreaterEqual}
-  | "="				        {updateLocation(lexbuf); T_Equal}
-  | "!="				{updateLocation(lexbuf); T_NotEqual}
-  | "&&"				{updateLocation(lexbuf); T_And}
-  | "||"				{updateLocation(lexbuf); T_Or}
-  | "while"				{updateLocation(lexbuf); T_While}
-  | "for"				{updateLocation(lexbuf); T_For}
-  | "if"				{updateLocation(lexbuf); T_If}
-  | "else"				{updateLocation(lexbuf); T_Else}
-  | "return"				{updateLocation(lexbuf); T_Return}
-  | "break"				{updateLocation(lexbuf); T_Break}
-  | "void"                              {updateLocation(lexbuf); T_Void}
-  | "int"                       	{updateLocation(lexbuf); T_Int}
-  | "float"            		        {updateLocation(lexbuf); T_Float}
-  | "bool"                              {updateLocation(lexbuf); T_Bool}
-  | "string"                            {updateLocation(lexbuf); T_String}
-  | "null"                              {updateLocation(lexbuf); T_Null}
-  | "while"                             {updateLocation(lexbuf); T_While}
-  | "for"                               {updateLocation(lexbuf); T_For}
-  | "forall"                            {updateLocation(lexbuf); T_ForAll}
-  | "exists"                            {updateLocation(lexbuf); T_Exists}
-  | "<->"                               {updateLocation(lexbuf); T_Iff}
-  | "->"                                {updateLocation(lexbuf); T_Implies}
-  | "@pre"                              {updateLocation(lexbuf); T_Pre}
-  | "@post"                             {updateLocation(lexbuf); T_Post}
-  | "div"                               {updateLocation(lexbuf); T_Div}
-  | "typedef"                           {updateLocation(lexbuf); T_Typedef}
-  | "struct"                            {updateLocation(lexbuf); T_Struct}
-  | alpha(alpha|digit|'_')* as ident 	{updateLocation(lexbuf); T_Identifier(ident)}
-  | '+'					{updateLocation(lexbuf); T_Plus}
-  | '-'					{updateLocation(lexbuf); T_Minus}
-  | '*'					{updateLocation(lexbuf); T_Star}
-  | '/'					{updateLocation(lexbuf); T_Slash}
-  | '<'					{updateLocation(lexbuf); T_Less}
-  | '>'					{updateLocation(lexbuf); T_Greater}
-  | '!'					{updateLocation(lexbuf); T_Not}
-  | ';'					{updateLocation(lexbuf); T_Semicolon}
-  | ','					{updateLocation(lexbuf); T_Comma}
-  | '.'					{updateLocation(lexbuf); T_Period}
-  | '['					{updateLocation(lexbuf); T_LSquareBracket}
-  | ']'					{updateLocation(lexbuf); T_RSquareBracket}
-  | '('					{updateLocation(lexbuf); T_LParen}
-  | ')'					{updateLocation(lexbuf); T_RParen}
-  | '{'					{updateLocation(lexbuf); T_LCurlyBracket}
-  | '}'					{updateLocation(lexbuf); T_RCurlyBracket}
-  | '?'					{updateLocation(lexbuf); T_QuestionMark}
-  | '@'					{updateLocation(lexbuf); T_Assert}
-  | '|'					{updateLocation(lexbuf); T_Bar}
-  | eof					{updateLocation(lexbuf); T_EOF}
-  | '\n'                                {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
-  | _					{updateLocation(lexbuf); print_string("read unknown");T_Unknown}
+    digit+ as num			 {updateLocation(lexbuf); T_IntConstant(int_of_string num)}
+  | digit+ '.' digit+ as num             {updateLocation(lexbuf); T_FloatConstant(float_of_string num)}
+  | "/*" ([^'*']*('*'+ [^'/''*'])?)* '*'* "*/" {updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
+  | "//"[^'\n']*'\n'			 {updateLocation(lexbuf); lang lexbuf (*skip single-line comments*)}
+  | [' ''\t''\n']			 {updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
+  | "define"                  		 {updateLocation(lexbuf); T_Define}
+  | "declare"				 {updateLocation(lexbuf); T_Declare}
+  | "pre"				 {updateLocation(lexbuf); T_Pre}
+  | "post"				 {updateLocation(lexbuf); T_Post}
+  | "bool"              		 {updateLocation(lexbuf); T_Bool}
+  | "void"			 	 {updateLocation(lexbuf); T_Void}
+  | "true"				 {updateLocation(lexbuf); T_True}
+  | "false"				 {updateLocation(lexbuf); T_False}
+  | "[]"				 {updateLocation(lexbuf); T_Dims}
+  | ":="				 {updateLocation(lexbuf); T_Assign}
+  | "<="				 {updateLocation(lexbuf); T_LessEqual}
+  | ">="				 {updateLocation(lexbuf); T_GreaterEqual}
+  | "="				         {updateLocation(lexbuf); T_Equal}
+  | "!="				 {updateLocation(lexbuf); T_NotEqual}
+  | "&&"				 {updateLocation(lexbuf); T_And}
+  | "||"				 {updateLocation(lexbuf); T_Or}
+  | "while"				 {updateLocation(lexbuf); T_While}
+  | "for"				 {updateLocation(lexbuf); T_For}
+  | "if"				 {updateLocation(lexbuf); T_If}
+  | "else"				 {updateLocation(lexbuf); T_Else}
+  | "return"				 {updateLocation(lexbuf); T_Return}
+  | "break"				 {updateLocation(lexbuf); T_Break}
+  | "void"                               {updateLocation(lexbuf); T_Void}
+  | "int"                       	 {updateLocation(lexbuf); T_Int}
+  | "float"            		         {updateLocation(lexbuf); T_Float}
+  | "bool"                               {updateLocation(lexbuf); T_Bool}
+  | "string"                             {updateLocation(lexbuf); T_String}
+  | "null"                               {updateLocation(lexbuf); T_Null}
+  | "while"                              {updateLocation(lexbuf); T_While}
+  | "for"                                {updateLocation(lexbuf); T_For}
+  | "forall"                             {updateLocation(lexbuf); T_ForAll}
+  | "exists"                             {updateLocation(lexbuf); T_Exists}
+  | "<->"                                {updateLocation(lexbuf); T_Iff}
+  | "->"                                 {updateLocation(lexbuf); T_Implies}
+  | "@pre"                               {updateLocation(lexbuf); T_Pre}
+  | "@post"                              {updateLocation(lexbuf); T_Post}
+  | "div"                                {updateLocation(lexbuf); T_Div}
+  | "typedef"                            {updateLocation(lexbuf); T_Typedef}
+  | "struct"                             {updateLocation(lexbuf); T_Struct}
+  | alpha(alpha|digit|'_')* as ident 	 {updateLocation(lexbuf); T_Identifier(ident)}
+  | '+'					 {updateLocation(lexbuf); T_Plus}
+  | '-'					 {updateLocation(lexbuf); T_Minus}
+  | '*'					 {updateLocation(lexbuf); T_Star}
+  | '/'					 {updateLocation(lexbuf); T_Slash}
+  | '<'					 {updateLocation(lexbuf); T_Less}
+  | '>'					 {updateLocation(lexbuf); T_Greater}
+  | '!'					 {updateLocation(lexbuf); T_Not}
+  | ';'					 {updateLocation(lexbuf); T_Semicolon}
+  | ','					 {updateLocation(lexbuf); T_Comma}
+  | '.'					 {updateLocation(lexbuf); T_Period}
+  | '['					 {updateLocation(lexbuf); T_LSquareBracket}
+  | ']'					 {updateLocation(lexbuf); T_RSquareBracket}
+  | '('					 {updateLocation(lexbuf); T_LParen}
+  | ')'					 {updateLocation(lexbuf); T_RParen}
+  | '{'					 {updateLocation(lexbuf); T_LCurlyBracket}
+  | '}'					 {updateLocation(lexbuf); T_RCurlyBracket}
+  | '?'					 {updateLocation(lexbuf); T_QuestionMark}
+  | '@'					 {updateLocation(lexbuf); T_Assert}
+  | '|'					 {updateLocation(lexbuf); T_Bar}
+  | eof					 {updateLocation(lexbuf); T_EOF}
+  | '\n'                                 {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
+  | _                                    {updateLocation(lexbuf); print_string("read unknown token");T_Unknown}
 
 
 

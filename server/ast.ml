@@ -185,7 +185,8 @@ Printing functions
 let insert_tabs num_tabs = String.make num_tabs '\t'
 
 let string_of_location loc =
-    "(" ^ string_of_int loc.loc_start.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_start) ^ ")"
+    "(" ^ string_of_int loc.loc_start.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_start) ^ ") to " ^
+    "(" ^ string_of_int loc.loc_end.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_end) ^ ")"
 
 let string_of_identifier id =
   id.name

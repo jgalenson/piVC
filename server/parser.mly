@@ -306,7 +306,7 @@ Actuals  : ExprList       { $1 }
 ;
 
 Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }
-/*         | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1) }*/
+         | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1)}
          | T_True           { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), true) }
          | T_False          { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), false) }	     
 /*         | T_Null           { $1 }*/
