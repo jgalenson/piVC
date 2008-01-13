@@ -27,34 +27,56 @@ let get_my_addr () =
 let main_server serv_fun =
   let port = default_port in 
   let my_address = get_my_addr () in
+  print_endline ("Starting server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
 
-(* Reads from the input channel until we get EOT (\04) and
-   returns a list of what we read.
-   This is a hack, but I'm not sure how else to do it. *)
-let read ic =
-  let rec read_in () =
-      let data = input_line ic in
-      if String.get data 0 = Char.chr 4 then
-	[]
-      else
-	data :: (read_in ())
+(* Converts from Windows to UNIX line endings. *)
+let convert_line_endings str =
+  Str.global_replace (Str.regexp "\r\n") "\n" str ;;
+
+(* Gets one string of input from the stream.
+   We first get an int (the number of chars)
+   and then a string of that many chars. *)
+let get_input ic = 
+  let in_len = input_binary_int ic in
+  print_endline (string_of_int in_len);
+  let in_buf = Buffer.create in_len in
+  Buffer.add_channel in_buf ic in_len;
+  convert_line_endings (Buffer.contents in_buf) ;;
+
+(* Sends one string to the stream. *)
+let send_output oc str =
+  let out_len = String.length str in
+  output_binary_int oc out_len;
+  output_string oc str
+									
+let compile ic oc =
+
+  (* Convert a queue to a list. *)
+  let rec queue_to_list q =
+    if Queue.is_empty q then
+      []
+    else
+      let first = Queue.pop q in
+      first :: queue_to_list q
   in
-  read_in () ;;
 
-(* Gets the code string from the specified input channel *)
-let get_code ic =
-  let code = read ic in
-  String.concat "\n" code ;;
+  (* Conver error list to string list. *)
+  let errors_to_strings l =
+    List.map (fun e -> Semantic_checking.string_of_error e) l
+      in
 
-(* Service that simply echoes back whatever it was sent. *)
-let echo_service ic oc =
-  let input = get_code ic in
-  output_string oc input ; flush oc
+  (* Convert queue of errors to a string. *)
+  let string_of_errors e =
+    String.concat "\n" (errors_to_strings (queue_to_list e))
+  in
 
-let compile_service ic oc =
-  let (program, errors) = Parse_utils.goParse ic in
-  let map_fn e = output_string oc (Semantic_checking.string_of_error e) in
-  Queue.iter map_fn errors ; flush oc
+  let code = get_input ic in
+  (* print_endline code; *)
+  let (program, errors) = Parse_utils.parse_string code in
+  let error_string = string_of_errors errors in
+  (* print_string error_string; *)
+  send_output oc error_string;
+  flush oc
     
-let _ = Unix.handle_unix_error main_server echo_service
+let _ = Unix.handle_unix_error main_server compile

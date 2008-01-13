@@ -8,9 +8,8 @@ open Lexing
 let parseToken lexbuf errors = 
    let program = Parser.main Lexer.lang lexbuf in
    check_program program errors ;;
-    
-let goParse ic =
-  let lexbuf = Lexing.from_channel ic in
+
+let parse lexbuf =
   let errors = Queue.create () in
   let e = ref errors in
   try
@@ -23,3 +22,11 @@ let goParse ic =
     let loc = Ast.create_location symbol_start_pos symbol_end_pos in
     add_error SyntaxError (Lexing.lexeme lexbuf) loc e;
     (None, !e)
+    
+let goParse ic =
+  let lexbuf = Lexing.from_channel ic in
+  parse lexbuf ;;
+
+let parse_string s =
+  let lexbuf = Lexing.from_string s in
+  parse lexbuf ;;

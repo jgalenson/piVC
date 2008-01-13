@@ -7,6 +7,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -15,6 +17,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
@@ -22,6 +26,8 @@ public class PiGui extends JFrame {
 	
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
+	private static final String DEFAULT_SERVER = "myth.stanford.edu";
+	private static final int DEFAULT_PORT = 4242;
 	
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
@@ -156,24 +162,29 @@ public class PiGui extends JFrame {
 	}
 	
 	public void doCompile() {
-		String result = JOptionPane.showInputDialog("Connect to host:port", "myth.stanford.edu:4242");
+		String result = JOptionPane.showInputDialog("Connect to host:port", DEFAULT_SERVER + ":" + DEFAULT_PORT);
 		if (result != null) {
 			String[] parts = result.split(":");
 			String name = parts[0].trim();
 			int port = Integer.parseInt(parts[1].trim());
 			try {
 				Socket toServer = new Socket(name, port);
-				ObjectOutputStream out = new ObjectOutputStream(toServer.getOutputStream());
-				out.writeUnshared(piCode.getText());
-				out.writeUnshared("\n" + '\04' + "\n");
+				DataOutputStream out = new DataOutputStream(toServer.getOutputStream());
+				String code = piCode.getText();
+				out.writeInt(code.length());
+				out.writeBytes(code);
 				out.flush();
-				ObjectInputStream in = new ObjectInputStream(toServer.getInputStream());
-				String text = (String)in.readObject();
+				DataInputStream in = new DataInputStream(toServer.getInputStream());
+				int len = in.readInt();
+				byte[] bytes = new byte[len];
+				in.readFully(bytes, 0, len);
+				String text = "";
+				for (byte b: bytes)
+					text += (char)b;
 				handleServerResponse(text);
 			} catch (java.net.ConnectException ex){
 				JOptionPane.showMessageDialog(null, ex.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
-			}
-			catch (Exception ex) { // IOException and ClassNotFoundException
+			} catch (Exception ex) { // IOException and ClassNotFoundException
 				ex.printStackTrace();
 			}
 		}
