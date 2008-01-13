@@ -61,19 +61,27 @@ let rec check_and_get_return_type_lval s lval = match lval with
                                None -> (print_error "Not defined" loc; ErrorType)
                              | Some(decl) -> type_of_decl decl
                            )
-  | ArrayLval(loc, arr, index) ->
-      let typeOfArray = check_and_get_return_type s arr in
-      let typeOfIndex = check_and_get_return_type s index in
-        (match typeOfIndex with
-             Int(l) -> print_string ""
-           | _ -> (print_error "Array index must be an integer" loc)
-        );
-        (match typeOfArray with
-            Array(t, l) -> t
-          | _ -> (print_error "This is not an array" loc;
-                  ErrorType
-                 )
-        )
+  | ArrayLval(loc, arr, index) ->(
+
+                                  let typeOfIndex = check_and_get_return_type s index in
+                                  (match typeOfIndex with
+                                      Int(l) -> print_string ""
+                                    | _ -> (print_error "Array index must be an integer" loc)
+                                  );
+
+                         let lookupResult = (Scope_stack.lookup_decl arr.name s) in
+                           (match lookupResult with
+                               None -> (print_error "Not defined" loc; ErrorType)
+                             | Some(decl) -> let typeOfArray = type_of_decl decl in 
+                                (match typeOfArray with
+                                    Array(t, l) -> t
+                                  | _ -> (print_error "This is not an array" loc;
+                                    ErrorType)
+                                )
+                           )
+
+                           )
+ 
 	
 and check_for_same_type t1 t2 loc = 
   if not (types_equal t1 t2) then
@@ -198,6 +206,7 @@ and check_and_get_return_type scope_stack e =
 	  print_error "Trying to take length of something not an array" loc;
 	Int(loc)
     | EmptyExpr -> Void (Ast.get_dummy_location ())
+
   in
   cagrt e
 

@@ -37,7 +37,7 @@ val create_varDecl : varType -> identifier -> location -> varDecl
 
 type lval =
   | NormLval of location * identifier
-  | ArrayLval of location * expr * expr
+  | ArrayLval of location * identifier * expr
 
 and constant =
   | ConstInt of location * int

@@ -4,3 +4,4 @@
  *)
 
 val check_program : Ast.program -> unit
+val check_and_get_return_type : Scope_stack.t -> Ast.expr -> Ast.varType

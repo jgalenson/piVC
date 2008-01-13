@@ -1,0 +1,13 @@
+
+
+@pre true
+@post true
+float jason(){
+int i;
+while
+@false && predicate(argHere)
+(i<5){
+i = i + 1;
+}
+
+}

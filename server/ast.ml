@@ -1,6 +1,8 @@
 open Printf
 open Lexing
 
+exception Error of string
+
 type location = {
   loc_start  : Lexing.position;
   loc_end    : Lexing.position;
@@ -55,7 +57,7 @@ let create_varDecl t name location = {varType=t; varName=name; location_vd=locat
 
 type lval =
   | NormLval of location * identifier
-  | ArrayLval of location * expr * expr
+  | ArrayLval of location * identifier * expr
 
 and constant =
   | ConstInt of location * int
@@ -87,6 +89,7 @@ and expr =
   | Implies of location * expr * expr
   | Length of location * expr
   | EmptyExpr
+
     
 and stmt =
   | Expr of location * expr
@@ -99,6 +102,7 @@ and stmt =
   | AssertStmt of location * expr
   | StmtBlock of location * stmt list
   | EmptyStmt
+
 	
 type fnDecl = {
   fnName       : identifier;
@@ -202,7 +206,7 @@ let string_of_type typ =
 (* temp *)
 let rec string_of_lval lval = match lval with
   | NormLval (loc, s) -> string_of_identifier s
-  | ArrayLval (loc, t1, t2) -> (string_of_expr t1) ^ "[" ^ (string_of_expr t2) ^ "]"
+  | ArrayLval (loc, t1, t2) -> (string_of_identifier t1) ^ "[" ^ (string_of_expr t2) ^ "]"
 (* temp *)
 and string_of_constant c = match c with
    | ConstInt (loc,c) -> string_of_int c
