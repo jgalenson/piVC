@@ -27,8 +27,11 @@ let get_my_addr () =
 let main_server serv_fun =
   let port = default_port in 
   let my_address = get_my_addr () in
-  establish_server serv_fun (Unix.ADDR_INET(my_address, port))
+  establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
 
+(* Reads from the input channel until we get EOT (\04) and
+   returns a list of what we read.
+   This is a hack, but I'm not sure how else to do it. *)
 let read ic =
   let rec read_in () =
       let data = input_line ic in
@@ -37,17 +40,21 @@ let read ic =
       else
 	data :: (read_in ())
   in
-  read_in ()
+  read_in () ;;
 
+(* Gets the code string from the specified input channel *)
 let get_code ic =
   let code = read ic in
-  String.concat "\n" code
+  String.concat "\n" code ;;
 
+(* Service that simply echoes back whatever it was sent. *)
 let echo_service ic oc =
   let input = get_code ic in
   output_string oc input ; flush oc
 
-(*let compile_service ic oc =
-  Test_parser.goParse ic*)
+let compile_service ic oc =
+  let (program, errors) = Parse_utils.goParse ic in
+  let map_fn e = output_string oc (Semantic_checking.string_of_error e) in
+  Queue.iter map_fn errors ; flush oc
     
 let _ = Unix.handle_unix_error main_server echo_service
