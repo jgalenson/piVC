@@ -2,6 +2,7 @@ Things to add to the lexer and parser
  Parser: global typedefs (structs: see book chapter 5), global defines
 	Should typedefs be like VarDecls or should they only be globals?
 	Can you typedef things other than structs?
+	Can you make a struct without a typedef?
 	Should we use defines?  Are they even in the book?
  Lexer: Maybe: T (true), And (&&), etc?
 

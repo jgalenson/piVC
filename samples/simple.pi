@@ -32,8 +32,8 @@ int simpleFunction(){
   }
   if (true)
     a := 7;
-  /*float f;
-  f = 3.14159;*/
+  float f;
+  f = 3.14159;
   return a;
   @ false;
 }

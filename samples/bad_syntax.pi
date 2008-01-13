@@ -1,0 +1,6 @@
+@pre true
+@post true
+void foo() {
+	int x;
+	x [;
+}

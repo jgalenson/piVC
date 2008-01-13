@@ -1,0 +1,13 @@
+@pre true
+@post true
+float pi() {
+	return 3.14159;
+}
+
+@pre true
+@post true
+void main() {
+	float f;
+	f = 2.5;
+	f = f + pi();
+}
