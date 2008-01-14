@@ -235,7 +235,7 @@ and string_of_expr e =
     | NE (loc,t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
     | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
     | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
-    | Not (loc,t) -> " !" ^ (soe t)
+    | Not (loc,t) -> " !(" ^ (soe t) ^ ")"
     | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
     | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"

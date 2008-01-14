@@ -2,16 +2,12 @@
 
 @pre true
 @post true
-void jason(){
+int jason(){
   int i;
-  if(true){
-    i = i + 10;
-  }else{
-    i = i - 10;
-  }
-  i = i + 1;
-  while
-  @true
-  (true){
-  }
+  for
+  @1=2
+        (i=0; i<10; i=i+1){
+                i = 3;
+        }
+        return i;
 }
