@@ -74,8 +74,8 @@ rule lang = parse
   | "null"                               {updateLocation(lexbuf); T_Null}
   | "while"                              {updateLocation(lexbuf); T_While}
   | "for"                                {updateLocation(lexbuf); T_For}
-  | "forall"                             {updateLocation(lexbuf); T_ForAll}
-  | "exists"                             {updateLocation(lexbuf); T_Exists}
+(*  | "forall"                             {updateLocation(lexbuf); T_ForAll}*)
+(*  | "exists"                             {updateLocation(lexbuf); T_Exists}*)
   | "<->"                                {updateLocation(lexbuf); T_Iff}
   | "->"                                 {updateLocation(lexbuf); T_Implies}
   | "@pre"                               {updateLocation(lexbuf); T_Pre}

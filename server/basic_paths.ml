@@ -1,5 +1,7 @@
 open Ast
 
+exception UnexpectedStatementException
+
 type path_node = 
   | Expr of Ast.expr
   | Assume of Ast.expr
@@ -78,7 +80,8 @@ let generate_paths_for_func func =
             generate_path (List.append [Annotation(annotation,"guard")] [Assume(get_not test)]) remaining_stmts closing_scope_actions          
           )
         | Ast.BreakStmt(loc) -> (
-	    print_string "bah"
+	    generate_path curr_path (List.hd closing_scope_actions).stmts (List.tl closing_scope_actions)
+              (*Use the statements that follow the scope close.*)
           )
         | Ast.ReturnStmt(loc, exp) -> (
 	    Queue.add (List.append curr_path [Expr (create_rv_expression exp); func_post_condition]) all_paths
@@ -87,7 +90,8 @@ let generate_paths_for_func func =
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;
             generate_path curr_path remaining_stmts closing_scope_actions
 
-        | _ -> print_string "J: NOT YET IMPLEMENTED"
+        | Ast.StmtBlock(loc, stmts) -> raise (UnexpectedStatementException)
+        | Ast.EmptyStmt -> generate_path curr_path remaining_stmts closing_scope_actions
 	)
   in generate_path [func_pre_condition] (get_statement_list func.stmtBlock) [];
     all_paths

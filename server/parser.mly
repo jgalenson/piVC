@@ -77,7 +77,7 @@ and condition_from_temp_expr = function
     | EmptyExpr -> raise NoCondition
 
 and expr_from_temp_expr has_condition = function
-    | Assign (loc,l, e) -> Ast.Assign(loc,l,expr_from_temp_expr true e)
+    | Assign (loc,l, e) -> Ast.Assign(loc,l,expr_from_temp_expr has_condition e)
     | Constant (loc,c) -> Ast.Constant(loc,c)
     | LValue (loc,l) -> Ast.LValue(loc, l)
     | TempCall (loc,s, el) -> (
@@ -85,25 +85,25 @@ and expr_from_temp_expr has_condition = function
                                  true  -> expr_from_temp_expr false s
                                | false -> Ast.Call(loc,identifier_of_expression s, expr_list_of_temp_expr_list el)
                               )
-    | Plus (loc,t1, t2) -> Ast.Plus(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Minus (loc,t1, t2) -> Ast.Minus(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Times (loc,t1, t2) -> Ast.Times(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Div (loc,t1, t2) -> Ast.Div(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | IDiv (loc,t1, t2) -> Ast.IDiv(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Mod (loc,t1, t2) -> Ast.Mod(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | UMinus (loc,t) -> Ast.UMinus(loc, expr_from_temp_expr true t)
-    | LT (loc,t1, t2) -> Ast.LT(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | LE (loc,t1, t2) -> Ast.LE(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | GT (loc,t1, t2) -> Ast.GT(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | GE (loc,t1, t2) -> Ast.GE(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | EQ (loc,t1, t2) -> Ast.EQ(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | NE (loc,t1, t2) -> Ast.NE(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | And (loc,t1, t2) -> Ast.And(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Or (loc,t1, t2) -> Ast.Or(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Not (loc,t) -> Ast.Not(loc, expr_from_temp_expr true t)
+    | Plus (loc,t1, t2) -> Ast.Plus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Minus (loc,t1, t2) -> Ast.Minus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Times (loc,t1, t2) -> Ast.Times(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Div (loc,t1, t2) -> Ast.Div(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | IDiv (loc,t1, t2) -> Ast.IDiv(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Mod (loc,t1, t2) -> Ast.Mod(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | UMinus (loc,t) -> Ast.UMinus(loc, expr_from_temp_expr has_condition t)
+    | LT (loc,t1, t2) -> Ast.LT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | LE (loc,t1, t2) -> Ast.LE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | GT (loc,t1, t2) -> Ast.GT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | GE (loc,t1, t2) -> Ast.GE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | EQ (loc,t1, t2) -> Ast.EQ(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | NE (loc,t1, t2) -> Ast.NE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | And (loc,t1, t2) -> Ast.And(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Or (loc,t1, t2) -> Ast.Or(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Not (loc,t) -> Ast.Not(loc, expr_from_temp_expr has_condition t)
     | Length (loc, t) -> Ast.Length(loc, expr_from_temp_expr false t)
-    | Iff (loc,t1, t2) -> Ast.Iff(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
-    | Implies (loc,t1, t2) -> Ast.Implies(loc, expr_from_temp_expr false t1, expr_from_temp_expr true t2)
+    | Iff (loc,t1, t2) -> Ast.Iff(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | Implies (loc,t1, t2) -> Ast.Implies(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | EmptyExpr -> Ast.EmptyExpr
 
 
