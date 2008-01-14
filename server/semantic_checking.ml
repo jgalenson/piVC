@@ -104,14 +104,19 @@ let rec check_and_get_return_type_lval s lval errors = match lval with
 	
 and check_for_same_type t1 t2 loc errors = 
   if not (types_equal t1 t2) then
-    add_error SemanticError "LHS and RHS are of different types" loc errors;
+    begin
+      add_error SemanticError "LHS and RHS are of different types" loc errors;
+      false
+    end
+  else
+    true
   
 and check_and_get_return_type scope_stack e errors =
   
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
-    check_for_same_type lhsType rhsType loc errors;
+    ignore (check_for_same_type lhsType rhsType loc errors);
     if not (is_numeric_type lhsType) or not (is_numeric_type rhsType) then
       add_error SemanticError "Relational expr type is not numeric" loc errors;
     Bool(loc)
@@ -119,7 +124,7 @@ and check_and_get_return_type scope_stack e errors =
   and check_and_get_return_type_equality loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
-    check_for_same_type lhsType rhsType loc errors;
+    ignore (check_for_same_type lhsType rhsType loc errors);
     Bool(loc)
 
   and check_and_get_return_type_logical loc t1 t2 =
@@ -132,12 +137,14 @@ and check_and_get_return_type scope_stack e errors =
   and check_and_get_return_type_arithmetic loc t1 t2 =
     let leftType = cagrt t1
     and rightType = cagrt t2 in
-    check_for_same_type leftType rightType loc errors;
+    let are_same_type = check_for_same_type leftType rightType loc errors in
     if not (is_numeric_type leftType) or not (is_numeric_type rightType) then
       begin
 	add_error SemanticError "Arithmetic expr type is not numeric" loc errors;
 	ErrorType
       end
+    else if not are_same_type then
+      ErrorType
     else
       rightType
       
@@ -145,7 +152,7 @@ and check_and_get_return_type scope_stack e errors =
     | Assign (loc,l,e) ->
 	let lhsType = check_and_get_return_type_lval scope_stack l errors in
         let rhsType = cagrt e in
-	check_for_same_type lhsType rhsType loc errors;
+	ignore (check_for_same_type lhsType rhsType loc errors);
         lhsType
     | Constant (loc,c) ->
 	begin
@@ -184,7 +191,7 @@ and check_and_get_return_type scope_stack e errors =
 		  let check_formal given expected =
 		    let given_type = cagrt given
 		    and expected_type = expected.varType in
-		    check_for_same_type given_type expected_type loc errors
+		    ignore (check_for_same_type given_type expected_type loc errors)
 		  in
 		  List.iter2 check_formal ac fndecl.formals;
 		  fndecl.returnType

@@ -1,3 +1,11 @@
+Jason
+	Finish basic path generation
+	Xml
+	GUI: highlighting and linking
+Joel
+	VCs
+	GUI: tree
+
 Things to add to the lexer and parser
  Parser: global typedefs (structs: see book chapter 5), global defines
 	Should typedefs be like VarDecls or should they only be globals?

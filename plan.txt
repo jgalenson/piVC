@@ -1,9 +1,0 @@
-Fix productions
-Finish ast
-Write to_string/to_c
-Deal with storing locations (parser and ast) and using them in useful errors
-Do semantic checks
-Gui: tree (Joel tree, not Jason tree)
-Server: start it
-
-Use emails for semaphores.

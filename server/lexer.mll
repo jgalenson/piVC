@@ -105,7 +105,7 @@ rule lang = parse
   | '|'					 {updateLocation(lexbuf); T_Bar}
   | eof					 {updateLocation(lexbuf); T_EOF}
   | '\n'                                 {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
-  | _                                    {updateLocation(lexbuf); print_string("read unknown token");T_Unknown}
+  | _ as token                           {updateLocation(lexbuf); print_endline ("read unknown token" ^ (Char.escaped token)); T_Unknown}
 
 
 

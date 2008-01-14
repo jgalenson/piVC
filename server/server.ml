@@ -52,29 +52,17 @@ let send_output oc str =
 									
 let compile ic oc =
 
-  (* Convert a queue to a list. *)
-  let rec queue_to_list q =
-    if Queue.is_empty q then
-      []
-    else
-      let first = Queue.pop q in
-      first :: queue_to_list q
-  in
-
-  (* Conver error list to string list. *)
-  let errors_to_strings l =
-    List.map (fun e -> Semantic_checking.string_of_error e) l
-      in
-
-  (* Convert queue of errors to a string. *)
-  let string_of_errors e =
-    String.concat "\n" (errors_to_strings (queue_to_list e))
+  (* Convert queue of errors into a string. *)
+  let get_error_string errors =
+    let buf = Buffer.create 1024 in
+    Queue.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
+    Buffer.contents buf
   in
 
   let code = get_input ic in
   (* print_endline code; *)
   let (program, errors) = Parse_utils.parse_string code in
-  let error_string = string_of_errors errors in
+  let error_string = get_error_string errors in
   (* print_string error_string; *)
   send_output oc error_string;
   flush oc
