@@ -107,6 +107,8 @@ type program = {
 }
 val create_program : decl list -> location -> program
 
+val get_root_decl : program -> string -> decl option
+
 val location_of_decl : decl -> location 
 
 val location_of_stmt : stmt -> location

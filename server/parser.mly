@@ -12,6 +12,7 @@ exception NoCondition
 exception ExprNotIdent
 
 
+
 type temp_expr =
   | Assign of Ast.location * Ast.lval * temp_expr
   | Constant of Ast.location * Ast.constant
@@ -39,12 +40,13 @@ type temp_expr =
   | EmptyExpr
 
 
-let identifier_of_expression = function
+let identifier_of_expression expr =
+  match expr with
     | LValue(loc, l) -> (match l with
                           Ast.NormLval(loc, identifier) -> identifier
                         | _ -> raise ExprNotIdent
                         )
-    | _ -> raise ExprNotIdent
+    | _ -> raise ExprNotIdent (*TODO: you should raise a semantic error (not an exception) if the expr is not a non-array ident*)
 
 let rec expr_list_of_temp_expr_list = function
      | [] -> []

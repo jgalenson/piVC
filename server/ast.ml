@@ -135,6 +135,21 @@ type program = {
 }
 let create_program decls location = {decls=decls; location = location;}
 
+let get_root_decl program (declName:string) = 
+  let decl_to_return = ref None in
+  let rec find_decl remaining = (
+    match remaining with
+      [] -> ignore ()
+    | e :: l -> ((
+        match (String.compare (name_of_decl e) declName) with
+          0 -> decl_to_return := Some(e)
+        | _ -> ignore ()
+      ); find_decl l)
+  )
+  in
+    find_decl program.decls;
+    !decl_to_return
+
 let location_of_decl decl = 
   match decl with
     VarDecl(l,d) -> l

@@ -8,7 +8,7 @@ let print_basic_paths program =
   let print_decl_paths_if_appropriate decl = 
     match decl with
         VarDecl (loc, vd) -> ignore ()
-      | FnDecl (loc, fd) -> Basic_paths.print_all_basic_paths (Basic_paths.generate_paths_for_func fd)     
+      | FnDecl (loc, fd) -> Basic_paths.print_all_basic_paths (Basic_paths.generate_paths_for_func fd program)     
   in List.iter print_decl_paths_if_appropriate program.decls
 
 
