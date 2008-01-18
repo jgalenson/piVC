@@ -17,8 +17,8 @@ let print_program program = match program with
     print_endline "\n---------";
     print_string (string_of_program p);
 
-    print_endline ("---------");
-    print_endline ("Basic paths:");
+    print_endline "---------";
+    print_endline "Basic paths:";
 
     print_basic_paths p;
     print_endline "---------"
