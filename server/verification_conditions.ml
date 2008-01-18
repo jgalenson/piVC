@@ -33,8 +33,11 @@ let get_vc path =
       | Assume (e) ->
 	  Ast.Implies (dummy_loc, e, formula)
       | Expr (e) ->
-	  (* TODO: Substitute.  Do same way as in basic paths? *)
-	  Ast.Implies (dummy_loc, e, formula)
+	  begin
+	    match e with
+	      | Ast.Assign (_,l,e) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
+	      | _ -> raise (InvalidPath "Non-assign expr in basic path") (* TODO: Don't raise exception.  Handle here or in basic paths? *)
+	  end
       | _ -> raise (InvalidPath "Annotation in middle of path")
     in
     

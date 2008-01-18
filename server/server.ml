@@ -55,7 +55,7 @@ let compile ic oc =
   (* Convert queue of errors into a string. *)
   let get_error_string errors =
     let buf = Buffer.create 1024 in
-    Queue.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
+    List.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
     Buffer.contents buf
   in
 
