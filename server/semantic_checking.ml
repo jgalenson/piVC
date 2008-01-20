@@ -319,10 +319,10 @@ let rec check_stmt scope_stack returnType errors stmt =
 
 
 let check_function func s errors =
-  ignore (check_and_get_return_type s func.preCondition errors);
-  ignore (check_and_get_return_type s func.preCondition errors);
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
+  ignore (check_and_get_return_type s func.preCondition errors);
+  ignore (check_and_get_return_type s func.postCondition errors);
   check_stmt s func.returnType errors func.stmtBlock;
   Scope_stack.exit_scope s
 
