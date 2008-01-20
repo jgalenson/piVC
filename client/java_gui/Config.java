@@ -1,9 +1,13 @@
 
 import java.io.File;
+import java.io.FileNotFoundException;
+
+import javax.swing.JOptionPane;
 import javax.xml.parsers.*;
 import org.w3c.dom.*;
 
 public class Config {
+	private static final String CONFIG_FILE_NAME = "config.xml";
 	private Document xml;
 	
 	public Config(){
@@ -11,8 +15,11 @@ public class Config {
 		DocumentBuilder builder = null;
 		try {
 			builder = factory.newDocumentBuilder();
-			xml = builder.parse(new File("config.xml"));
-		} catch (Exception e) {
+			xml = builder.parse(new File(CONFIG_FILE_NAME));
+		} catch (FileNotFoundException e){
+			JOptionPane.showMessageDialog(null, "The file '"+CONFIG_FILE_NAME+"' could not be found.\n\nIf you are checking this project out from SVN, then you should copy the file 'config_template.xml' to 'config.xml'.\n\nThis is a critical error; the program will now close.", "Configuration file not found", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+		}catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
