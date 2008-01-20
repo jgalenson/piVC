@@ -3,29 +3,32 @@
 open Parse_utils
 open Semantic_checking
 open Ast
-
-(* TODO: Split this into two functions: one that returns a list
-   of all the basic paths (list of list of paths) and one that
-   prints them. Joel will do this, but I'll wait until we modify
-   gen basic paths to return a list not a queue. *)
   
-let print_basic_paths program = 
-  let print_decl_paths_if_appropriate decl = 
-    match decl with
-        VarDecl (loc, vd) -> ignore ()
-      | FnDecl (loc, fd) -> Basic_paths.print_all_basic_paths (Basic_paths.generate_paths_for_func fd program)     
-  in List.iter print_decl_paths_if_appropriate program.decls
-
+let print_basic_paths all_info =
+  let print_paths (_, info) =
+    List.iter (fun (path, _) -> Basic_paths.print_basic_path path) info
+  in
+    List.iter print_paths all_info ;;
+  
+let print_verification_conditions all_info =
+  let print_vcs (_, info) =
+    List.iter (fun (_, vc) -> Verification_conditions.print_vc vc) info
+  in
+    List.iter print_vcs all_info ;;
 
 let print_program program = match program with
   | Some (p) ->
     print_endline "\n---------";
     print_string (string_of_program p);
-
     print_endline "---------";
+    let all_info = get_all_info p in
+      
     print_endline "Basic paths:";
+    print_basic_paths all_info;
+    print_endline "---------";
 
-    print_basic_paths p;
+    print_endline "Verification conditions:";
+    print_verification_conditions all_info;
     print_endline "---------"
   | None -> print_string "";;
 

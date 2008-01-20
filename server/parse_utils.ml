@@ -10,6 +10,34 @@ let parseToken lexbuf errors =
    let program = Parser.main Lexer.lang lexbuf in
    check_program program errors ;;
 
+(* Gets all the info we need from a program.
+   That is, for each method, its basic paths and VCs: (path_node list * expr).list
+   Returns (fnName as string * (Basic Path * VC) list) list. *)
+let get_all_info program =
+  (* Returns a pair of fnName and its basic path.
+     Returns (string * path_node list list). *)
+  let get_basic_paths program =
+    let get_decl_paths_if_appropriate decl = 
+      match decl with
+          VarDecl (loc, vd) -> None
+	| FnDecl (loc, fd) -> Some (fd.fnName.name, Basic_paths.generate_paths_for_func fd program)
+    in
+    (* Concatenate together functions ignoring vardecls. *)
+    let map_fn all cur =
+      let paths = get_decl_paths_if_appropriate cur in
+	match paths with
+	    None -> all
+	  | Some (e) -> all @ [e]
+    in
+      List.fold_left map_fn [] program.decls
+  in
+  (* Add the VCs into the fnName + Basic path info. *)
+  let get_vcs (fnName, paths) =
+    (fnName, List.map (fun path -> (path, Verification_conditions.get_vc path)) paths)
+  in
+  let paths = get_basic_paths program in
+  List.map get_vcs paths ;;
+
 let parse lexbuf =
   let errors = Queue.create () in
   let e = ref errors in
@@ -23,7 +51,7 @@ let parse lexbuf =
     let loc = Ast.create_location symbol_start_pos symbol_end_pos in
     add_error SyntaxError (Lexing.lexeme lexbuf) loc e;
     (None, queue_to_list !e)
-    
+      
 let goParse ic =
   let lexbuf = Lexing.from_channel ic in
   parse lexbuf ;;
