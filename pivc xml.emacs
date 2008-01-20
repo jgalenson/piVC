@@ -43,23 +43,26 @@ Server errors:
 Server no errors:
 <piVC_transmission type="program_submission_response" >
 	<result status="proved/unproved">
-		<basic_path status="valid/invalid">
-			<path>
-				<node type="expr/assume/annotation">
-					<location>
-						<start row=foo col=bar />
-						<end row=bar col=foo />
-					</location>
-					<text>
-						cool++;
-					</text>
-				</node>
-				// mode nodes as siblings
-			</path>
-			<vc>
-				string goes here
-			</vc>
-		</basic_path>
-		// mode basic paths as siblings
+		<function name="name">
+			<basic_path status="valid/invalid">
+				<path>
+					<node type="expr/assume/annotation">
+						<location>
+							<start row=foo col=bar />
+							<end row=bar col=foo />
+						</location>
+						<text>
+							cool++;
+						</text>
+					</node>
+					// mode nodes as siblings
+				</path>
+				<vc>
+					string goes here
+				</vc>
+			</basic_path>
+			// more basic paths as siblings
+		</function>
+		// more functions as siblings
 	</result>
 </piVC_transmission>
