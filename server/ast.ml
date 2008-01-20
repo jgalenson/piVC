@@ -302,18 +302,20 @@ let rec string_of_stmt s num_tabs =
   match s with
   | StmtBlock (loc, tl) -> (sos s)
   | _ -> (insert_tabs num_tabs) ^ (sos s)
-			     
-let string_of_decl d num_tabs = match d with
+
+let tabbed_string_of_decl d num_tabs = match d with
   | VarDecl (loc, d) ->
-      (string_of_var_decl d) ^ ";\n"
+      (string_of_var_decl d) ^ ";"
   | FnDecl  (loc, d) ->
       "@pre " ^ (string_of_expr d.preCondition) ^ "\n@post " ^ (string_of_expr d.postCondition) ^ "\n"
       ^ (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
-      ^ (string_of_stmt d.stmtBlock num_tabs) ^ "\n"
+      ^ (string_of_stmt d.stmtBlock num_tabs)
 
+let string_of_decl d = tabbed_string_of_decl d 0 ;;
+	
 let string_of_program p =
   let map_fn d =
-    string_of_decl d 0
+    (tabbed_string_of_decl d 0) ^ "\n"
   in
   String.concat "\n" (List.map map_fn p.decls)

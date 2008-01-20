@@ -6,5 +6,5 @@ void foo() {
 	a[0] := 42;
 	a := a + a;  // bad
 	x := |a|;
-	|x|;  // bad
+	x := |x|;  // bad
 }

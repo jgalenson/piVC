@@ -29,7 +29,9 @@ let insert_decl s errors decl =
   let curr = Scope_stack.lookup_decl_in_curr_scope_only (Ast.name_of_decl decl) s in
     match curr with
 	None -> Scope_stack.insert_decl decl s
-      | _ -> add_error SemanticError "Already defined" (location_of_decl decl) errors
+      | Some (d) ->
+	  let error_msg = "'" ^ string_of_decl d ^ "' is already defined" in
+	  add_error SemanticError error_msg (location_of_decl decl) errors
 
 let insert_var_decl s errors decl = 
   insert_decl s errors (Ast.VarDecl(decl.location_vd, decl))
@@ -77,7 +79,9 @@ let rec check_and_get_return_type_lval s lval errors = match lval with
       let lookupResult = Scope_stack.lookup_decl id.name s in
       begin
 	match lookupResult with
-          | None -> add_error SemanticError "Not defined" loc errors; ErrorType
+          | None ->
+	      let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
+	      add_error SemanticError error_msg  loc errors; ErrorType
 	  | Some(decl) -> type_of_decl decl
       end
   | ArrayLval(loc, arr, index) ->
@@ -86,17 +90,23 @@ let rec check_and_get_return_type_lval s lval errors = match lval with
         begin
 	  match typeOfIndex with
             | Int(l) -> ()
-            | _ -> add_error SemanticError "Array index must be an integer" loc errors
+            | _ ->
+		let error_msg = "Array index '" ^ (string_of_expr index) ^ "' must be an integer" in
+		add_error SemanticError error_msg loc errors
         end;
         let lookupResult = (Scope_stack.lookup_decl arr.name s) in
         begin
 	  match lookupResult with
-           | None -> add_error SemanticError "Not defined" loc errors; ErrorType
+           | None ->
+	       let error_msg = "Identifier '" ^ (string_of_identifier arr) ^ "' not defined" in
+	       add_error SemanticError error_msg loc errors; ErrorType
            | Some(decl) -> let typeOfArray = type_of_decl decl in
 	     begin
                match typeOfArray with
                  | Array(t, l) -> t
-                 | _ -> add_error SemanticError "This is not an array" loc errors; ErrorType
+                 | _ ->
+		     let error_msg = "'" ^ (string_of_identifier arr) ^ "' is not an array" in
+		     add_error SemanticError error_msg loc errors; ErrorType
              end
         end
       end
@@ -105,20 +115,27 @@ let rec check_and_get_return_type_lval s lval errors = match lval with
 and check_for_same_type t1 t2 loc errors = 
   if not (types_equal t1 t2) then
     begin
-      add_error SemanticError "LHS and RHS are of different types" loc errors;
+      let error_msg = "LHS '" ^ (string_of_type t1) ^ "' and RHS '" ^ (string_of_type t2) ^ "' are of different types" in
+      add_error SemanticError error_msg loc errors;
       false
     end
   else
     true
   
 and check_and_get_return_type scope_stack e errors =
+
+  let get_type_error_msg expr_name given expected =
+    expr_name ^ " expr type is '" ^ (string_of_type given) ^ "' but should be " ^ expected
+  in
   
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
     ignore (check_for_same_type lhsType rhsType loc errors);
-    if not (is_numeric_type lhsType) or not (is_numeric_type rhsType) then
-      add_error SemanticError "Relational expr type is not numeric" loc errors;
+    if not (is_numeric_type lhsType) then
+      add_error SemanticError (get_type_error_msg "Relational" lhsType "numeric") loc errors;
+    if not (is_numeric_type rhsType) then
+      add_error SemanticError (get_type_error_msg "Relational" rhsType "numeric") loc errors;    
     Bool(loc)
       
   and check_and_get_return_type_equality loc t1 t2 =
@@ -130,19 +147,26 @@ and check_and_get_return_type scope_stack e errors =
   and check_and_get_return_type_logical loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
-    if not (is_boolean_type lhsType loc) or not (is_boolean_type rhsType loc) then
-      add_error SemanticError "Logical expr type is not boolean" loc errors;
+    if not (is_boolean_type lhsType loc) then
+      add_error SemanticError (get_type_error_msg "Logical" lhsType "boolean") loc errors;
+    if not (is_boolean_type rhsType loc) then
+      add_error SemanticError (get_type_error_msg "Logical" rhsType "boolean") loc errors;
     Bool(loc)
       
   and check_and_get_return_type_arithmetic loc t1 t2 =
     let leftType = cagrt t1
     and rightType = cagrt t2 in
     let are_same_type = check_for_same_type leftType rightType loc errors in
-    if not (is_numeric_type leftType) or not (is_numeric_type rightType) then
+    if not (is_numeric_type leftType) then
       begin
-	add_error SemanticError "Arithmetic expr type is not numeric" loc errors;
+	add_error SemanticError (get_type_error_msg "Arithmetic" leftType "numeric") loc errors;
 	ErrorType
       end
+    else if not (is_numeric_type rightType) then
+      begin
+	add_error SemanticError (get_type_error_msg "Arithmetic" rightType "numeric") loc errors;
+	ErrorType
+      end	
     else if not are_same_type then
       ErrorType
     else
@@ -170,9 +194,13 @@ and check_and_get_return_type scope_stack e errors =
 	let isfndecl =
 	  begin
 	    match lookup_result with
-	      | None -> add_error SemanticError "Function name not defined." loc errors; check_actuals; None
+	      | None ->
+		  let error_msg = "Function name '" ^ (string_of_identifier ident) ^ "' not defined" in
+		  add_error SemanticError error_msg loc errors; check_actuals; None
 	      | Some (d) -> match d with
-		| VarDecl (l, vd) -> add_error SemanticError "Not a function" loc errors; check_actuals; None
+		| VarDecl (l, vd) ->
+		    let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a function" in
+		    add_error SemanticError error_msg loc errors; check_actuals; None
 		| FnDecl (loc, fd) -> Some (fd)
 	  end
 	in
@@ -183,7 +211,8 @@ and check_and_get_return_type scope_stack e errors =
 		(* Check a call to a valid function *)
 		if List.length ac != List.length fndecl.formals then
 		  begin
-		    add_error SemanticError "Incorrect number of arguments" loc errors;
+		    let error_msg = "Incorrect number of arguments: expected " ^ (string_of_int (List.length fndecl.formals)) ^ ", given: " ^ (string_of_int (List.length ac)) in
+		    add_error SemanticError error_msg loc errors;
 		    check_actuals;
 		    ErrorType
 		  end
@@ -222,14 +251,17 @@ and check_and_get_return_type scope_stack e errors =
     | Not (loc,t) ->
 	let ltype = cagrt t in
 	if not (is_boolean_type ltype loc) then
-	  add_error SemanticError "Not expr type is not boolean" loc errors;
+	  add_error SemanticError (get_type_error_msg "Logical not" ltype "boolean") loc errors;
 	Bool(loc)
     | Iff (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
     | Implies (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
     | Length (loc, t) ->
 	let atype = cagrt t in
 	if not (is_array_type atype) then
-	  add_error SemanticError "Trying to take length of something not an array" loc errors;
+	  begin
+	    let error_msg = "Trying to take length of something that is of type '" ^ (string_of_type atype)  ^ "' and not an array" in
+	    add_error SemanticError error_msg loc errors;
+	  end;
 	Int(loc)
     | EmptyExpr -> Void (Ast.get_dummy_location ())
 
@@ -245,15 +277,17 @@ let rec check_stmt scope_stack returnType errors stmt =
   | IfStmt (loc, test, then_block, else_block) ->
       let testType = check_and_get_return_type scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	add_error SemanticError "Test not boolean" loc errors;
+	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	add_error SemanticError error_msg loc errors;
       check_stmt scope_stack returnType errors then_block;
       check_stmt scope_stack returnType errors else_block;
 
   | WhileStmt (loc, test, block, annotation) -> 
+      ignore (check_and_get_return_type scope_stack annotation errors);
       let testType = check_and_get_return_type scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	add_error SemanticError "Test not boolean" loc errors;
-      ignore (check_and_get_return_type scope_stack annotation errors);
+	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	add_error SemanticError error_msg loc errors;
       check_stmt scope_stack returnType errors block;
       
   | ForStmt (loc, init, test, incr, block, annotation) ->
@@ -261,7 +295,8 @@ let rec check_stmt scope_stack returnType errors stmt =
       ignore (check_and_get_return_type scope_stack init errors);
       let testType = check_and_get_return_type scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	add_error SemanticError "Test not boolean" loc errors;
+	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	add_error SemanticError error_msg loc errors;
       ignore (check_and_get_return_type scope_stack incr errors);
       check_stmt scope_stack returnType errors block;
       
@@ -269,7 +304,8 @@ let rec check_stmt scope_stack returnType errors stmt =
 
   | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e errors) in
                           if not (types_equal type_of_return returnType) then
-                            add_error SemanticError "Incorrect return type" loc errors
+			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
+                            add_error SemanticError error_msg  loc errors
 
   | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e errors)
 	(* TODO: Do semantic checking for asserts vs. exprs *)
@@ -283,6 +319,8 @@ let rec check_stmt scope_stack returnType errors stmt =
 
 
 let check_function func s errors =
+  ignore (check_and_get_return_type s func.preCondition errors);
+  ignore (check_and_get_return_type s func.preCondition errors);
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
   check_stmt s func.returnType errors func.stmtBlock;

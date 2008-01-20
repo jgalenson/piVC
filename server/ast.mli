@@ -128,6 +128,6 @@ val string_of_constant : constant -> string (*temp*)
 val string_of_expr : expr -> string
 val string_of_var_decl : varDecl -> string			     
 val string_of_stmt : stmt -> int -> string
-val string_of_decl : decl -> int -> string
+val string_of_decl : decl -> string
 val string_of_program : program -> string
 

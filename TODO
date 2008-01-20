@@ -14,11 +14,9 @@ Things to add to the lexer and parser
 	Should we use defines?  Are they even in the book?
  Lexer: Maybe: T (true), And (&&), etc?
 
-
 Break stmt
 	Add a struct or pass around recursively?
 	Maybe also make location an option?
-
 
 Long Term
 - "definitions" file (see Aaron's email 12/6/07)
@@ -26,9 +24,7 @@ Long Term
 
 Maybe, maybe not
 - Put comments in the ast so we can print them out in to-C++ printing.
-
-
-
+- ocamlmake
 
 Notes
 -----
