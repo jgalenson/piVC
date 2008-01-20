@@ -32,7 +32,7 @@ let get_vc path =
 	  begin
 	    match e with
 	      | Ast.Assign (_,l,e) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
-	      | _ -> raise (InvalidPath "Non-assign expr in basic path") (* TODO: Don't raise exception.  Handle here or in basic paths? *)
+	      | _ -> raise (InvalidPath ("Non-assign expr in basic path.\nExpr: " ^ (Ast.string_of_expr e))) (* TODO: Don't raise exception.  Handle here or in basic paths? *)
 	  end
       | _ -> raise (InvalidPath "Annotation in middle of path")
     in
@@ -47,7 +47,9 @@ let get_vc path =
   
   Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs) ;;
 
+let string_of_vc vc = Ast.string_of_expr vc ;;
+
 (* Print a verification condition. *)
 let print_vc vc =
-  print_endline (Ast.string_of_expr vc) ;;
+  print_endline (string_of_vc vc) ;;
 

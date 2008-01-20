@@ -4,17 +4,14 @@ open Parse_utils
 open Semantic_checking
 open Ast
   
-let print_basic_paths all_info =
-  let print_paths (_, info) =
-    List.iter (fun (path, _) -> Basic_paths.print_basic_path path) info
+let print_basic_paths_and_vcs all_info =
+  let print_paths_and_vcs (_, info) =
+    let print_path_and_vc (path, vc) =
+      Basic_paths.print_basic_path path;
+      print_endline ("VC: " ^ Verification_conditions.string_of_vc vc) in
+  List.iter print_path_and_vc info
   in
-    List.iter print_paths all_info ;;
-  
-let print_verification_conditions all_info =
-  let print_vcs (_, info) =
-    List.iter (fun (_, vc) -> Verification_conditions.print_vc vc) info
-  in
-    List.iter print_vcs all_info ;;
+  List.iter print_paths_and_vcs all_info ;;
 
 let print_program program = match program with
   | Some (p) ->
@@ -23,13 +20,9 @@ let print_program program = match program with
     print_endline "---------";
     let all_info = get_all_info p in
       
-    print_endline "Basic paths:";
-    print_basic_paths all_info;
+    print_endline "Basic paths and VCs:";
+    print_basic_paths_and_vcs all_info;
     print_endline "---------";
-
-    print_endline "Verification conditions:";
-    print_verification_conditions all_info;
-    print_endline "---------"
   | None -> print_string "";;
 
 let _ =
