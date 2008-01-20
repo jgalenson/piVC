@@ -38,7 +38,8 @@ let get_vc path =
     in
     
     if List.length rev_instrs = 0 then
-      raise (InvalidPath "No instructions in path")
+      (* For basic paths without any instructions, the VC is precondition -> postcondition. *)
+      formula 
     else if List.length rev_instrs = 1 then
       single_wp formula (List.hd rev_instrs)
     else

@@ -15,7 +15,9 @@ Things to add to the lexer and parser
  Lexer: Maybe: T (true), And (&&), etc?
 
 
-Cascading errors e.g. in arithmetic
+Break stmt
+	Add a struct or pass around recursively?
+	Maybe also make location an option?
 
 
 Long Term

@@ -38,7 +38,7 @@ parser :
 	$(OC) -c test_parser.ml;
 	$(OC) -I xml-light -c server.ml;
 	$(OC) -o test_parser utils.cmo ast.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo test_parser.cmo 
-	$(OC) -I xml-light -o server unix.cma xml-light.cma utils.cmo ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo expr_utils.cmo verification_conditions.cmo basic_paths.cmo parse_utils.cmo str.cma server.cmo
+	$(OC) -I xml-light -o server unix.cma xml-light.cma utils.cmo ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo parse_utils.cmo str.cma server.cmo
 
 	rm lexer.ml;
 	rm parser.mli;

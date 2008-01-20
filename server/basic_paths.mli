@@ -5,5 +5,6 @@ type path_node =
   | Assume of Ast.expr
   | Annotation of Ast.expr * string ;;
 
+val string_of_basic_path : path_node list -> string ;;
 val print_basic_path : path_node list -> unit ;;
 val generate_paths_for_func : fnDecl -> program -> path_node list list ;;

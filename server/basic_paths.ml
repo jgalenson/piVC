@@ -5,7 +5,6 @@ exception UnexpectedStatementException
 exception NoDeclException
 exception BadDeclException
 
-
 type path_node = 
   | Expr of Ast.expr
   | Assume of Ast.expr
@@ -17,14 +16,17 @@ type closing_scope_action = {
   stmts: stmt list;
 }
 
-let print_basic_path path = 
+let string_of_basic_path path = 
   let print_node node = match node with
-      Expr(exp) -> print_string ((Ast.string_of_expr exp) ^ "\n") 
-    | Assume(exp) -> print_string ("Assume " ^ (Ast.string_of_expr exp) ^ "\n" )
-    | Annotation(exp, str) -> print_string ("@" ^ str ^ ": " ^ (Ast.string_of_expr exp) ^ "\n" )
+      Expr(exp) -> (Ast.string_of_expr exp)
+    | Assume(exp) -> "Assume " ^ (Ast.string_of_expr exp)
+    | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp)
   in
+    String.concat "\n" (List.map print_node path) ;;
+    
+let print_basic_path path = 
     print_string "---------\n";
-    List.iter print_node path
+    print_endline (string_of_basic_path path) ;;
 
 let print_all_basic_paths paths =
   List.iter print_basic_path paths
