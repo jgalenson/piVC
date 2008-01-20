@@ -10,6 +10,20 @@ let parseToken lexbuf errors =
    let program = Parser.main Lexer.lang lexbuf in
    check_program program errors ;;
 
+
+
+(* Returns (fnName as string * bool * (Basic Path * VC * bool) list) list. *)
+let verify_program program_info = 
+  let rec verify_function func = 
+    let verified_basic_paths = List.map verify_basic_path (snd func) in
+    let path_is_pass (path, vc, pass) = pass in
+    let all_paths_passed = List.for_all path_is_pass verified_basic_paths in
+    (fst func, all_paths_passed, verified_basic_paths)
+  and verify_basic_path path_info =
+    (fst path_info, snd path_info, true) (*TODO: replace true with actual result from decision procedure*)
+  in 
+    List.map verify_function program_info
+
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list
    Returns (fnName as string * (Basic Path * VC) list) list. *)

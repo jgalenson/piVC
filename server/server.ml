@@ -1,4 +1,10 @@
+open Xml_generator
+open Utils
+
+
+
 let default_port = 4242
+
 
 (* The network code is stolen from http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora187.html *)
     
@@ -50,7 +56,7 @@ let send_output oc str =
   output_binary_int oc out_len;
   output_string oc str
 									
-let compile ic oc =
+let rec compile ic oc =
 
   (* Convert queue of errors into a string. *)
   let get_error_string errors =
@@ -62,9 +68,26 @@ let compile ic oc =
   let code = get_input ic in
   (* print_endline code; *)
   let (program, errors) = Parse_utils.parse_string code in
-  let error_string = get_error_string errors in
-  (* print_string error_string; *)
-  send_output oc error_string;
+
+
+  let get_output_to_return_to_client = 
+    match errors with
+        [] -> (
+          let program_info = Parse_utils.get_all_info (Utils.elem_from_opt program) in
+          let verified_program_info = Parse_utils.verify_program program_info in
+            Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
+              )
+      | _  -> get_error_string errors
+
+  in
+    send_output oc get_output_to_return_to_client;
   flush oc
+
+
+and xml_of_verified_program verified_program_info = 
+  let transmission_node = Xml_generator.create "piVC_transmission" in
+    add_attribute ("type", "program_submission_response") (transmission_node);
+    transmission_node
+
     
 let _ = Unix.handle_unix_error main_server compile

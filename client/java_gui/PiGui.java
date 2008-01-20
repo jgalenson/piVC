@@ -24,10 +24,10 @@ import javax.swing.filechooser.FileFilter;
 
 public class PiGui extends JFrame {
 	
+	public static Config config = new Config();
+	
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
-	private static final String DEFAULT_SERVER = "myth.stanford.edu";
-	private static final int DEFAULT_PORT = 4242;
 	
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
@@ -162,7 +162,7 @@ public class PiGui extends JFrame {
 	}
 	
 	public void doCompile() {
-		String result = JOptionPane.showInputDialog("Connect to host:port", DEFAULT_SERVER + ":" + DEFAULT_PORT);
+		String result = JOptionPane.showInputDialog("Connect to host:port", config.getValue("default_server_address"));
 		if (result != null) {
 			String[] parts = result.split(":");
 			String name = parts[0].trim();
