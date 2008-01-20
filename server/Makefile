@@ -31,11 +31,12 @@ parser :
 	$(OC) -c parser.ml;
 	$(OC) -c lexer.ml;
 	$(OC) -c parse_utils.ml;
+	$(OC) -c expr_utils.ml;
 	$(OC) -c basic_paths.ml;
 	$(OC) -c verification_conditions.ml
 	$(OC) -c test_parser.ml;
 	$(OC) -I xml-light -c server.ml;
-	$(OC) -o test_parser utils.cmo ast.cmo basic_paths.cmo verification_conditions.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo test_parser.cmo 
+	$(OC) -o test_parser utils.cmo ast.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo test_parser.cmo 
 	$(OC) -I xml-light -o server unix.cma xml-light.cma utils.cmo ast.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo str.cma server.cmo
 
 	rm lexer.ml;

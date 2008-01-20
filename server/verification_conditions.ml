@@ -1,6 +1,7 @@
 (* PiVC *)
 
-open Basic_paths ;;
+open Basic_paths
+open Expr_utils
 
 exception InvalidPath of string ;;
 
