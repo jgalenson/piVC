@@ -1,0 +1,19 @@
+@pre true
+@post true
+int foo() {
+	double x;
+	return x;  // bad
+}
+
+@pre true
+@post true
+void bar() {
+	int x;
+	return x;  // bad
+}
+
+@pre true
+@post true
+int foobar() {
+	double x;
+}  // Should we error on this?
