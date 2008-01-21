@@ -1,6 +1,14 @@
 import javax.swing.JTree;
+import data_structures.VerificationResult;
 
-// TODO: We'll probably want to change this superclass.
 public class PiTree extends JTree {
+	
+	public PiTree() {
+		super();
+	}
+	
+	public void handleVerificationResult(VerificationResult verificationResult) {
+		
+	}
 
 }

@@ -74,7 +74,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		
 		JMenuItem compile = new JMenuItem("Compile");
 		compile.setMnemonic(KeyEvent.VK_C);
-		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
 		compile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				piGui.doCompile();

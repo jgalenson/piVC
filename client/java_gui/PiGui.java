@@ -22,9 +22,9 @@ import java.util.Arrays;
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 
+import data_structures.VerificationResult;
+
 public class PiGui extends JFrame {
-	
-	public static Config config = new Config();
 	
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
@@ -32,6 +32,8 @@ public class PiGui extends JFrame {
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
 	private PiTree piTree;
+	private Config config;
+	private ServerResponseParser serverResponseParser;
 	private JFileChooser fileChooser;
 	private File curFile;
 	private boolean dirty;
@@ -192,12 +194,19 @@ public class PiGui extends JFrame {
 
 	private void handleServerResponse(String text) {
 		piCompilerOutput.setText(text);
+		serverResponseParser.parse(text);
+	}
+	
+	public void handleVerificationResult(VerificationResult verificationResult) {
+		
 	}
 
 	/**
 	 * Inits some data before we install the GUI elements. 
 	 */
 	private void initDataPre() {
+		config = new Config();
+		serverResponseParser = new ServerResponseParser(this);
 		initFileChooser();
 		curFile = null;
 		dirtyChangedListeners = new ArrayList<DirtyChangedListener>();
