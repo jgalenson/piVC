@@ -277,15 +277,15 @@ Expr     : LValue T_Assign Expr { Assign ( (create_location (Parsing.rhs_start_p
          | Expr T_Less Expr { LT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_LessEqual Expr { LE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Greater Expr { GT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
-         | Expr T_GreaterEqual Expr { GE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
-         | Expr T_Equal Expr { EQ ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
-         | Expr T_NotEqual Expr { NE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
-         | Expr T_Iff Expr         { Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
-         | Expr T_Implies Expr     { Implies ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
-         | Expr T_And Expr { And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
-         | Expr T_Or Expr { Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$1, $3) }
-         | T_Not Expr { Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)),$2) }
-	 | T_Bar Expr T_Bar { Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
+         | Expr T_GreaterEqual Expr { GE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Equal Expr { EQ ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_NotEqual Expr { NE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Iff Expr         { Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
+         | Expr T_Implies Expr     { Implies ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
+         | Expr T_And Expr { And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Or Expr { Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | T_Not Expr { Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 3)),$2) }
+	 | T_Bar Expr T_Bar { Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$2) }
 ;
 
 LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
