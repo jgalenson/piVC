@@ -22,7 +22,10 @@ let verify_program program_info =
   and verify_basic_path path_info =
     (fst path_info, snd path_info, true) (*TODO: replace true with actual result from decision procedure*)
   in 
-    List.map verify_function program_info
+  let verified_functions = List.map verify_function program_info in
+  let func_is_pass (name,pass,info) = pass in
+  let all_funcs_passed = List.for_all func_is_pass verified_functions in
+    (all_funcs_passed, verified_functions)
 
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list

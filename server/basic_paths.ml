@@ -16,13 +16,23 @@ type closing_scope_action = {
   stmts: stmt list;
 }
 
+let type_of_step step = match step with
+    Expr(e) -> "expr"
+  | Assume(e) -> "assume"
+  | Annotation(e,s) -> "annotation"
+ 
+let location_of_path_node node = match node with
+    Expr(e) -> Ast.location_of_expr e
+  | Assume(e) -> Ast.location_of_expr e
+  | Annotation(e,s) -> Ast.location_of_expr e
+
+let string_of_path_node node = match node with
+    Expr(exp) -> (Ast.string_of_expr exp)
+  | Assume(exp) -> "Assume " ^ (Ast.string_of_expr exp)
+  | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp)
+
 let string_of_basic_path path = 
-  let print_node node = match node with
-      Expr(exp) -> (Ast.string_of_expr exp)
-    | Assume(exp) -> "Assume " ^ (Ast.string_of_expr exp)
-    | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp)
-  in
-    String.concat "\n" (List.map print_node path) ;;
+  String.concat "\n" (List.map string_of_path_node path) ;;
     
 let print_basic_path path = 
     print_string "---------\n";

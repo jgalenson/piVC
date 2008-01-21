@@ -84,10 +84,61 @@ let rec compile ic oc =
   flush oc
 
 
-and xml_of_verified_program verified_program_info = 
-  let transmission_node = Xml_generator.create "piVC_transmission" in
-    add_attribute ("type", "program_submission_response") (transmission_node);
-    transmission_node
+and xml_of_verified_program (all_valid, functions) = 
+  (* We begin with a few utility functions *)
+  let rec proved_of_bool bool = match bool with
+      true -> "valid"
+    | false -> "invalid"
+     
+  (*Now we have the xml generation functions for the various levels*)
+  and xml_of_function (name, all_valid, basic_paths) = 
+    let function_node = Xml_generator.create "function" in
+      add_attribute ("name", name) function_node;
+      let process_basic_path basic_path = 
+        add_child (xml_of_basic_path basic_path) function_node in
+        List.iter process_basic_path basic_paths;
+        function_node
+  and xml_of_basic_path (nodes, vc, valid) =
+    let basic_path_node = Xml_generator.create "basic_path" in
+      add_attribute ("status", proved_of_bool all_valid) basic_path_node;
+      let path_node = Xml_generator.create "path" in
+        add_child path_node basic_path_node;
+        let vc_node = Xml_generator.create "vc" in
+          set_text (Ast.string_of_expr vc) vc_node;
+          add_child vc_node basic_path_node;
+          let process_step step = 
+            add_child (xml_of_step step) path_node in
+            List.iter process_step nodes;
+            basic_path_node
+  and xml_of_step step = 
+    let step_node = Xml_generator.create "step" in
+      add_attribute ("type", Basic_paths.type_of_step step) step_node;
+      add_child (xml_of_location (Basic_paths.location_of_path_node step)) step_node;
+      let text_node = Xml_generator.create "text" in
+        set_text (Basic_paths.string_of_path_node step) text_node;
+        add_child text_node step_node;
+        step_node
+  and xml_of_location location = 
+    let location_node = Xml_generator.create "location" in
+    let start_node = Xml_generator.create "start" in
+      add_attribute ("row", string_of_int location.Ast.loc_start.Lexing.pos_lnum) start_node;
+      add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_start)) start_node;
+      let end_node = Xml_generator.create "end" in
+        add_attribute ("row", string_of_int location.Ast.loc_end.Lexing.pos_lnum) end_node;
+        add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_end)) end_node;
+        add_child start_node location_node;
+        add_child end_node location_node;
+        location_node
+  (* Now we put together the root node *)
+  and transmission_node = Xml_generator.create "piVC_transmission" in
+    add_attribute ("type", "program_submission_response") transmission_node;
+    let result_node = Xml_generator.create "result" in
+      add_attribute ("status", proved_of_bool all_valid) result_node;
+      add_child result_node transmission_node;
+      let process_function func = 
+        add_child (xml_of_function func) result_node in
+        List.iter process_function functions;
+        transmission_node
 
     
 let _ = Unix.handle_unix_error main_server compile
