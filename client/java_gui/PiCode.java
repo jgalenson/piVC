@@ -1,8 +1,12 @@
+import java.awt.Color;
 import java.io.IOException;
 import java.io.Reader;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 
 /**
  * A class for the code section on the left-hand side.
@@ -11,6 +15,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	
 	private PiGui piGui;
 	private boolean justLoaded;
+	private DefaultHighlighter.DefaultHighlightPainter hlp = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 	
 	public PiCode(PiGui piGui) {
 		super();
@@ -27,6 +32,16 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	public void read(Reader in, Object desc) throws IOException {
 		super.read(in, desc);
 		justLoaded = true;
+	}
+	
+	public void highlight(int start, int end) {
+		Highlighter hl = getHighlighter();
+        hl.removeAllHighlights();
+        try {
+			hl.addHighlight(start, end, hlp);
+		} catch (BadLocationException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**

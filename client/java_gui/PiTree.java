@@ -128,12 +128,12 @@ public class PiTree extends JPanel {
 		private ImageIcon programValid, programInvalid, functionValid, functionInvalid, basicPathValid, basicPathInvalid;
 		
 		public MyTreeCellRenderer() {
-			programValid = new ImageIcon("client/java_gui/images/program-valid.jpg");
-			programInvalid = new ImageIcon("client/java_gui/images/program-invalid.jpg");
-			functionValid = new ImageIcon("client/java_gui/images/function-valid.jpg");
-			functionInvalid = new ImageIcon("client/java_gui/images/function-invalid.jpg");
-			basicPathValid = new ImageIcon("client/java_gui/images/basic_path-valid-large.jpg");
-			basicPathInvalid = new ImageIcon("client/java_gui/images/basic_path-invalid-large.jpg");
+			programValid = new ImageIcon("images/program-valid.jpg");
+			programInvalid = new ImageIcon("images/program-invalid.jpg");
+			functionValid = new ImageIcon("images/function-valid.jpg");
+			functionInvalid = new ImageIcon("images/function-invalid.jpg");
+			basicPathValid = new ImageIcon("images/basic_path-valid-large.jpg");
+			basicPathInvalid = new ImageIcon("images/basic_path-invalid-large.jpg");
 		}
 		
 		private ImageIcon getProperProgramIcon(boolean isValid) {
