@@ -1,5 +1,6 @@
 import java.awt.Component;
-import java.awt.Dimension;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -31,7 +32,23 @@ public class PiTree extends JPanel {
 	}
 	
 	private void initTree() {
-		// TODO: Handle clicks here
+		// Listen to clicks
+		tree.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getButton() != MouseEvent.BUTTON1)
+					return;
+				int selRow = tree.getRowForLocation(e.getX(), e.getY());
+				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+				if(selRow != -1) {
+					if(e.getClickCount() == 1)
+						singleClicked(selPath);
+					else if(e.getClickCount() == 2)
+						;// do something?
+				}
+			}
+		});
+		// Draw icons next to things
 		tree.setCellRenderer(new MyTreeCellRenderer());
 		tree.setShowsRootHandles(true);
 		tree.setRootVisible(true);
@@ -46,19 +63,19 @@ public class PiTree extends JPanel {
 		return new JScrollPane(tree);
 	}
 	
+	/**
+	 * Fills out the tree based on the compiler's information, basic
+	 * paths, VCs, and all.
+	 */
 	public void handleVerificationResult(VerificationResult verificationResult) {
-		// TODO: Images (green or red)
-		//clear();
 		root = new DefaultMutableTreeNode(verificationResult);
 		treeModel.setRoot(root);
 		addFunctions(verificationResult);
 	}
 	
-    public void clear() {
-        root.removeAllChildren();
-        treeModel.reload();
-    }
-	
+	/**
+	 * Adds the functions inside the VerificationResult to the tree as children of the root.
+	 */
 	private void addFunctions(VerificationResult verificationResult) {
 		for (int i = 0; i < verificationResult.getNumFunctions(); i++) {
 			Function function = verificationResult.getFunction(i);
@@ -69,6 +86,9 @@ public class PiTree extends JPanel {
 		}
 	}
 
+	/**
+	 * Adds the basic paths and VCs inside a function to the tree as its children.
+	 */
 	private void addBasicPaths(Function function, DefaultMutableTreeNode fnNode) {
 		for (int i = 0; i < function.getNumBasicPaths(); i++) {
 			BasicPath basicPath = function.getBasicPath(i);
@@ -80,6 +100,9 @@ public class PiTree extends JPanel {
 		}		
 	}
 
+	/**
+	 * Adds the steps inside a basic path to the tree as its children.
+	 */
 	private void addSteps(BasicPath basicPath, DefaultMutableTreeNode basicPathNode) {
 		for (int i = 0; i < basicPath.getNumSteps(); i++) {
 			Step step = basicPath.getStep(i);
@@ -87,7 +110,19 @@ public class PiTree extends JPanel {
 			treeModel.insertNodeInto(stepNode, basicPathNode, basicPathNode.getChildCount());
 		}		
 	}
+
+	/**
+	 * Called when a node is clicked.
+	 */
+	private void singleClicked(TreePath path) {
+		DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+		System.out.println("You clicked on something on level " + node.getLevel() + ".");
+	}
 	
+	/**
+	 * A class that lets us customize how we draw nodes.
+	 * We can specify a node's text and image.
+	 */
 	private class MyTreeCellRenderer extends DefaultTreeCellRenderer {
 		
 		private ImageIcon validIcon, invalidIcon;
@@ -104,6 +139,9 @@ public class PiTree extends JPanel {
 				return invalidIcon;
 		}
 		
+		/**
+		 * Does the actual specification.
+		 */
 		@Override
 		@SuppressWarnings("hiding")
 		public Component getTreeCellRendererComponent(JTree tree, Object value, 
@@ -113,10 +151,11 @@ public class PiTree extends JPanel {
 			if (obj instanceof VerificationResult) {
 				VerificationResult verificationResult = (VerificationResult)obj;
 				setIcon(getProperIcon(verificationResult.isValid()));
-				setText("Program");
+				String name = verificationResult.getFilename() != null ? verificationResult.getFilename() : "Program";
+				setText(name);
 			} else if (obj instanceof Function) {
 				Function function = (Function)obj;
-				//setIcon(getProperIcon(function.isValid()));
+				setIcon(getProperIcon(function.isValid()));
 				setText(function.getName());
 			} else if (obj instanceof BasicPath) {
 				BasicPath basicPath = (BasicPath)obj;

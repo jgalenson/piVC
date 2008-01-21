@@ -13,11 +13,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -196,13 +193,20 @@ public class PiGui extends JFrame {
 
 	private void handleServerResponse(String text) {
 		piCompilerOutput.setText(text);
-		serverResponseParser.parse(text);
+		serverResponseParser.parse(text, getFilename());
 	}
 	
 	public void handleVerificationResult(VerificationResult verificationResult) {
 		piTree.handleVerificationResult(verificationResult);
 		rightTabbedPane.setSelectedIndex(0);
 		rightTabbedPane.repaint();
+	}
+	
+	private String getFilename() {
+		if (curFile == null)
+			return null;
+		else
+			return curFile.getName();
 	}
 
 	/**
