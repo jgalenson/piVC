@@ -11,5 +11,9 @@ public class Function {
 		this.name = name;
 		this.basicPaths = basicPaths;
 	}
+	
+	public String getName() {
+		return name;
+	}
 
 }

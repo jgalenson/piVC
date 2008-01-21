@@ -11,5 +11,17 @@ public class VerificationResult {
 		this.isValid = isValid;
 		this.functions = functions;
 	}
+	
+	public boolean isValid() {
+		return isValid;
+	}
+	
+	public int getNumFunctions() {
+		return functions.size();
+	}
+	
+	public Function getFunction(int index) {
+		return functions.get(index);
+	}
 
 }

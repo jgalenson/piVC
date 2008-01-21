@@ -32,6 +32,7 @@ public class PiGui extends JFrame {
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
 	private PiTree piTree;
+	private JTabbedPane rightTabbedPane;
 	private Config config;
 	private ServerResponseParser serverResponseParser;
 	private JFileChooser fileChooser;
@@ -198,7 +199,9 @@ public class PiGui extends JFrame {
 	}
 	
 	public void handleVerificationResult(VerificationResult verificationResult) {
-		
+		piTree.handleVerificationResult(verificationResult);
+		rightTabbedPane.setSelectedIndex(0);
+		rightTabbedPane.repaint();
 	}
 
 	/**
@@ -245,9 +248,10 @@ public class PiGui extends JFrame {
                 BorderFactory.createTitledBorder("Code"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
-        JTabbedPane rightTabbedPane = new JTabbedPane();
+        rightTabbedPane = new JTabbedPane();
         rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		piTree = new PiTree();
+		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		//piTree.setLayout(new GridLayout(1, 1));
 		piTree.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Tree"),
@@ -256,10 +260,10 @@ public class PiGui extends JFrame {
 		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Compiler output"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		rightTabbedPane.addTab("Tree", piTree.getTreeInScrollPane());
+		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_D);
 		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_R);
-		rightTabbedPane.addTab("Tree", new JScrollPane(piTree));
-		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_D);
+		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_R);
 		
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);
