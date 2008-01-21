@@ -11,5 +11,9 @@ public class Step {
 		this.text = text;
 		this.location = location;
 	}
+	
+	public String getText() {
+		return text;
+	}
 
 }

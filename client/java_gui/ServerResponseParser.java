@@ -16,6 +16,7 @@ import data_structures.BasicPath;
 import data_structures.Function;
 import data_structures.Location;
 import data_structures.Step;
+import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
 
 public class ServerResponseParser {
@@ -88,14 +89,14 @@ public class ServerResponseParser {
 		String valid = basicPath.getAttributes().getNamedItem("status").getTextContent();
 		boolean isValid = valid.equals("valid") ? true : false;
 		ArrayList<Step> steps = null;
-		String vc = null;
+		VerificationCondition vc = null;
 		NodeList children = basicPath.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
 			if ("path".equals(child.getNodeName()))
 				steps = parsePath(child);
 			if ("vc".equals(child.getNodeName()))
-				vc = child.getTextContent();
+				vc = new VerificationCondition(child.getTextContent(), isValid);
 		}
 		if (steps == null || vc == null)
 			throw new RuntimeException("Invalid basic_path tag");

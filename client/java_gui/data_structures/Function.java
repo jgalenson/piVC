@@ -15,5 +15,13 @@ public class Function {
 	public String getName() {
 		return name;
 	}
+	
+	public int getNumBasicPaths() {
+		return basicPaths.size();
+	}
+	
+	public BasicPath getBasicPath(int index) {
+		return basicPaths.get(index);
+	}
 
 }

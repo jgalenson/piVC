@@ -43,6 +43,7 @@ public class PiGui extends JFrame {
 	public PiGui() {
 		super("PiVC");
 		setLayout(new BorderLayout());
+		useSystemLookAndFeel();
 		
 		initDataPre();
 		installMain();
@@ -300,7 +301,6 @@ public class PiGui extends JFrame {
 	 * maximized, and makes it visible.
 	 */
 	private void setupWindow() {
-		useSystemLookAndFeel();
 		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 			@Override
