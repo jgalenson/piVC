@@ -29,5 +29,12 @@ public class BasicPath {
 	public VerificationCondition getVC() {
 		return vc;
 	}
+	
+	public ArrayList<Location> getLocations() {
+		ArrayList<Location> locations = new ArrayList<Location>();
+		for (Step step: steps)
+			locations.add(step.getLocation());
+		return locations;
+	}
 
 }

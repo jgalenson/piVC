@@ -21,13 +21,15 @@ public class PiTree extends JPanel {
 	
 	private DefaultTreeModel treeModel;
 	private JTree tree;
-	DefaultMutableTreeNode root;
+	private DefaultMutableTreeNode root;
+	private PiCode piCode;
 	
-	public PiTree() {
+	public PiTree(PiCode piCode) {
 		super();
 	    root = null;
 	    treeModel = new DefaultTreeModel(root);
 	    tree = new JTree(treeModel);
+	    this.piCode = piCode;
 		initTree();
 	}
 	
@@ -116,7 +118,15 @@ public class PiTree extends JPanel {
 	 */
 	private void singleClicked(TreePath path) {
 		DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
-		System.out.println("You clicked on something on level " + node.getLevel() + ".");
+		Object obj = node.getUserObject();
+		if (obj instanceof Step) {
+			Step step = (Step)obj;
+			piCode.highlight(step.getLocation());
+		} else if (obj instanceof BasicPath) {
+			BasicPath basicPath = (BasicPath)obj;
+			piCode.highlight(basicPath.getLocations());
+		}
+		// TODO: Also highlight functions
 	}
 	
 	/**

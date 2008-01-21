@@ -154,22 +154,24 @@ public class ServerResponseParser {
 	 * Makes and returns a Location object from a <location> tag.
 	 */
 	private Location parseLocation(Node location) {
-		int startRow = -1, startCol = -1, endRow = -1, endCol = -1;
+		int startRow = -1, startCol = -1, endRow = -1, endCol = -1, startByte = -1, endByte = -1;
 		NodeList children = location.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
 			if ("start".equals(child.getNodeName())) {
 				startRow = Integer.valueOf(child.getAttributes().getNamedItem("row").getTextContent());
 				startCol = Integer.valueOf(child.getAttributes().getNamedItem("col").getTextContent());
+				startByte = Integer.valueOf(child.getAttributes().getNamedItem("byte").getTextContent());
 			}
 			if ("end".equals(child.getNodeName())) {
 				endRow = Integer.valueOf(child.getAttributes().getNamedItem("row").getTextContent());
 				endCol = Integer.valueOf(child.getAttributes().getNamedItem("col").getTextContent());
+				endByte = Integer.valueOf(child.getAttributes().getNamedItem("byte").getTextContent());
 			}
 		}
-		if (startRow == -1 || startCol == -1 || endRow == -1 || endCol == -1)
+		if (startRow == -1 || startCol == -1 || endRow == -1 || endCol == -1 || startByte == -1 || endByte == -1)
 			throw new RuntimeException("Invalid location tag");
-		return new Location(startRow, startCol, endRow, endCol);
+		return new Location(startByte, endByte, startRow, startCol, endRow, endCol);
 	}
 
 	private void parseError(Node result) {

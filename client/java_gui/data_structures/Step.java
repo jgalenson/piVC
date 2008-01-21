@@ -15,5 +15,9 @@ public class Step {
 	public String getText() {
 		return text;
 	}
+	
+	public Location getLocation() {
+		return location;
+	}
 
 }

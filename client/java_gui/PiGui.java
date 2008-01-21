@@ -255,7 +255,7 @@ public class PiGui extends JFrame {
 		
         rightTabbedPane = new JTabbedPane();
         rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
-		piTree = new PiTree();
+		piTree = new PiTree(piCode);
 		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		//piTree.setLayout(new GridLayout(1, 1));
 		piTree.setBorder(BorderFactory.createCompoundBorder(

@@ -1,12 +1,16 @@
 import java.awt.Color;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
+
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
+
+import data_structures.Location;
 
 /**
  * A class for the code section on the left-hand side.
@@ -34,11 +38,38 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 		justLoaded = true;
 	}
 	
-	public void highlight(int start, int end) {
+	/**
+	 * Clears all current highlights and highlights the given location.
+	 */
+	public void highlight(Location location) {
 		Highlighter hl = getHighlighter();
         hl.removeAllHighlights();
+		highlightSingleLocation(location);
+	}
+	
+	/**
+	 * Clears all current highlights and highlights the given locations.
+	 */
+	public void highlight(ArrayList<Location> locations) {
+		Highlighter hl = getHighlighter();
+        hl.removeAllHighlights();
+		for (Location location: locations)
+			highlightSingleLocation(location);
+	}
+	
+	/**
+	 * Highlights a single location.
+	 */
+	private void highlightSingleLocation(Location location) {
+		highlightRange(location.getStartByte(), location.getEndByte());
+	}
+
+	/**
+	 * Highlights a single location.
+	 */
+	private void highlightRange(int start, int end) {
         try {
-			hl.addHighlight(start, end, hlp);
+        	getHighlighter().addHighlight(start, end, hlp);
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
