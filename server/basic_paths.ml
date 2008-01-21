@@ -72,20 +72,19 @@ let gen_func_postcondition_with_rv_substitution func rv_sub =
 (* CODE SECTION: GENERATING PATHS *)
 
 let generate_paths_for_func func program = 
-
   let all_paths : ((path_node list) Queue.t) = Queue.create () in
   let func_pre_condition = Annotation(func.preCondition, "pre") in
   let func_post_condition = Annotation(func.postCondition, "post") in
   let temp_var_number = (ref 0) in
   let generate_nodes_for_expr (curr_path:path_node list) expr = 
     let (new_nodes:path_node list ref) = ref [] in
-    let rec gnfe expr = 
+    let rec gnfe expr =
     match expr with
-      Assign (loc,l, e) -> expr
+      Assign (loc,l, e) -> Assign(loc, l, gnfe e)
     | Constant (loc,c) -> expr
     | LValue (loc,l) -> expr
     | Call (loc,s, el) ->
-        (          
+        (   
             match (Ast.get_root_decl program s.name) with 
               None -> raise (NoDeclException)
             | Some(callee_prob) -> (
