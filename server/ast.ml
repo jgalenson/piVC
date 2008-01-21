@@ -15,7 +15,7 @@ let get_dummy_location () = {
 
 let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_end}
 
-let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol) + 1
+let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol)
 
 let location_union loc1 loc2 = {
   loc_start = 

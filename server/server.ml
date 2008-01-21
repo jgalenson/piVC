@@ -124,9 +124,11 @@ and xml_of_verified_program (all_valid, functions) =
     let start_node = Xml_generator.create "start" in
       add_attribute ("row", string_of_int location.Ast.loc_start.Lexing.pos_lnum) start_node;
       add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_start)) start_node;
+      add_attribute ("byte", string_of_int location.Ast.loc_start.Lexing.pos_cnum) start_node;
       let end_node = Xml_generator.create "end" in
         add_attribute ("row", string_of_int location.Ast.loc_end.Lexing.pos_lnum) end_node;
         add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_end)) end_node;
+        add_attribute ("byte", string_of_int location.Ast.loc_end.Lexing.pos_cnum) end_node;
         add_child start_node location_node;
         add_child end_node location_node;
         location_node
