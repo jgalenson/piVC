@@ -1,5 +1,5 @@
 @pre x >= 0
-@post x >= 1
+@post rv >= 1
 int foo(int x) {
 	x := x + 1;
 	x := foo2(5);
@@ -7,7 +7,7 @@ int foo(int x) {
 }
 
 @pre x >= 0
-@post x >= 1
+@post rv >= 1
 int foo2(int x) {
 	x := x + 1;
 	return x;
