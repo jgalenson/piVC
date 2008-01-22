@@ -1,13 +1,13 @@
 @pre x >= 0
-@post rv >= 1
+@post x >= 1
 int foo(int x) {
 	x := x + 1;
-	x := foo2(5);
+	x := x;
 	return x;
 }
 
 @pre x >= 0
-@post rv >= 1
+@post x >= 1
 int foo2(int x) {
 	x := x + 1;
 	return x;
