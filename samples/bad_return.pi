@@ -16,4 +16,35 @@ void bar() {
 @post true
 int foobar() {
 	double x;
-}  // Should we error on this?
+}  // bad (no return)
+
+@pre true
+@post true
+int meow(bool b) {
+	if (b) {
+		return 5;
+	}
+} // bad
+
+@pre true
+@post true
+int meow2(bool b) {
+	if (b) {
+		return 5;
+	} else {
+		return 42;
+	}
+}
+
+@pre true
+@post true
+int meow3(bool b) {
+	int x;
+	int y;
+	x := 42;
+	y := x + x;
+	while @true (y > x) {
+		y := y - 1;
+		return y;
+	}
+}  // bad

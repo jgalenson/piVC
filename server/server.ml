@@ -1,17 +1,15 @@
 open Xml_generator
 open Utils
 
-
-
 let default_port = 4242
-
+let max_connections = 10
 
 (* The network code is stolen from http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora187.html *)
     
 let establish_server server_fun sockaddr =
    let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
    Unix.bind sock sockaddr;
-   Unix.listen sock 3;
+   Unix.listen sock max_connections;
    while true do
      let (s, caller) = Unix.accept sock in
      print_endline "Accepted" ; 
@@ -45,7 +43,7 @@ let convert_line_endings str =
    and then a string of that many chars. *)
 let get_input ic = 
   let in_len = input_binary_int ic in
-  print_endline (string_of_int in_len);
+  print_endline ("Got input of length " ^ (string_of_int in_len));
   let in_buf = Buffer.create in_len in
   Buffer.add_channel in_buf ic in_len;
   convert_line_endings (Buffer.contents in_buf) ;;

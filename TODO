@@ -4,7 +4,6 @@ Jason
         put location of func signature in func xml
         change all refs to node to step
 Joel
-        modify xml file to remove user-id stuff, and to reflect current xml format
 
 Things to add to the lexer and parser
  Parser: global typedefs (structs: see book chapter 5), global defines
@@ -22,7 +21,6 @@ Semantically check assertions
 Figure out how to deal with predicates (forall, sorted, etc.).
 rv: handle in semantic check assertions
 defines
-Error when function that should return doesn't.
 Caching VCs
 
 Long Term
@@ -32,10 +30,6 @@ Long Term
 Maybe, maybe not
 - Put comments in the ast so we can print them out in to-C++ printing.
 - ocamlmake
-
-Questions for Aaron
-  Struct stuff?
-  DP
 
 Notes
 -----

@@ -316,7 +316,32 @@ let rec check_stmt scope_stack returnType errors stmt =
 
   | EmptyStmt -> ignore ()
 
-
+(* Ensures that a non-void function returns
+   in all control paths. *)
+let ensure_function_returns f =
+  (* Check if a stmt returns by recursing on StmtBlocks
+     and ifs with an else. *)
+  let rec check_if_stmt_returns stmt =
+    match stmt with
+	ReturnStmt (_, _) -> true
+      | StmtBlock (_, stmts)  -> check_if_stmts_return stmts
+      | IfStmt (_, _, then_block, else_block) ->
+	  begin
+	    match else_block with
+		EmptyStmt -> false
+	      | _ -> (check_if_stmt_returns then_block) && (check_if_stmt_returns else_block)
+	  end
+      | _ -> false
+  (* A list of stmts returns if one of the
+     stmts returns. *)
+  and check_if_stmts_return stmts =
+    match stmts with
+	[] -> false
+      | s :: rest -> (check_if_stmt_returns s) || (check_if_stmts_return rest)
+  in
+  match f.returnType with
+      Void (_) -> true
+    | _ -> check_if_stmt_returns f.stmtBlock
 
 let check_function func s errors =
   Scope_stack.enter_scope s;
@@ -324,6 +349,9 @@ let check_function func s errors =
   ignore (check_and_get_return_type s func.preCondition errors);
   ignore (check_and_get_return_type s func.postCondition errors);
   check_stmt s func.returnType errors func.stmtBlock;
+  if not (ensure_function_returns func) then
+    let error_msg = "Function " ^ (string_of_identifier func.fnName) ^ " does not return in all control paths." in
+    add_error SemanticError error_msg func.location_fd errors;
   Scope_stack.exit_scope s
 
 let check_program program errors =

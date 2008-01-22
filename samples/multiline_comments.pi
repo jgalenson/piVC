@@ -1,4 +1,4 @@
-@pre ture
+@pre true
 @post true
 void foo() {
 	/* test */
