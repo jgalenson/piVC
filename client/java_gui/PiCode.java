@@ -42,8 +42,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	 * Clears all current highlights and highlights the given location.
 	 */
 	public void highlight(Location location) {
-		Highlighter hl = getHighlighter();
-        hl.removeAllHighlights();
+		removeAllHighlights();
 		highlightSingleLocation(location);
 	}
 	
@@ -51,8 +50,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	 * Clears all current highlights and highlights the given locations.
 	 */
 	public void highlight(ArrayList<Location> locations) {
-		Highlighter hl = getHighlighter();
-        hl.removeAllHighlights();
+		removeAllHighlights();
 		for (Location location: locations)
 			highlightSingleLocation(location);
 	}
@@ -73,6 +71,14 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 		} catch (BadLocationException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Removes all current highlighting.
+	 */
+	public void removeAllHighlights() {
+		Highlighter hl = getHighlighter();
+        hl.removeAllHighlights();
 	}
 
 	/**

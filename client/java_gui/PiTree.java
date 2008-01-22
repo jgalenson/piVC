@@ -125,8 +125,11 @@ public class PiTree extends JPanel {
 		} else if (obj instanceof BasicPath) {
 			BasicPath basicPath = (BasicPath)obj;
 			piCode.highlight(basicPath.getLocations());
-		}
-		// TODO: Also highlight functions
+		} else if (obj instanceof Function) {
+			Function function = (Function)obj;
+			// TODO: Also highlight functions
+		} else
+			piCode.removeAllHighlights();
 	}
 	
 	/**
@@ -135,36 +138,18 @@ public class PiTree extends JPanel {
 	 */
 	private class MyTreeCellRenderer extends DefaultTreeCellRenderer {
 		
-		private ImageIcon programValid, programInvalid, functionValid, functionInvalid, basicPathValid, basicPathInvalid;
+		private ImageIcon valid, invalid;
 		
 		public MyTreeCellRenderer() {
-			programValid = new ImageIcon("images/program-valid.jpg");
-			programInvalid = new ImageIcon("images/program-invalid.jpg");
-			functionValid = new ImageIcon("images/function-valid.jpg");
-			functionInvalid = new ImageIcon("images/function-invalid.jpg");
-			basicPathValid = new ImageIcon("images/basic_path-valid-large.jpg");
-			basicPathInvalid = new ImageIcon("images/basic_path-invalid-large.jpg");
+			valid = new ImageIcon("images/valid.jpg");
+			invalid = new ImageIcon("images/invalid.jpg");
 		}
 		
-		private ImageIcon getProperProgramIcon(boolean isValid) {
+		private ImageIcon getProperIcon(boolean isValid) {
 			if (isValid)
-				return programValid;
+				return valid;
 			else
-				return programInvalid;
-		}
-		
-		private ImageIcon getProperFunctionIcon(boolean isValid) {
-			if (isValid)
-				return functionValid;
-			else
-				return functionInvalid;
-		}
-		
-		private ImageIcon getProperBasicPathIcon(boolean isValid) {
-			if (isValid)
-				return basicPathValid;
-			else
-				return basicPathInvalid;
+				return invalid;
 		}
 		
 		/**
@@ -178,16 +163,16 @@ public class PiTree extends JPanel {
 			Object obj = ((DefaultMutableTreeNode)value).getUserObject();
 			if (obj instanceof VerificationResult) {
 				VerificationResult verificationResult = (VerificationResult)obj;
-				setIcon(getProperProgramIcon(verificationResult.isValid()));
+				setIcon(getProperIcon(verificationResult.isValid()));
 				String name = verificationResult.getFilename() != null ? verificationResult.getFilename() : "Program";
 				setText(name);
 			} else if (obj instanceof Function) {
 				Function function = (Function)obj;
-				setIcon(getProperFunctionIcon(function.isValid()));
+				setIcon(getProperIcon(function.isValid()));
 				setText(function.getName());
 			} else if (obj instanceof BasicPath) {
 				BasicPath basicPath = (BasicPath)obj;
-				setIcon(getProperBasicPathIcon(basicPath.isValid()));
+				setIcon(getProperIcon(basicPath.isValid()));
 				setText("Basic path identifier goes here");
 			} else if (obj instanceof Step) {
 				Step step = (Step)obj;
@@ -195,7 +180,7 @@ public class PiTree extends JPanel {
 				setText(step.getText());
 			} else if (obj instanceof VerificationCondition) {
 				VerificationCondition vc = (VerificationCondition)obj;
-				//setIcon(getProperIcon(vc.isValid()));
+				setIcon(getProperIcon(vc.isValid()));
 				setText("VC: " + vc.getVerificationCondition());
 			}
 			return this;
