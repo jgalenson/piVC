@@ -13,7 +13,7 @@ default : gui
 
 gui :
 
-	$(JAVAC) java_gui/*.java; \
+	$(JAVAC) java_gui/data_structures/*.java java_gui/*.java; \
  
 clean :
 	rm $(PROJ_DIR:%=%/*.class)
