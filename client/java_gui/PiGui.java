@@ -114,6 +114,7 @@ public class PiGui extends JFrame {
 	public void loadFile(File selectedFile) {
         try {
             BufferedReader in = new BufferedReader(new FileReader(selectedFile));
+            piCode.removeAllHighlights();
             piCode.read(in, null);
         }
         catch (IOException e) {
@@ -179,9 +180,7 @@ public class PiGui extends JFrame {
 				int len = in.readInt();
 				byte[] bytes = new byte[len];
 				in.readFully(bytes, 0, len);
-				String text = "";
-				for (byte b: bytes)
-					text += (char)b;
+				String text = new String(bytes);
 				handleServerResponse(text);
 			} catch (java.net.ConnectException ex){
 				JOptionPane.showMessageDialog(null, ex.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
@@ -272,6 +271,7 @@ public class PiGui extends JFrame {
 		
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);
+		sp.setContinuousLayout(true);
 		//sp.setDividerLocation(.5);
 		
 		add(sp);
