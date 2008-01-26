@@ -4,19 +4,23 @@ import java.awt.event.KeyEvent;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 
 public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	
 	private PiGui piGui;
+	private Config config;
 	private JMenuItem save;
 	
-	public PiMenu(PiGui piGui) {
+	public PiMenu(PiGui piGui, Config config) {
 		super();
 		this.piGui = piGui;
+		this.config = config;
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
 		addCompileMenu();
+		addSettingsMenu();
 	}
 	
 	/**
@@ -83,6 +87,24 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		compileMenu.add(compile);
 		
 		add(compileMenu);
+	}
+	
+	private void addSettingsMenu() {
+		JMenu settingsMenu = new JMenu("Settings");
+		settingsMenu.setMnemonic(KeyEvent.VK_S);
+		
+		JMenuItem serverAddress = new JMenuItem("Change server address");
+		serverAddress.setMnemonic(KeyEvent.VK_S);
+		serverAddress.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String result = JOptionPane.showInputDialog("New server host:port", config.getValue("default_server_address"));
+				config.setValue("default_server_address", result);
+				config.writeOutConfig();
+			}
+		});
+		settingsMenu.add(serverAddress);
+		
+		add(settingsMenu);
 	}
 
 	/**

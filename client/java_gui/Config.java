@@ -1,9 +1,12 @@
-
 import java.io.File;
 import java.io.FileNotFoundException;
-
 import javax.swing.JOptionPane;
 import javax.xml.parsers.*;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.w3c.dom.*;
 
 public class Config {
@@ -41,6 +44,16 @@ public class Config {
 		return null;
 	}
 	
+	public void setValue(String key, String newValue){
+		Node root = xml.getChildNodes().item(0);
+		NodeList nodes = root.getChildNodes();
+		for (int i = 0; i < nodes.getLength(); i++){
+			Node curNode = nodes.item(i);
+			if(curNode.getNodeName().equals(key))
+				curNode.setTextContent(newValue);
+		}
+	}
+	
 	private String pruneNewLines(String value){
 		if(value.charAt(0)=='\n'){
 			value = value.substring(1);
@@ -50,5 +63,17 @@ public class Config {
 		}
 		return value;
 	}
-	
+
+	public void writeOutConfig() {
+		TransformerFactory tFactory = TransformerFactory.newInstance();
+		try {
+			Transformer transformer = tFactory.newTransformer();
+			DOMSource source = new DOMSource(xml);
+			StreamResult result = new StreamResult(new File(CONFIG_FILE_NAME));
+			transformer.transform(source, result); 
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 }

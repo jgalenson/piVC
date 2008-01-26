@@ -164,7 +164,7 @@ public class PiGui extends JFrame {
 	}
 	
 	public void doCompile() {
-		String result = JOptionPane.showInputDialog("Connect to host:port", config.getValue("default_server_address"));
+		String result = config.getValue("default_server_address");
 		if (result != null) {
 			String[] parts = result.split(":");
 			String name = parts[0].trim();
@@ -183,7 +183,7 @@ public class PiGui extends JFrame {
 				String text = new String(bytes);
 				handleServerResponse(text);
 			} catch (java.net.ConnectException ex){
-				JOptionPane.showMessageDialog(null, ex.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
 			} catch (Exception ex) { // IOException and ClassNotFoundException
 				ex.printStackTrace();
 			}
@@ -281,7 +281,7 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		PiMenu menu = new PiMenu(this);
+		PiMenu menu = new PiMenu(this, config);
 		setJMenuBar(menu);
 	}
 	
