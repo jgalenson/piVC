@@ -1,19 +1,13 @@
 Jason
-	GUI: highlighting and linking
-        check out project management software with kalvin
-        put location of func signature in func xml
-        change all refs to node to step
+	Send error data to gui in xml
+    put location of func signature in func xml
+    check out project management software with kalvin
+    change all refs to node to step
 Joel
+	After funcs have locations, have it highlight when you click on them.
+	After error data is sent in xml, parse it and write a JList for it.
 
-Things to add to the lexer and parser
- Parser: global typedefs (structs: see book chapter 5), global defines
-	Should typedefs be like VarDecls or should they only be globals?
-	Can you typedef things other than structs?
-	Can you make a struct without a typedef?
-	Should we use defines?  Are they even in the book?
- Lexer: Maybe: T (true), And (&&), etc?
-
-DP stuff
+DP stuff (see Aaron's second email 1/23/08)
 Break stmt
 	Add a struct or pass around recursively?
 	Maybe also make location an option?
@@ -22,10 +16,15 @@ Figure out how to deal with predicates (forall, sorted, etc.).
 rv: handle in semantic check assertions
 defines
 Caching VCs
+Structs and typedefs (see Aaron's first email 1/23/08)
+Have the gui send its code to the server in xml and have the server parse that xml.
 
 Long Term
 - "definitions" file (see Aaron's email 12/6/07)
 - Hashtables, sets, multisets (see Aaron's email 12/6/07)
+- Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
+- Visualize counterexamples (see two of Aaron's emails 1/27/2008)
+- Termination arguments (see Aaron's original PiVC email)
 
 Maybe, maybe not
 - Put comments in the ast so we can print them out in to-C++ printing.

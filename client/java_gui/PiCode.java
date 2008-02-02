@@ -6,9 +6,12 @@ import java.util.ArrayList;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
+import javax.swing.undo.UndoManager;
 
 import data_structures.Location;
 
@@ -19,13 +22,17 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	
 	private PiGui piGui;
 	private boolean justLoaded;
-	private DefaultHighlighter.DefaultHighlightPainter hlp = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+	private DefaultHighlighter.DefaultHighlightPainter hlp;
+	private UndoManager undo;
 	
-	public PiCode(PiGui piGui) {
+	public PiCode(PiGui pGui) {
 		super();
-		this.piGui = piGui;
+		this.piGui = pGui;
 		justLoaded = false;
+		hlp = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
+		addUndoableEditListener();
 	}
 	
 	/**
@@ -36,6 +43,15 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	public void read(Reader in, Object desc) throws IOException {
 		super.read(in, desc);
 		justLoaded = true;
+	}
+	
+	private void addUndoableEditListener() {
+		getDocument().addUndoableEditListener(new UndoableEditListener() {
+		    public void undoableEditHappened(UndoableEditEvent e) {
+		        undo.addEdit(e.getEdit());
+		        piGui.undoChangeHappened(undo);
+		    }
+		});
 	}
 	
 	/**
@@ -79,6 +95,40 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	public void removeAllHighlights() {
 		Highlighter hl = getHighlighter();
         hl.removeAllHighlights();
+	}
+	
+	/**
+	 * Undo the last change made and notify the gui
+	 * that we have made a change.
+	 * We return whether or not there are more edits
+	 * that could be undone.
+	 */
+	public boolean undo() {
+		undo.undo();
+		piGui.undoChangeHappened(undo);
+		return undo.canUndo();
+	}
+	
+	/**
+	 * Redo the last change made and notify the gui
+	 * that we have made a change.
+	 */
+	public void redo() {
+		undo.redo();
+		piGui.undoChangeHappened(undo);
+	}
+	
+	/**
+	 * Called after we open a new file.  We want to clear
+	 * highlighting and undo information.  We also have
+	 * to reregister the undo change listener since that
+	 * seems to get clearned on a call to read().
+	 */
+	public void openedNewFile() {
+		removeAllHighlights();
+		undo.discardAllEdits();
+		piGui.undoChangeHappened(undo);
+		addUndoableEditListener();
 	}
 
 	/**

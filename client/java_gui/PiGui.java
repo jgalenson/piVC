@@ -18,6 +18,7 @@ import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.undo.UndoManager;
 
 import data_structures.VerificationResult;
 
@@ -29,6 +30,7 @@ public class PiGui extends JFrame {
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
 	private PiTree piTree;
+	private PiMenu menu;
 	private JTabbedPane rightTabbedPane;
 	private Config config;
 	private ServerResponseParser serverResponseParser;
@@ -114,8 +116,8 @@ public class PiGui extends JFrame {
 	public void loadFile(File selectedFile) {
         try {
             BufferedReader in = new BufferedReader(new FileReader(selectedFile));
-            piCode.removeAllHighlights();
             piCode.read(in, null);
+            piCode.openedNewFile();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -207,6 +209,33 @@ public class PiGui extends JFrame {
 		else
 			return curFile.getName();
 	}
+	
+	/**
+	 * Called when some kind of change relating to undo/redo happened.
+	 * We let the menus update themselves as they please.
+	 */
+	public void undoChangeHappened(UndoManager undoManager) {
+		menu.undoChangeHappened(undoManager);
+	}
+	
+	/**
+	 * Undo the last change made and set the dirty
+	 * bit to false if there are no more things
+	 * that can be undone (i.e. we have undone everything
+	 * we did).
+	 */
+	public void undo() {
+		boolean canUndoMore = piCode.undo();
+		if (!canUndoMore)
+			setDirty(false);
+	}
+	
+	/**
+	 * Redo the last change made.
+	 */
+	public void redo() {
+		piCode.redo();
+	}
 
 	/**
 	 * Inits some data before we install the GUI elements. 
@@ -281,7 +310,7 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		PiMenu menu = new PiMenu(this, config);
+		menu = new PiMenu(this, config);
 		setJMenuBar(menu);
 	}
 	
