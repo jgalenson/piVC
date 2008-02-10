@@ -2,7 +2,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
-import javax.swing.Action;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -16,6 +15,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private Config config;
 	private JMenuItem save;
 	private JMenuItem undo, redo;
+	private JMenuItem displayPath;
 	
 	public PiMenu(PiGui piGui, Config config) {
 		super();
@@ -25,6 +25,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		addFileMenu();
 		addEditMenu();
 		addCompileMenu();
+		addAnalyzeMenu();
 		addSettingsMenu();
 	}
 	
@@ -114,7 +115,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		
 		JMenuItem compile = new JMenuItem("Compile");
 		compile.setMnemonic(KeyEvent.VK_C);
-		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.ALT_MASK));
+		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, ActionEvent.CTRL_MASK));
 		compile.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				piGui.doCompile();
@@ -123,6 +124,24 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		compileMenu.add(compile);
 		
 		add(compileMenu);
+	}
+	
+	private void addAnalyzeMenu() {
+		JMenu analyzeMenu = new JMenu("Analyze");
+		analyzeMenu.setMnemonic(KeyEvent.VK_A);
+		
+		displayPath = new JMenuItem("Display selected basic path");
+		displayPath.setMnemonic(KeyEvent.VK_D);
+		displayPath.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, ActionEvent.CTRL_MASK));
+		displayPath.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.displaySelectedBasicPath();
+			}
+		});
+		displayPath.setEnabled(false);
+		analyzeMenu.add(displayPath);
+		
+		add(analyzeMenu);
 	}
 	
 	private void addSettingsMenu() {
@@ -159,6 +178,14 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
         	redo.setText(undoManager.getRedoPresentationName());
         else
         	redo.setText("Redo");
+	}
+	
+	/**
+	 * Enables or disables the button that highlights
+	 * a basic path.
+	 */
+	public void enableBasicPathHighlighter(boolean b) {
+		displayPath.setEnabled(b);
 	}
 
 	/**

@@ -20,6 +20,8 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.undo.UndoManager;
 
+import data_structures.BasicPath;
+import data_structures.Step;
 import data_structures.VerificationResult;
 
 public class PiGui extends JFrame {
@@ -30,7 +32,7 @@ public class PiGui extends JFrame {
 	private PiCode piCode;
 	private PiCompilerOutput piCompilerOutput;
 	private PiTree piTree;
-	private PiMenu menu;
+	private PiMenu piMenu;
 	private JTabbedPane rightTabbedPane;
 	private Config config;
 	private ServerResponseParser serverResponseParser;
@@ -165,9 +167,14 @@ public class PiGui extends JFrame {
 		fireDirtyChanged();
 	}
 	
+	/**
+	 * Handles a call to compile the code by sending it
+	 * off to the server and handling the response.
+	 */
 	public void doCompile() {
 		String result = config.getValue("default_server_address");
 		if (result != null) {
+			piCode.removeAllHighlights();
 			String[] parts = result.split(":");
 			String name = parts[0].trim();
 			int port = Integer.parseInt(parts[1].trim());
@@ -186,23 +193,33 @@ public class PiGui extends JFrame {
 				handleServerResponse(text);
 			} catch (java.net.ConnectException ex){
 				JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
-			} catch (Exception ex) { // IOException and ClassNotFoundException
+			} catch (Exception ex) {
 				ex.printStackTrace();
 			}
 		}
 	}
 
+	/**
+	 * Handles a response from the server by parsing it.
+	 */
 	private void handleServerResponse(String text) {
 		piCompilerOutput.setText(text);
 		serverResponseParser.parse(text, getFilename());
 	}
 	
+	/**
+	 * Handles a response from the server that contains
+	 * verification conditions and basic paths.
+	 */
 	public void handleVerificationResult(VerificationResult verificationResult) {
 		piTree.handleVerificationResult(verificationResult);
 		rightTabbedPane.setSelectedIndex(0);
 		rightTabbedPane.repaint();
 	}
 	
+	/**
+	 * Gets the name of the currently-opened file.
+	 */
 	private String getFilename() {
 		if (curFile == null)
 			return null;
@@ -215,7 +232,7 @@ public class PiGui extends JFrame {
 	 * We let the menus update themselves as they please.
 	 */
 	public void undoChangeHappened(UndoManager undoManager) {
-		menu.undoChangeHappened(undoManager);
+		piMenu.undoChangeHappened(undoManager);
 	}
 	
 	/**
@@ -235,6 +252,24 @@ public class PiGui extends JFrame {
 	 */
 	public void redo() {
 		piCode.redo();
+	}
+	
+	/**
+	 * Called when a new node in the tree is selected.
+	 * We make sure to enable/disable any menu items
+	 * that depend on having a basic path selected.
+	 */
+	public void nodeSelected(Object obj) {
+		piMenu.enableBasicPathHighlighter(obj instanceof BasicPath);
+	}
+	
+	/**
+	 * Display the selected basic path over time.
+	 */
+	public void displaySelectedBasicPath() {
+		BasicPath basicPath = (BasicPath)piTree.getSelectedObject();
+		BasicPathHighlighter basicPathHighlighter = new BasicPathHighlighter(basicPath);
+		basicPathHighlighter.start();
 	}
 
 	/**
@@ -283,7 +318,7 @@ public class PiGui extends JFrame {
 		
         rightTabbedPane = new JTabbedPane();
         rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
-		piTree = new PiTree(piCode);
+		piTree = new PiTree(this, piCode);
 		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		//piTree.setLayout(new GridLayout(1, 1));
 		piTree.setBorder(BorderFactory.createCompoundBorder(
@@ -310,8 +345,8 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		menu = new PiMenu(this, config);
-		setJMenuBar(menu);
+		piMenu = new PiMenu(this, config);
+		setJMenuBar(piMenu);
 	}
 	
 	private void installTop() {
@@ -388,6 +423,65 @@ public class PiGui extends JFrame {
 		@Override
 		public String getDescription() {
 			return "Pi programs";
+		}
+		
+	}
+	
+	/**
+	 * A thread that highlights a basic path one step at a
+	 * time, in order, pausing slightly at each step so the user
+	 * can tell the direction.  We always take the same total time
+	 * to highlight the path, regardless of how many steps there are.
+	 */
+	private class BasicPathHighlighter extends Thread {
+		
+		// In milliseconds.
+		private static final int TOTAL_BASIC_PATH_HIGHLIGHT_TIME = 500;
+		
+		private BasicPath basicPath;
+		
+		public BasicPathHighlighter(BasicPath basicPath) {
+			this.basicPath = basicPath;
+		}
+		
+		@Override
+		public void run() {
+			// First, remove all highlights
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					piCode.removeAllHighlights();
+				}
+			});
+			// Now highlight each step one at a time.
+			long pauseTime = TOTAL_BASIC_PATH_HIGHLIGHT_TIME / ((long)basicPath.getNumSteps());
+			for (int i = 0; i < basicPath.getNumSteps(); i++) {
+				final Step step = basicPath.getStep(i);
+				// Highlight the step
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						piCode.highlight(step.getLocation());
+					}
+				});
+				// Sleep for a bit
+				try {
+					Thread.sleep(pauseTime);
+				} catch (InterruptedException e) {}
+				// Unhighlight it
+				SwingUtilities.invokeLater(new Runnable() {
+					public void run() {
+						piCode.removeAllHighlights();
+					}
+				});
+			}
+			/* At end, highlight whatever is currently selected.
+			 * We do this in case the user selected something different
+			 * as we were highlighting this path.
+			 */
+			SwingUtilities.invokeLater(new Runnable() {
+				public void run() {
+					piTree.reselectSelectedNode();
+				}
+			});
 		}
 		
 	}

@@ -10,7 +10,6 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Highlighter;
 import javax.swing.undo.UndoManager;
 
 import data_structures.Location;
@@ -93,8 +92,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	 * Removes all current highlighting.
 	 */
 	public void removeAllHighlights() {
-		Highlighter hl = getHighlighter();
-        hl.removeAllHighlights();
+		getHighlighter().removeAllHighlights();
 	}
 	
 	/**

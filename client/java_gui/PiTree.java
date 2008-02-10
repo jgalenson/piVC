@@ -1,6 +1,4 @@
 import java.awt.Component;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -24,14 +22,18 @@ public class PiTree extends JPanel {
 	private DefaultTreeModel treeModel;
 	private JTree tree;
 	private DefaultMutableTreeNode root;
+	private PiGui piGui;
 	private PiCode piCode;
+	private DefaultMutableTreeNode selectedNode;
 	
-	public PiTree(PiCode piCode) {
+	public PiTree(PiGui piGui, PiCode piCode) {
 		super();
 	    root = null;
 	    treeModel = new DefaultTreeModel(root);
 	    tree = new JTree(treeModel);
+	    this.piGui = piGui;
 	    this.piCode = piCode;
+	    selectedNode = null;
 		initTree();
 	}
 	
@@ -57,9 +59,12 @@ public class PiTree extends JPanel {
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent e) {
 		        DefaultMutableTreeNode node = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+		        selectedNode = node;
+		        Object obj = (node == null ? null : node.getUserObject());
+		        piGui.nodeSelected(obj);
 		        if (node == null)
 		        	return;
-		        nodeSelected(node.getUserObject());
+		        nodeSelected(obj);
 		    }
 		});
 		// Draw icons next to things
@@ -141,6 +146,26 @@ public class PiTree extends JPanel {
 			// TODO: Also highlight functions
 		} else
 			piCode.removeAllHighlights();
+	}
+	
+	/**
+	 * Reselects (i.e. highlights) the currently-selected node.
+	 * We use this in the BasicPathHighlighter in case the 
+	 * user has selected something new while we are displaying
+	 * the old path.
+	 */
+	public void reselectSelectedNode() {
+		nodeSelected(selectedNode.getUserObject());
+	}
+	
+	/**
+	 * Returns the currently-selected object.
+	 */
+	public Object getSelectedObject() {
+		if (selectedNode == null)
+			return null;
+		else
+			return selectedNode.getUserObject();
 	}
 	
 	/**
