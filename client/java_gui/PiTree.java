@@ -6,6 +6,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -35,7 +37,7 @@ public class PiTree extends JPanel {
 	
 	private void initTree() {
 		// Listen to clicks
-		tree.addMouseListener(new MouseAdapter() {
+		/*tree.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				if (e.getButton() != MouseEvent.BUTTON1)
@@ -43,12 +45,22 @@ public class PiTree extends JPanel {
 				int selRow = tree.getRowForLocation(e.getX(), e.getY());
 				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
 				if(selRow != -1) {
-					if(e.getClickCount() == 1)
-						singleClicked(selPath);
-					else if(e.getClickCount() == 2)
+					if(e.getClickCount() == 1) {
+						DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
+						nodeSelected(node.getUserObject());
+					} else if(e.getClickCount() == 2)
 						;// do something?
 				}
 			}
+		});*/
+		// Selecting something highlights it.
+		tree.addTreeSelectionListener(new TreeSelectionListener() {
+			public void valueChanged(TreeSelectionEvent e) {
+		        DefaultMutableTreeNode node = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+		        if (node == null)
+		        	return;
+		        nodeSelected(node.getUserObject());
+		    }
 		});
 		// Draw icons next to things
 		tree.setCellRenderer(new MyTreeCellRenderer());
@@ -112,13 +124,12 @@ public class PiTree extends JPanel {
 			treeModel.insertNodeInto(stepNode, basicPathNode, basicPathNode.getChildCount());
 		}		
 	}
-
+	
 	/**
-	 * Called when a node is clicked.
+	 * When a node is selected, we highlight it
+	 * depending on what type of node it is.
 	 */
-	private void singleClicked(TreePath path) {
-		DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
-		Object obj = node.getUserObject();
+	private void nodeSelected(Object obj) {
 		if (obj instanceof Step) {
 			Step step = (Step)obj;
 			piCode.highlight(step.getLocation());
