@@ -1,19 +1,20 @@
 Jason
 	Send error data to gui in xml
-    put location of func signature in func xml
-    check out project management software with kalvin
-    change all refs to node to step
+	put location of func signature in func xml
+	change all refs to node to step
+	Fix basic path bugs
+	Forall, exists, and variables defined in them, and rv
 Joel
 	After funcs have locations, have it highlight when you click on them.
 	After error data is sent in xml, parse it and write a JList for it.
+	DP stuff (see Aaron's second email 1/23/08)
 
-DP stuff (see Aaron's second email 1/23/08)
+Figure out how to deal with predicates (sorted, partitioned, etc.).
 Break stmt
 	Add a struct or pass around recursively?
 	Maybe also make location an option?
 Semantically check assertions
-Figure out how to deal with predicates (forall, sorted, etc.).
-rv: handle in semantic check assertions
+
 defines
 Caching VCs
 Structs and typedefs (see Aaron's first email 1/23/08)
@@ -22,6 +23,7 @@ Have the gui send its code to the server in xml and have the server parse that x
 Long Term
 - "definitions" file (see Aaron's email 12/6/07)
 - Hashtables, sets, multisets (see Aaron's email 12/6/07)
+- User-defined predicates.
 - Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
 - Visualize counterexamples (see two of Aaron's emails 1/27/2008)
 - Termination arguments (see Aaron's original PiVC email)
