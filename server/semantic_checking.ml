@@ -14,6 +14,10 @@ let string_of_error_type t = match t with
   | SyntaxError -> "Syntax Error"
   | SemanticError -> "Semantic Error" ;;
 
+let string_of_error_type_for_xml t = match t with
+  | SyntaxError -> "syntax_error"
+  | SemanticError -> "semantic_error" ;;
+
 let string_of_error_msg e = match e.e_type with
   | SyntaxError -> "Error on the following token: " ^ e.msg
   | SemanticError -> e.msg
@@ -74,7 +78,7 @@ and is_array_type t = match t with
   
 (* CAGRT *)
 	
-let rec check_and_get_return_type_lval s lval errors = match lval with
+let rec check_and_get_return_type_lval is_annotation s lval errors = match lval with
   | NormLval(loc, id) ->
       let lookupResult = Scope_stack.lookup_decl id.name s in
       begin
@@ -86,7 +90,7 @@ let rec check_and_get_return_type_lval s lval errors = match lval with
       end
   | ArrayLval(loc, arr, index) ->
       begin
-        let typeOfIndex = check_and_get_return_type s index errors in
+        let typeOfIndex = check_and_get_return_type is_annotation s index errors in
         begin
 	  match typeOfIndex with
             | Int(l) -> ()
@@ -122,7 +126,7 @@ and check_for_same_type t1 t2 loc errors =
   else
     true
   
-and check_and_get_return_type scope_stack e errors =
+and check_and_get_return_type is_annotation scope_stack e errors =
 
   let get_type_error_msg expr_name given expected =
     expr_name ^ " expr type is '" ^ (string_of_type given) ^ "' but should be " ^ expected
@@ -174,7 +178,7 @@ and check_and_get_return_type scope_stack e errors =
       
   and cagrt e = match e with
     | Assign (loc,l,e) ->
-	let lhsType = check_and_get_return_type_lval scope_stack l errors in
+	let lhsType = check_and_get_return_type_lval is_annotation scope_stack l errors in
         let rhsType = cagrt e in
 	ignore (check_for_same_type lhsType rhsType loc errors);
         lhsType
@@ -185,7 +189,7 @@ and check_and_get_return_type scope_stack e errors =
 	  | ConstFloat (l, f) -> Float (loc)
 	  | ConstBool (l, b) -> Bool (loc)
 	end
-    | LValue (loc,l) -> check_and_get_return_type_lval scope_stack l errors
+    | LValue (loc,l) -> check_and_get_return_type_lval is_annotation scope_stack l errors
     | Call (loc, ident, ac) -> (* Check this more? *)
 	let map_fn e = ignore (cagrt e) in
 	let check_actuals = List.iter (map_fn) ac
@@ -270,12 +274,12 @@ and check_and_get_return_type scope_stack e errors =
 
 let rec check_stmt scope_stack returnType errors stmt =
   match stmt with
-    Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e errors)
+    Expr (loc, e) -> ignore (check_and_get_return_type false scope_stack e errors)
 
   | VarDeclStmt(loc,d) -> (insert_decl scope_stack errors (VarDecl(loc,d))) 
 
   | IfStmt (loc, test, then_block, else_block) ->
-      let testType = check_and_get_return_type scope_stack test errors in
+      let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
 	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	add_error SemanticError error_msg loc errors;
@@ -283,31 +287,31 @@ let rec check_stmt scope_stack returnType errors stmt =
       check_stmt scope_stack returnType errors else_block;
 
   | WhileStmt (loc, test, block, annotation) -> 
-      ignore (check_and_get_return_type scope_stack annotation errors);
-      let testType = check_and_get_return_type scope_stack test errors in
+      ignore (check_and_get_return_type false scope_stack annotation errors);
+      let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
 	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	add_error SemanticError error_msg loc errors;
       check_stmt scope_stack returnType errors block;
       
   | ForStmt (loc, init, test, incr, block, annotation) ->
-      ignore (check_and_get_return_type scope_stack annotation errors);
-      ignore (check_and_get_return_type scope_stack init errors);
-      let testType = check_and_get_return_type scope_stack test errors in
+      ignore (check_and_get_return_type false scope_stack annotation errors);
+      ignore (check_and_get_return_type false scope_stack init errors);
+      let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
 	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	add_error SemanticError error_msg loc errors;
-      ignore (check_and_get_return_type scope_stack incr errors);
+      ignore (check_and_get_return_type false scope_stack incr errors);
       check_stmt scope_stack returnType errors block;
       
   | BreakStmt (loc) -> print_string "" (* TODO: Break stmts *)
 
-  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e errors) in
+  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type false scope_stack e errors) in
                           if not (types_equal type_of_return returnType) then
 			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
                             add_error SemanticError error_msg  loc errors
 
-  | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e errors)
+  | AssertStmt (loc, e) -> ignore (check_and_get_return_type true scope_stack e errors)
 	(* TODO: Do semantic checking for asserts vs. exprs *)
 
   | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
@@ -346,8 +350,17 @@ let ensure_function_returns f =
 let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
-  ignore (check_and_get_return_type s func.preCondition errors);
-  ignore (check_and_get_return_type s func.postCondition errors);
+  ignore (check_and_get_return_type true s func.preCondition errors);
+
+
+  Scope_stack.enter_scope s;
+  (let vd = Ast.create_varDecl func.returnType (Ast.create_identifier "rv" (Ast.get_dummy_location ()) ) (Ast.get_dummy_location ()) in
+    Scope_stack.insert_decl (Ast.VarDecl(Ast.get_dummy_location (), vd)) s);
+  (*add rv to scope*)
+  ignore (check_and_get_return_type true s func.postCondition errors);
+  Scope_stack.exit_scope s;
+
+
   check_stmt s func.returnType errors func.stmtBlock;
   if not (ensure_function_returns func) then
     let error_msg = "Function " ^ (string_of_identifier func.fnName) ^ " does not return in all control paths." in

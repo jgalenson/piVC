@@ -124,7 +124,6 @@ let name_of_decl decl =
       VarDecl(l, d) -> d.varName.name
     | FnDecl(l, d) -> d.fnName.name
 
-
 let type_of_decl = function
   | VarDecl (loc, d) -> d.varType
   | FnDecl (loc, d) -> d.returnType

@@ -55,6 +55,9 @@ public class Config {
 	}
 	
 	private String pruneNewLines(String value){
+		if(value.length()==0){
+			return value;
+		}
 		if(value.charAt(0)=='\n'){
 			value = value.substring(1);
 		}

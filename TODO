@@ -1,9 +1,8 @@
 Jason
-	Send error data to gui in xml
 	put location of func signature in func xml
 	change all refs to node to step
 	Fix basic path bugs
-	Forall, exists, and variables defined in them, and rv
+	Forall, exists, and variables defined in them
 Joel
 	After funcs have locations, have it highlight when you click on them.
 	After error data is sent in xml, parse it and write a JList for it.

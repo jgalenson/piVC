@@ -1,5 +1,7 @@
 open Xml_generator
 open Utils
+open Ast
+open Semantic_checking
 
 let default_port = 4242
 let max_connections = 10
@@ -57,11 +59,11 @@ let send_output oc str =
 let rec compile ic oc =
 
   (* Convert queue of errors into a string. *)
-  let get_error_string errors =
+  (*let get_error_string errors =
     let buf = Buffer.create 1024 in
     List.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
     Buffer.contents buf
-  in
+  in*)
 
   let code = get_input ic in
   (* print_endline code; *)
@@ -75,11 +77,44 @@ let rec compile ic oc =
           let verified_program_info = Parse_utils.verify_program program_info in
             Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
               )
-      | _  -> get_error_string errors
+      | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
 
   in
     send_output oc get_output_to_return_to_client;
   flush oc
+
+
+and xml_of_location location = 
+  let location_node = Xml_generator.create "location" in
+  let start_node = Xml_generator.create "start" in
+    add_attribute ("row", string_of_int location.Ast.loc_start.Lexing.pos_lnum) start_node;
+    add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_start)) start_node;
+    add_attribute ("byte", string_of_int location.Ast.loc_start.Lexing.pos_cnum) start_node;
+    let end_node = Xml_generator.create "end" in
+      add_attribute ("row", string_of_int location.Ast.loc_end.Lexing.pos_lnum) end_node;
+      add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_end)) end_node;
+      add_attribute ("byte", string_of_int location.Ast.loc_end.Lexing.pos_cnum) end_node;
+      add_child start_node location_node;
+      add_child end_node location_node;
+      location_node
+
+and xml_of_errors errors =
+
+  let transmission_node = Xml_generator.create "piVC_transmission" in
+    add_attribute ("type", "program_submission_response") transmission_node;
+    let result_node = Xml_generator.create "result" in
+      add_attribute ("status", "error") result_node;
+      List.iter (fun e -> 
+                   let error_node = (Xml_generator.create "error") in
+                     Xml_generator.add_attribute ("type", (Semantic_checking.string_of_error_type_for_xml e.e_type)) error_node;
+                     Xml_generator.add_child (xml_of_location e.loc) error_node;
+                     let message_node = Xml_generator.create "message" in
+                       Xml_generator.set_text e.msg message_node;
+                       Xml_generator.add_child message_node error_node;
+                       Xml_generator.add_child error_node result_node) errors;                     
+      Xml_generator.add_child result_node transmission_node;
+      transmission_node
+
 
 
 and xml_of_verified_program (all_valid, functions) = 
@@ -117,19 +152,6 @@ and xml_of_verified_program (all_valid, functions) =
         set_text (Basic_paths.string_of_path_node step) text_node;
         add_child text_node step_node;
         step_node
-  and xml_of_location location = 
-    let location_node = Xml_generator.create "location" in
-    let start_node = Xml_generator.create "start" in
-      add_attribute ("row", string_of_int location.Ast.loc_start.Lexing.pos_lnum) start_node;
-      add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_start)) start_node;
-      add_attribute ("byte", string_of_int location.Ast.loc_start.Lexing.pos_cnum) start_node;
-      let end_node = Xml_generator.create "end" in
-        add_attribute ("row", string_of_int location.Ast.loc_end.Lexing.pos_lnum) end_node;
-        add_attribute ("col", string_of_int (Ast.col_number_of_position location.Ast.loc_end)) end_node;
-        add_attribute ("byte", string_of_int location.Ast.loc_end.Lexing.pos_cnum) end_node;
-        add_child start_node location_node;
-        add_child end_node location_node;
-        location_node
   (* Now we put together the root node *)
   and transmission_node = Xml_generator.create "piVC_transmission" in
     add_attribute ("type", "program_submission_response") transmission_node;
