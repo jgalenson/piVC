@@ -37,7 +37,7 @@ let get_all_info program =
     let get_decl_paths_if_appropriate decl = 
       match decl with
           VarDecl (loc, vd) -> None
-	| FnDecl (loc, fd) -> Some (fd.fnName.name, Basic_paths.generate_paths_for_func fd program)
+	| FnDecl (loc, fd) -> ((*Basic_paths.print_all_basic_paths (Basic_paths.generate_paths_for_func fd program);*)Some (fd.fnName.name, Basic_paths.generate_paths_for_func fd program))
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =

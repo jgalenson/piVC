@@ -128,6 +128,7 @@ and expr_from_temp_expr has_condition = function
 %token T_While T_For
 %token T_Else
 %token T_If
+%token T_Length
 %token T_Return T_Break
 %token T_Break T_Return
 %token T_Typedef T_Struct
@@ -286,6 +287,7 @@ Expr     : LValue T_Assign Expr { Assign ( (create_location (Parsing.rhs_start_p
          | Expr T_Or Expr { Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | T_Not Expr { Not ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 3)),$2) }
 	 | T_Bar Expr T_Bar { Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$2) }
+	 | T_Length T_LParen Expr T_RParen { Length ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$3) }
 ;
 
 LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }

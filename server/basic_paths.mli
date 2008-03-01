@@ -11,3 +11,4 @@ val string_of_basic_path : path_node list -> string ;;
 val string_of_path_node : path_node -> string ;;
 val print_basic_path : path_node list -> unit ;;
 val generate_paths_for_func : fnDecl -> program -> path_node list list ;;
+val print_all_basic_paths : path_node list list -> unit

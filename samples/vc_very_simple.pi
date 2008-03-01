@@ -1,14 +1,18 @@
 @pre x >= 0
-@post x >= 1
+@post rv >= 1
 int foo(int x) {
+                  int[] arr;
+	int[] arr_rv;
 	x := x + 1;
 	x := x;
+                  arr_rv := foo2(2, arr);
 	return x;
 }
 
 @pre x >= 0
-@post x >= 1
-int foo2(int x) {
-	x := x + 1;
-	return x;
+@post forall(i,0,2,rv[i]>=0)
+int[] foo2(int x, int[] arr2) {
+   	int[] test2;	
+  	x := x + 1;
+	return test2;
 }

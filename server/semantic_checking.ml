@@ -1,5 +1,7 @@
 open Ast
 
+exception SemanticCheckingError of string;;
+
 type error_type =
   | SyntaxError
   | SemanticError ;;
@@ -175,7 +177,61 @@ and check_and_get_return_type is_annotation scope_stack e errors =
       ErrorType
     else
       rightType
-      
+
+  and check_and_get_return_type_predicate e =
+      begin
+        match e with
+          | Call(loc, ident, ac) ->
+              begin
+                let check_quantifier_actuals actuals = 
+                  match List.length ac with
+                      4 ->
+                        begin
+                          Scope_stack.enter_scope scope_stack;
+                          (*Check second and third arguments*)
+                          begin
+                            let check_for_int_bounds arg = 
+                              match cagrt arg with 
+                                  ErrorType -> ()
+                                | Int(l) -> ()
+                                | _ -> add_error SemanticError "Bound is not an an integer" (Ast.location_of_expr arg) errors
+                            in 
+                              check_for_int_bounds (List.nth actuals 1);
+                              check_for_int_bounds (List.nth actuals 2)
+                          end;
+                          (*Check first argument*)
+                          begin
+                            let decl_ok = ref true in
+                            let decl_arg = List.nth actuals 0 in
+                              begin
+                                match decl_arg with
+                                    LValue(loc, lval) ->
+                                      begin
+                                        match lval with
+                                            NormLval(loc, ident) -> Scope_stack.insert_decl (Ast.VarDecl(loc,(Ast.create_varDecl (Int(get_dummy_location())) ident loc))) scope_stack
+                                          | _ -> decl_ok := false
+                                      end
+                                  | _ -> decl_ok := false
+                              end;
+                              match !decl_ok with
+                                  true -> ()
+                                | false -> add_error SemanticError "Incorrect declaration of quantified variable" (location_of_expr (decl_arg)) errors
+                          end;
+                          (*Check fourth argument*)
+                          ignore(cagrt (List.nth actuals 3));
+                          Scope_stack.exit_scope scope_stack
+                        end
+                    | _ -> add_error SemanticError "Incorrect number of quantifier arguments. Quantifiers have 4 arguments: var_name, low_bound_inclusive, high_bound_inclusive, expr."  loc errors
+                in
+                  match ident.name with
+                      "forall" -> check_quantifier_actuals ac
+                    | "exists" -> check_quantifier_actuals ac
+                    | _ -> (add_error SemanticError "Unrecognized predicate name in annotation" ident.location_id errors)
+              end
+          | _ -> (raise (SemanticCheckingError "Predicate is not a call"))
+      end;
+    Bool(get_dummy_location ())
+
   and cagrt e = match e with
     | Assign (loc,l,e) ->
 	let lhsType = check_and_get_return_type_lval is_annotation scope_stack l errors in
@@ -191,44 +247,54 @@ and check_and_get_return_type is_annotation scope_stack e errors =
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval is_annotation scope_stack l errors
     | Call (loc, ident, ac) -> (* Check this more? *)
-	let map_fn e = ignore (cagrt e) in
-	let check_actuals = List.iter (map_fn) ac
-	and lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
-	(* Check if there is a function with that name *)
-	let isfndecl =
-	  begin
-	    match lookup_result with
-	      | None ->
-		  let error_msg = "Function name '" ^ (string_of_identifier ident) ^ "' not defined" in
-		  add_error SemanticError error_msg loc errors; check_actuals; None
-	      | Some (d) -> match d with
-		| VarDecl (l, vd) ->
-		    let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a function" in
-		    add_error SemanticError error_msg loc errors; check_actuals; None
-		| FnDecl (loc, fd) -> Some (fd)
-	  end
-	in
-	begin
-	  match isfndecl with
-	    | None -> ErrorType
-	    | Some (fndecl) ->
-		(* Check a call to a valid function *)
-		if List.length ac != List.length fndecl.formals then
-		  begin
-		    let error_msg = "Incorrect number of arguments: expected " ^ (string_of_int (List.length fndecl.formals)) ^ ", given: " ^ (string_of_int (List.length ac)) in
-		    add_error SemanticError error_msg loc errors;
-		    check_actuals;
-		    ErrorType
-		  end
-		else
-		  let check_formal given expected =
-		    let given_type = cagrt given
-		    and expected_type = expected.varType in
-		    ignore (check_for_same_type given_type expected_type loc errors)
-		  in
-		  List.iter2 check_formal ac fndecl.formals;
-		  fndecl.returnType
-	end
+        begin
+        match is_annotation with
+            true ->
+              begin
+                check_and_get_return_type_predicate e
+              end
+          | false ->
+              begin   
+	        let map_fn e = ignore (cagrt e) in
+	        let check_actuals = List.iter (map_fn) ac
+	        and lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
+	          (* Check if there is a function with that name *)
+	        let isfndecl =
+	          begin
+	            match lookup_result with
+	              | None ->
+		          let error_msg = "Function name '" ^ (string_of_identifier ident) ^ "' not defined" in
+		            add_error SemanticError error_msg loc errors; check_actuals; None
+	              | Some (d) -> match d with
+		          | VarDecl (l, vd) ->
+		              let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a function" in
+		                add_error SemanticError error_msg loc errors; check_actuals; None
+		          | FnDecl (loc, fd) -> Some (fd)
+	          end
+	        in
+	          begin
+	            match isfndecl with
+	              | None -> ErrorType
+	              | Some (fndecl) ->
+		          (* Check a call to a valid function *)
+		          if List.length ac != List.length fndecl.formals then
+		            begin
+		              let error_msg = "Incorrect number of arguments: expected " ^ (string_of_int (List.length fndecl.formals)) ^ ", given: " ^ (string_of_int (List.length ac)) in
+		                add_error SemanticError error_msg loc errors;
+		                check_actuals;
+		                ErrorType
+		            end
+		          else
+		            let check_formal given expected =
+		              let given_type = cagrt given
+		              and expected_type = expected.varType in
+		                ignore (check_for_same_type given_type expected_type loc errors)
+		            in
+		              List.iter2 check_formal ac fndecl.formals;
+		              fndecl.returnType
+	          end
+              end
+        end
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Times (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
