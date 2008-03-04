@@ -3,7 +3,7 @@ open Utils
 open Ast
 open Semantic_checking
 
-let default_port = 4243
+let default_port = 4242
 let max_connections = 10
 
 (* The network code is stolen from http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora187.html *)

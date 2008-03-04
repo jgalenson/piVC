@@ -32,7 +32,7 @@ let get_vc path =
 	  begin
 	    match e with
 	      | Ast.Assign (_,l,e) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
-	      | _ -> raise (InvalidPath ("Non-assign expr in basic path.\nExpr: " ^ (Ast.string_of_expr e))) (* TODO: Don't raise exception.  Handle here or in basic paths? *)
+	      | _ -> Ast.EmptyExpr
 	  end
       | _ -> raise (InvalidPath "Annotation in middle of path")
     in
