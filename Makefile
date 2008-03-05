@@ -1,6 +1,5 @@
 DIRS	= server client
 
-
 PROJ_DIR = . client server dp_server client/java_gui
 
 CCFLAGS =
@@ -15,6 +14,12 @@ JAVAC = javac
 default : make_all
 
 make_all :
+	cd language; \
+	make; \
+
+	cd compiler; \
+	make; \
+
 	cd server; \
 	make; \
 
@@ -23,6 +28,12 @@ make_all :
 
 
 clean :
+	cd language; \
+	make clean; \
+
+	cd compiler; \
+	make clean; \
+
 	cd server; \
 	make clean; \
 

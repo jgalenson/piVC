@@ -1,0 +1,38 @@
+PROJ_DIR = . 
+
+CCFLAGS =
+OCFLAGS = -dtypes
+
+INCDIR = $(PROJ_DIR:%=-I %)
+
+CC = gcc $(CCFLAGS) $(INCDIR)
+OC = ocamlc $(OCFLAGS) $(INCDIR)
+JAVAC = javac
+
+default : parser
+
+parser :
+
+	$(OC) -c utils.mli
+	$(OC) -c semantic_checking.mli;
+	$(OC) -c basic_paths.mli
+	$(OC) -c parse_utils.mli;
+	$(OC) -c verification_conditions.mli
+	$(OC) -c test_parser.mli;
+	$(OC) -c utils.ml
+	$(OC) -c semantic_checking.ml;
+	$(OC) -c parser.ml;
+	$(OC) -c lexer.ml;
+	$(OC) -c parse_utils.ml;
+	$(OC) -c expr_utils.ml;
+	$(OC) -c basic_paths.ml;
+	$(OC) -c xml_generator.ml;
+	$(OC) -c verification_conditions.ml
+	$(OC) -c test_parser.ml;
+	$(OC) -o test_parser utils.cmo str.cma ast.cmo xml_generator.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo lexer.cmo parser.cmo scope_stack.cmo semantic_checking.cmo parse_utils.cmo test_parser.cmo 
+
+clean :
+	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cma) \
+		$(PROJ_DIR:%=%/*.cmx) $(PROJ_DIR:%=%/*.annot) $(PROJ_DIR:%=%/*.o)
+
+include .depend
