@@ -32,7 +32,7 @@ let get_vc path =
 	  begin
 	    match e with
 	      | Ast.Assign (_,l,e) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
-	      | _ -> Ast.EmptyExpr
+	      | _ -> formula
 	  end
       | _ -> raise (InvalidPath "Annotation in middle of path")
     in
