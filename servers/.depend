@@ -1,0 +1,4 @@
+server.cmo: xml_generator.cmi server.cmi 
+server.cmx: xml_generator.cmx server.cmi 
+xml_generator.cmo: xml_generator.cmi 
+xml_generator.cmx: xml_generator.cmi 

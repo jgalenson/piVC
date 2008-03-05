@@ -1,0 +1,5 @@
+scope_stack.cmi: ast.cmi 
+ast.cmo: ast.cmi 
+ast.cmx: ast.cmi 
+scope_stack.cmo: ast.cmi scope_stack.cmi 
+scope_stack.cmx: ast.cmx scope_stack.cmi 
