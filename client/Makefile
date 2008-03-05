@@ -1,4 +1,4 @@
-PROJ_DIR = . java_gui
+PROJ_DIR = java_gui java_gui/data_structures
 
 CCFLAGS =
 OCFLAGS =

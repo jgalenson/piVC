@@ -20,7 +20,7 @@ make_all :
 	cd compiler; \
 	make; \
 
-	cd server; \
+	cd servers; \
 	make; \
 
 	cd client; \
@@ -34,7 +34,7 @@ clean :
 	cd compiler; \
 	make clean; \
 
-	cd server; \
+	cd servers; \
 	make clean; \
 
 	cd client; \
