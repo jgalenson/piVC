@@ -5,10 +5,7 @@ Jason
 	Forall, exists, and variables defined in them
 Joel
 	After funcs have locations, have it highlight when you click on them.
-	After error data is sent in xml, parse it and write a JList for it.
 	DP stuff (see Aaron's second email 1/23/08)
-        Can we deal with non-assign statements in a friendlier way? We should proably just ignore them, as opposed to the current behavior, which gives the following error message: "Fatal error: exception Verification_conditions.InvalidPath("Non-assign expr in basic path."
-
 
 Figure out how to deal with predicates (sorted, partitioned, etc.).
 Break stmt

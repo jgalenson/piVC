@@ -168,6 +168,12 @@ public class PiTree extends JPanel {
 			return selectedNode.getUserObject();
 	}
 	
+	public void clear() {
+		root = null;
+		treeModel.setRoot(root);
+		selectedNode = null;
+	}
+	
 	/**
 	 * A class that lets us customize how we draw nodes.
 	 * We can specify a node's text and image.

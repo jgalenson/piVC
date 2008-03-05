@@ -21,6 +21,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.undo.UndoManager;
 
 import data_structures.BasicPath;
+import data_structures.PiError;
 import data_structures.Step;
 import data_structures.VerificationResult;
 
@@ -30,6 +31,7 @@ public class PiGui extends JFrame {
 	private static final int DEFAULT_HEIGHT = 800;
 	
 	private PiCode piCode;
+	private PiErrorOutput piErrorOutput;
 	private PiCompilerOutput piCompilerOutput;
 	private PiTree piTree;
 	private PiMenu piMenu;
@@ -203,8 +205,11 @@ public class PiGui extends JFrame {
 	 * Handles a response from the server by parsing it.
 	 */
 	private void handleServerResponse(String text) {
+		piTree.clear();
+		piErrorOutput.clear();
 		piCompilerOutput.setText(text);
 		serverResponseParser.parse(text, getFilename());
+		rightTabbedPane.repaint();
 	}
 	
 	/**
@@ -214,7 +219,15 @@ public class PiGui extends JFrame {
 	public void handleVerificationResult(VerificationResult verificationResult) {
 		piTree.handleVerificationResult(verificationResult);
 		rightTabbedPane.setSelectedIndex(0);
-		rightTabbedPane.repaint();
+	}
+	
+	/**
+	 * Handles a response from the server that contains
+	 * a list of errors.
+	 */
+	public void handleError(ArrayList<PiError> errors) {
+		piErrorOutput.setErrors(errors);
+		rightTabbedPane.setSelectedIndex(1);
 	}
 	
 	/**
@@ -324,14 +337,20 @@ public class PiGui extends JFrame {
 		piTree.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Tree"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		piErrorOutput = new PiErrorOutput(piCode);
+		piErrorOutput.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createTitledBorder("Errors"),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		piCompilerOutput = new PiCompilerOutput();
 		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Compiler output"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		rightTabbedPane.addTab("Tree", piTree.getTreeInScrollPane());
 		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_D);
+		rightTabbedPane.addTab("Errors", piErrorOutput.getErrorOutputInScrollPane());
+		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
 		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_R);
+		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
 		
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);

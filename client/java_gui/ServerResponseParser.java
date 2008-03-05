@@ -11,6 +11,7 @@ import org.xml.sax.InputSource;
 import data_structures.BasicPath;
 import data_structures.Function;
 import data_structures.Location;
+import data_structures.PiError;
 import data_structures.Step;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
@@ -53,8 +54,8 @@ public class ServerResponseParser {
 		String status = result.getAttributes().getNamedItem("status").getTextContent();
 		if (status.equals("valid") || status.equals("invalid"))
 			parseNormal(result, filename);
-		else if (status.equals("semantic_error") || status.equals("syntax_error"))
-			parseError(result);
+		else if (status.equals("error"))
+			parseErrors(result);
 		//System.out.println("Finished parsing");
 	}
 
@@ -174,9 +175,32 @@ public class ServerResponseParser {
 		return new Location(startByte, endByte, startRow, startCol, endRow, endCol);
 	}
 
-	private void parseError(Node result) {
-		// TODO Auto-generated method stub
-		
+	private void parseErrors(Node result) {
+		ArrayList<PiError> errors = new ArrayList<PiError>();
+		NodeList children = result.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("error".equals(child.getNodeName()))  // Element node
+				errors.add(parseError(child));
+		}
+		piGui.handleError(errors);
+	}
+	
+	private PiError parseError(Node error) {
+		String type = error.getAttributes().getNamedItem("type").getTextContent();
+		String msg = null;
+		Location location = null;
+		NodeList children = error.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("location".equals(child.getNodeName()))
+				location = parseLocation(child);
+			if ("message".equals(child.getNodeName()))
+				msg = child.getTextContent();
+		}
+		if (type == null || msg == null || location == null)
+			throw new RuntimeException("Invalid error tag");
+		return PiError.makeError(type, msg, location);
 	}
 
 }
