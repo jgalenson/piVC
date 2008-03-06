@@ -347,8 +347,10 @@ let rec check_stmt scope_stack returnType errors stmt =
   | IfStmt (loc, test, then_block, else_block) ->
       let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
-	add_error SemanticError error_msg loc errors;
+	begin
+	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	  add_error SemanticError error_msg loc errors;
+	end;
       check_stmt scope_stack returnType errors then_block;
       check_stmt scope_stack returnType errors else_block;
 
@@ -356,8 +358,10 @@ let rec check_stmt scope_stack returnType errors stmt =
       ignore (check_and_get_return_type false scope_stack annotation errors);
       let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
-	add_error SemanticError error_msg loc errors;
+	begin
+	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	  add_error SemanticError error_msg loc errors;
+	end;
       check_stmt scope_stack returnType errors block;
       
   | ForStmt (loc, init, test, incr, block, annotation) ->
@@ -365,8 +369,10 @@ let rec check_stmt scope_stack returnType errors stmt =
       ignore (check_and_get_return_type false scope_stack init errors);
       let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then
-	let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
-	add_error SemanticError error_msg loc errors;
+	begin
+	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
+	  add_error SemanticError error_msg loc errors;
+	end;
       ignore (check_and_get_return_type false scope_stack incr errors);
       check_stmt scope_stack returnType errors block;
       
