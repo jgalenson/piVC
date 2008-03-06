@@ -18,17 +18,18 @@ import data_structures.Location;
  * A class for the code section on the left-hand side.
  */
 public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
+
+	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
+	public static DefaultHighlighter.DefaultHighlightPainter redHP = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
 	
 	private PiGui piGui;
 	private boolean justLoaded;
-	private DefaultHighlighter.DefaultHighlightPainter hlp;
 	private UndoManager undo;
 	
 	public PiCode(PiGui pGui) {
 		super();
 		this.piGui = pGui;
 		justLoaded = false;
-		hlp = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
 		addUndoableEditListener();
@@ -56,31 +57,31 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	/**
 	 * Clears all current highlights and highlights the given location.
 	 */
-	public void highlight(Location location) {
+	public void highlight(Location location, DefaultHighlighter.DefaultHighlightPainter hlp) {
 		removeAllHighlights();
-		highlightSingleLocation(location);
+		highlightSingleLocation(location, hlp);
 	}
 	
 	/**
 	 * Clears all current highlights and highlights the given locations.
 	 */
-	public void highlight(ArrayList<Location> locations) {
+	public void highlight(ArrayList<Location> locations, DefaultHighlighter.DefaultHighlightPainter hlp) {
 		removeAllHighlights();
 		for (Location location: locations)
-			highlightSingleLocation(location);
+			highlightSingleLocation(location, hlp);
 	}
 	
 	/**
 	 * Highlights a single location.
 	 */
-	private void highlightSingleLocation(Location location) {
-		highlightRange(location.getStartByte(), location.getEndByte());
+	private void highlightSingleLocation(Location location, DefaultHighlighter.DefaultHighlightPainter hlp) {
+		highlightRange(location.getStartByte(), location.getEndByte(), hlp);
 	}
 
 	/**
 	 * Highlights a single location.
 	 */
-	private void highlightRange(int start, int end) {
+	private void highlightRange(int start, int end, DefaultHighlighter.DefaultHighlightPainter hlp) {
         try {
         	getHighlighter().addHighlight(start, end, hlp);
 		} catch (BadLocationException e) {

@@ -478,7 +478,7 @@ public class PiGui extends JFrame {
 				// Highlight the step
 				SwingUtilities.invokeLater(new Runnable() {
 					public void run() {
-						piCode.highlight(step.getLocation());
+						piCode.highlight(step.getLocation(), PiCode.yellowHP);
 					}
 				});
 				// Sleep for a bit

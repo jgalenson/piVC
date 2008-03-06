@@ -137,10 +137,10 @@ public class PiTree extends JPanel {
 	private void nodeSelected(Object obj) {
 		if (obj instanceof Step) {
 			Step step = (Step)obj;
-			piCode.highlight(step.getLocation());
+			piCode.highlight(step.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof BasicPath) {
 			BasicPath basicPath = (BasicPath)obj;
-			piCode.highlight(basicPath.getLocations());
+			piCode.highlight(basicPath.getLocations(), PiCode.yellowHP);
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
 			// TODO: Also highlight functions

@@ -3,9 +3,10 @@ Jason
 	change all refs to node to step
 	Fix basic path bugs
 	Forall, exists, and variables defined in them
+	DP setup: Give VarDecls gids, Identifiers VarDecl ref
 Joel
 	After funcs have locations, have it highlight when you click on them.
-	DP stuff (see Aaron's second email 1/23/08)
+	DP stuff (see Aaron's second email 1/23/08): new context, declare (renamed) variables, push assertion, getsat, delete context
 
 Figure out how to deal with predicates (sorted, partitioned, etc.).
 Break stmt
@@ -25,6 +26,9 @@ Long Term
 - Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
 - Visualize counterexamples (see two of Aaron's emails 1/27/2008)
 - Termination arguments (see Aaron's original PiVC email)
+
+Less important
+- Typedef stuff like path (in bp, vc, etc) to make types more readable
 
 Maybe, maybe not
 - Put comments in the ast so we can print them out in to-C++ printing.

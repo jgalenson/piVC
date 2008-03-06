@@ -38,7 +38,7 @@ public class PiErrorOutput extends JPanel {
 					if (obj == null)  // unselecting
 						piCode.removeAllHighlights();
 					else
-						piCode.highlight(((PiError)obj).getLocation());
+						piCode.highlight(((PiError)obj).getLocation(), PiCode.redHP);
 				}
 			}
 		});	
