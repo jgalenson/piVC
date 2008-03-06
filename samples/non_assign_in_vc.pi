@@ -1,0 +1,6 @@
+@pre x >= 0
+@post x >= 1
+void foo(int x) {
+	x := x + 1;
+	x = 1;
+}
