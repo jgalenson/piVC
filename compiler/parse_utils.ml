@@ -10,8 +10,6 @@ let parseToken lexbuf errors =
    let program = Parser.main Lexer.lang lexbuf in
    check_program program errors ;;
 
-
-
 (* Returns (fnName as string * bool * (Basic Path * VC * bool) list) list. *)
 let verify_program program_info = 
   let rec verify_function func = 

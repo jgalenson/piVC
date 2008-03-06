@@ -1,4 +1,8 @@
-server.cmo: xml_generator.cmi server.cmi 
-server.cmx: xml_generator.cmx server.cmi 
+dp_server.cmo: server_framework.cmi dp_server.cmi 
+dp_server.cmx: server_framework.cmx dp_server.cmi 
+main_server.cmo: xml_generator.cmi server_framework.cmi main_server.cmi 
+main_server.cmx: xml_generator.cmx server_framework.cmx main_server.cmi 
+server_framework.cmo: xml_generator.cmi server_framework.cmi 
+server_framework.cmx: xml_generator.cmx server_framework.cmi 
 xml_generator.cmo: xml_generator.cmi 
 xml_generator.cmx: xml_generator.cmi 
