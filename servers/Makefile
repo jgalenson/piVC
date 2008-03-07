@@ -7,16 +7,17 @@ INCDIR = $(PROJ_DIR:%=-I %) -I ../language -I ../compiler -I xml-light
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-SERVER_OBJS = xml_generator.cmo server_framework.cmo
+SERVER_OBJS = xml_generator.cmo server_framework.cmo ci_yices.cmo
 SERVER_INCLUDES = str.cma unix.cma xml-light.cma
 COMPILER_OBJS = utils.cmo semantic_checking.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo parse_utils.cmo utils.cmo
 LANGUAGE_OBJS = ast.cmo lexer.cmo parser.cmo scope_stack.cmo
 
 default : depend servers
 
-servers : $(SERVER_OBJS) main_server.cmo dp_server.cmo
+servers : $(SERVER_OBJS) main_server.cmo dp_server.cmo test_yices.cmo
 	$(OC) -o main_server $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) main_server.cmo
 	$(OC) -o dp_server $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) dp_server.cmo
+	$(OC) -o test_yices $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) test_yices.cmo
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
