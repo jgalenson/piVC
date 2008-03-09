@@ -1,4 +1,12 @@
-  
+(*Jason's really simple test*)
+(*let _ =
+  Ci_yices.init ();
+  let context = Ci_yices.new_context() in
+    Ci_yices.send context "(assert (/= 1 1))(check)";
+    Ci_yices.wait context;
+    let result = Ci_yices.recv context in
+      print_string("result: " ^ result ^ "\n")
+*)     
     
 (* Extract if context id is currently sat.  Parse through
  * annoying messages.
@@ -36,3 +44,5 @@ let test_yices expr_str =
 
 let _ =
   test_yices "x" ;;
+
+

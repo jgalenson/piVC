@@ -24,7 +24,7 @@ let create () =
   let ip, op = Unix.pipe () in
   let im, om = Unix.pipe () in
     Unix.set_nonblock im;
-    let pid = (Unix.create_process "yices" [|"yices"|] ip om log) in
+    let pid = (Unix.create_process "./yices" [|"yices"|] ip om log) in
       Unix.close ip; (* if you get a broken pipe... *)
       Unix.close om; (* ...comment these two lines. *)
       { ic = Unix.in_channel_of_descr im;
