@@ -88,7 +88,13 @@ let rec check_and_get_return_type_lval is_annotation s lval errors = match lval 
           | None ->
 	      let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
 	      add_error SemanticError error_msg  loc errors; ErrorType
-	  | Some(decl) -> type_of_decl decl
+	  | Some(decl) -> 
+              begin
+                let vd = (varDecl_of_decl decl) in
+                  ignore(!(vd.var_id) = Some(23234234));(*TODO-JA: CHANGE ME*)
+                  ignore(!(id.decl) = Some(vd));
+                  type_of_decl decl
+              end
       end
   | ArrayLval(loc, arr, index) ->
       begin

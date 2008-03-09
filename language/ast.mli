@@ -16,10 +16,10 @@ val location_union : location -> location -> location
 type identifier = {
   name: string;
   location_id: location;
+  decl : (varDecl option) ref;
 }
-val create_identifier : string -> location -> identifier
 
-type varType = 
+and varType = 
   | Bool of location
   | Int of location
   | Float of location
@@ -28,13 +28,14 @@ type varType =
   | Identifier of identifier * location
   | ErrorType
 	
-type varDecl = {
+and varDecl = {
   varType : varType;
   varName : identifier;
-  location_vd : location
+  location_vd : location;
+  var_id: (int option) ref;
 }
 val create_varDecl : varType -> identifier -> location -> varDecl
-
+val create_identifier : string -> location -> identifier
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * identifier * expr
@@ -115,6 +116,13 @@ val location_of_stmt : stmt -> location
 
 val location_of_expr : expr -> location
 
+val decl_of_identifier : identifier -> varDecl
+
+val type_of_identifier : identifier -> varType
+
+val id_of_identifier : identifier -> int
+
+val varDecl_of_decl : decl -> varDecl
 
 (******************
 Printing functions

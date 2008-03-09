@@ -35,11 +35,9 @@ let location_union loc1 loc2 = {
 type identifier = {
   name: string;
   location_id: location;
+  decl : (varDecl option) ref;
 }
-let create_identifier name location =
-  {name = name; location_id = location;}
-
-type varType = 
+and varType =  
   | Bool of location
   | Int of location
   | Float of location
@@ -48,12 +46,42 @@ type varType =
   | Identifier of identifier * location
   | ErrorType
 	
-type varDecl = {
+and varDecl = {
   varType : varType;
   varName : identifier;
-  location_vd : location
+  location_vd : location;
+  var_id: (int option) ref;
 }
-let create_varDecl t name location = {varType=t; varName=name; location_vd=location;}
+let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None;}
+
+let decl_of_identifier ident = 
+  match !(ident.decl) with
+      Some(d) -> (d)
+    | None -> raise (Error "Variable decl not set")
+
+let type_of_identifier ident = 
+  (decl_of_identifier ident).varType
+
+let id_of_identifier ident = 
+  let d = decl_of_identifier ident in
+    match !(d.var_id) with
+        Some(id) -> id
+      | None -> raise (Error "Variable id not set")
+
+let id_of_identifier_if_available ident = 
+  match !(ident.decl) with
+      Some(d) ->
+        begin
+          print_string "HERE!!!";
+          match !(d.var_id) with
+              Some(id) -> id
+            | None -> -1
+        end
+    | None -> -1
+
+let create_identifier name location =
+  {name = name; location_id = location; decl = ref None}
+
 
 type lval =
   | NormLval of location * identifier
@@ -118,6 +146,10 @@ let create_fnDecl name formals returnType stmtBlock preCondition postCondition l
 type decl = 
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
+
+let varDecl_of_decl decl = match decl with
+    VarDecl(loc, vd) -> vd
+  | FnDecl(loc, fd) -> raise (Error "Not a varDecl")
 
 let name_of_decl decl =
   match decl with
@@ -203,7 +235,7 @@ let string_of_location loc =
     "(" ^ string_of_int loc.loc_end.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_end) ^ ")"
 
 let string_of_identifier id =
-  id.name
+  id.name(* ^ "(" ^ (string_of_int (id_of_identifier_if_available id)) ^ ")"*)
 
 let string_of_type typ =
   let rec sot = function
