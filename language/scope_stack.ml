@@ -2,20 +2,33 @@ open Hashtbl
 open Ast
 open Stack
 
-type t = (string, Ast.decl) Hashtbl.t Stack.t
+type t = (((string, Ast.decl) Hashtbl.t Stack.t)*int ref)
 
-let create () = (Stack.create ())
+let create () = ((Stack.create ()), ref 0)
 
 let enter_scope s = 
-  Stack.push (Hashtbl.create 5) s
+  Stack.push (Hashtbl.create 5) (fst s)
 
 let exit_scope s = 
-  ignore(Stack.pop s)
+  ignore(Stack.pop (fst s))
 
-let insert_decl decl s = Hashtbl.add (Stack.top s) (Ast.name_of_decl decl) decl
+let rec insert_decl decl s =
+  begin
+    match decl with
+        VarDecl(loc,vd) ->
+          begin
+            vd.var_id := Some(!(snd s));
+            (snd s) := !(snd s) + 1;
+          end
+      | FnDecl(loc, fd) -> ignore()
+  end;
+  insert_decl_without_setting_id decl s
+
+and insert_decl_without_setting_id decl s = 
+  Hashtbl.add (Stack.top (fst s)) (Ast.name_of_decl decl) decl
 
 let lookup_decl declName s =
-  let copy = Stack.copy s in
+  let copy = Stack.copy (fst s) in
   let rec lookupRecursive copy = 
     if (Stack.is_empty copy) then None else
     let exists = Hashtbl.mem (Stack.top copy) declName in
@@ -31,8 +44,8 @@ let lookup_decl declName s =
 
 
 let lookup_decl_in_curr_scope_only declName s = 
-  let exists = Hashtbl.mem (Stack.top s) declName in
+  let exists = Hashtbl.mem (Stack.top (fst s)) declName in
      if exists then
-       Some (Hashtbl.find (Stack.top s) declName)
+       Some (Hashtbl.find (Stack.top (fst s)) declName)
      else
        None

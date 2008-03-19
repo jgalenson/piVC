@@ -50,12 +50,12 @@ let get_statement_list stmts =
     | _ -> [stmts]
 
 let create_rv_decl t ident = 
-  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some(0));}
+  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some(-1));}
 
 let create_rv_expression expr t = 
 
   let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
-    ignore(rv_ident.decl = ref (Some(create_rv_decl t rv_ident)));
+    rv_ident.decl := Some(create_rv_decl t rv_ident);
     let rv_lval = Ast.NormLval(Ast.get_dummy_location (), rv_ident) in
     let rv_assignment = Ast.Assign(Ast.location_of_expr expr, rv_lval, expr) in
       rv_assignment
@@ -97,7 +97,11 @@ let generate_paths_for_func func program =
                     VarDecl(loc, vd) -> raise (BadDeclException)
                   | FnDecl(loc, callee) -> (
                       let ident_name = "_v" ^ string_of_int !temp_var_number in
-                      let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), create_identifier ident_name (get_dummy_location ()))) in
+                      let ident = create_identifier ident_name (get_dummy_location ()) in
+                      let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
+                      let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+                        decl.var_id := Some(-temp_var_number.contents - 2); (*rv is -1, so _v0 is -2, _v1 is -3, and so on*)
+                        ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
                         Queue.add (List.append curr_path [Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]) all_paths;
                         new_nodes := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_nodes;

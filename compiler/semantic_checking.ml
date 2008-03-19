@@ -78,25 +78,33 @@ and is_array_type t = match t with
   | Array(atype, loc) -> true
   | _ -> false
   
+
+let annotate_ident ident s = 
+  let lookupResult = Scope_stack.lookup_decl ident.name s in
+    match lookupResult with
+        None -> ignore () (*This probably means that the ident wasn't declared, but this will be reported elsewhere.*)
+      | Some(decl) ->
+          begin
+            let vd = (varDecl_of_decl decl) in
+              ident.decl := Some(vd)
+          end
+
 (* CAGRT *)
 	
 let rec check_and_get_return_type_lval is_annotation s lval errors = match lval with
   | NormLval(loc, id) ->
+      annotate_ident id s;
       let lookupResult = Scope_stack.lookup_decl id.name s in
       begin
 	match lookupResult with
           | None ->
 	      let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
 	      add_error SemanticError error_msg  loc errors; ErrorType
-	  | Some(decl) -> 
-              begin
-                let vd = (varDecl_of_decl decl) in
-                  ignore(!(vd.var_id) = Some(23234234));(*TODO-JA: CHANGE ME*)
-                  ignore(!(id.decl) = Some(vd));
-                  type_of_decl decl
-              end
-      end
+	  | Some(decl) -> type_of_decl decl
+      end;
+
   | ArrayLval(loc, arr, index) ->
+      annotate_ident arr s;
       begin
         let typeOfIndex = check_and_get_return_type is_annotation s index errors in
         begin
@@ -214,7 +222,11 @@ and check_and_get_return_type is_annotation scope_stack e errors =
                                     LValue(loc, lval) ->
                                       begin
                                         match lval with
-                                            NormLval(loc, ident) -> Scope_stack.insert_decl (Ast.VarDecl(loc,(Ast.create_varDecl (Int(get_dummy_location())) ident loc))) scope_stack
+                                            NormLval(loc, ident) ->
+                                              begin
+                                                Scope_stack.insert_decl (Ast.VarDecl(loc,(Ast.create_varDecl (Int(get_dummy_location())) ident loc))) scope_stack;
+                                                annotate_ident ident scope_stack
+                                              end
                                           | _ -> decl_ok := false
                                       end
                                   | _ -> decl_ok := false
@@ -432,8 +444,11 @@ let check_function func s errors =
 
 
   Scope_stack.enter_scope s;
-  (let vd = Ast.create_varDecl func.returnType (Ast.create_identifier "rv" (Ast.get_dummy_location ()) ) (Ast.get_dummy_location ()) in
-    Scope_stack.insert_decl (Ast.VarDecl(Ast.get_dummy_location (), vd)) s);
+  begin
+    let vd = Ast.create_varDecl func.returnType (Ast.create_identifier "rv" (Ast.get_dummy_location ()) ) (Ast.get_dummy_location ()) in
+      vd.var_id := Some(-1);
+      Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
+  end;
   (*add rv to scope*)
   ignore (check_and_get_return_type true s func.postCondition errors);
   Scope_stack.exit_scope s;

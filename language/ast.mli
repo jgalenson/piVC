@@ -116,7 +116,9 @@ val location_of_stmt : stmt -> location
 
 val location_of_expr : expr -> location
 
-val decl_of_identifier : identifier -> varDecl
+val var_id_of_varDecl : varDecl -> int
+
+val varDecl_of_identifier : identifier -> varDecl
 
 val type_of_identifier : identifier -> varType
 

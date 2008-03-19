@@ -54,16 +54,21 @@ and varDecl = {
 }
 let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None;}
 
-let decl_of_identifier ident = 
+let varDecl_of_identifier ident = 
   match !(ident.decl) with
       Some(d) -> (d)
     | None -> raise (Error "Variable decl not set")
 
+let var_id_of_varDecl decl = 
+  match !(decl.var_id) with
+      Some(num) -> num
+    | None -> raise (Error "Variable id not set")
+
 let type_of_identifier ident = 
-  (decl_of_identifier ident).varType
+  (varDecl_of_identifier ident).varType
 
 let id_of_identifier ident = 
-  let d = decl_of_identifier ident in
+  let d = varDecl_of_identifier ident in
     match !(d.var_id) with
         Some(id) -> id
       | None -> raise (Error "Variable id not set")
@@ -72,7 +77,6 @@ let id_of_identifier_if_available ident =
   match !(ident.decl) with
       Some(d) ->
         begin
-          print_string "HERE!!!";
           match !(d.var_id) with
               Some(id) -> id
             | None -> -1
@@ -234,10 +238,15 @@ let string_of_location loc =
     "(" ^ string_of_int loc.loc_start.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_start) ^ ") to " ^
     "(" ^ string_of_int loc.loc_end.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_end) ^ ")"
 
-let string_of_identifier id =
-  id.name(* ^ "(" ^ (string_of_int (id_of_identifier_if_available id)) ^ ")"*)
+let rec string_of_identifier id =
+  match id.decl.contents with
+      None -> id.name
+    | Some(vd) ->
+        begin
+          id.name ^ "{" ^ string_of_int (var_id_of_varDecl(vd)) ^ ", " ^ (string_of_type vd.varType) ^ "}"
+        end
 
-let string_of_type typ =
+and string_of_type typ =
   let rec sot = function
     | Bool l -> "bool"
     | Int l -> "int"
