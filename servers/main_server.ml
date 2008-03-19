@@ -79,10 +79,11 @@ and xml_of_verified_program (all_valid, functions) =
     | false -> "invalid"
      
   (*Now we have the xml generation functions for the various levels*)
-  and xml_of_function (name, all_valid, basic_paths) = 
+  and xml_of_function (fn, all_valid, basic_paths) = 
     let function_node = Xml_generator.create "function" in
-      add_attribute ("name", name) function_node;
+      add_attribute ("name", fn.fnName.name) function_node;
       add_attribute ("status", proved_of_bool all_valid) function_node;
+      add_child (xml_of_location fn.location_fd) function_node;
       let process_basic_path basic_path = 
         add_child (xml_of_basic_path basic_path) function_node in
         List.iter process_basic_path basic_paths;

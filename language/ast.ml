@@ -238,7 +238,12 @@ let string_of_location loc =
     "(" ^ string_of_int loc.loc_start.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_start) ^ ") to " ^
     "(" ^ string_of_int loc.loc_end.pos_lnum ^ ", " ^ string_of_int (col_number_of_position loc.loc_end) ^ ")"
 
-let rec string_of_identifier id =
+
+
+let string_of_identifier id =
+  id.name
+
+let rec string_of_identifier_with_extra_info id =
   match id.decl.contents with
       None -> id.name
     | Some(vd) ->

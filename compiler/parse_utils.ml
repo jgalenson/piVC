@@ -10,7 +10,7 @@ let parseToken lexbuf errors =
    let program = Parser.main Lexer.lang lexbuf in
    check_program program errors ;;
 
-(* Returns (fnName as string * bool * (Basic Path * VC * bool) list) list. *)
+(* Returns (fn * bool * (Basic Path * VC * bool) list) list. *)
 let verify_program program_info = 
   let rec verify_function func = 
     let verified_basic_paths = List.map verify_basic_path (snd func) in
@@ -27,15 +27,15 @@ let verify_program program_info =
 
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list
-   Returns (fnName as string * (Basic Path * VC) list) list. *)
+   Returns (fn * (Basic Path * VC) list) list. *)
 let get_all_info program =
-  (* Returns a pair of fnName and its basic path.
-     Returns (string * path_node list list). *)
+  (* Returns a list of pairs of fnName and its basic path.
+     Returns (fn * path_node list list) list. *)
   let get_basic_paths program =
     let get_decl_paths_if_appropriate decl = 
       match decl with
           VarDecl (loc, vd) -> None
-	| FnDecl (loc, fd) -> ((*Basic_paths.print_all_basic_paths (Basic_paths.generate_paths_for_func fd program);*)Some (fd.fnName.name, Basic_paths.generate_paths_for_func fd program))
+	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program))
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =
