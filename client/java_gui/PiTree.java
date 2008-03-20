@@ -143,7 +143,7 @@ public class PiTree extends JPanel {
 			piCode.highlight(basicPath.getLocations(), PiCode.yellowHP);
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
-			// TODO: Also highlight functions
+			piCode.highlight(function.getLocation(), PiCode.yellowHP);
 		} else
 			piCode.removeAllHighlights();
 	}

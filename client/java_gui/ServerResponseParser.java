@@ -85,15 +85,18 @@ public class ServerResponseParser {
 		String valid = function.getAttributes().getNamedItem("status").getTextContent();
 		boolean isValid = valid.equals("valid") ? true : false;
 		ArrayList<BasicPath> basicPaths = new ArrayList<BasicPath>();
+		Location location = null;
 		NodeList children = function.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
 			if ("basic_path".equals(child.getNodeName()))
 				basicPaths.add(parseBasicPath(child));
+			if ("location".equals(child.getNodeName()))
+				location = parseLocation(child);
 		}
 		if (basicPaths.size() == 0)
 			throw new RuntimeException("Function has no basic paths");
-		return new Function(name, isValid, basicPaths);
+		return new Function(name, isValid, basicPaths, location);
 	}
 
 	/**

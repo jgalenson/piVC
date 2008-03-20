@@ -32,7 +32,7 @@ let get_my_addr () =
 
 let start_server serv_fun =
   let port = default_port in 
-  let my_address = Unix.inet_addr_of_string "128.12.102.200" in
+  let my_address = get_my_addr () in
   print_endline ("Starting server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
 

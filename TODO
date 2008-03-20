@@ -1,11 +1,9 @@
 Jason
-	put location of func signature in func xml
 	change all refs to node to step
 	Fix basic path bugs
 	Forall, exists, and variables defined in them
 	DP setup: Give VarDecls gids, Identifiers VarDecl ref
 Joel
-	After funcs have locations, have it highlight when you click on them.
 	DP stuff (see Aaron's second email 1/23/08): new context, declare (renamed) variables, push assertion, getsat, delete context
 
 Figure out how to deal with predicates (sorted, partitioned, etc.).
