@@ -12,7 +12,8 @@ let verify_vc vc =
   Unix.connect sock (Unix.ADDR_INET(server_addr, Constants.dp_server_port));
   let inchan = Unix.in_channel_of_descr sock in
   let outchan = Unix.out_channel_of_descr sock in
-  let vc_yices_string = Transform_yices.get_yices_string vc in
+  let negated_vc = Not (get_dummy_location (), vc) in
+  let vc_yices_string = Transform_yices.get_yices_string negated_vc in
   Net_utils.send_output outchan vc_yices_string;
   flush outchan;
   let response = Net_utils.get_input inchan in  
