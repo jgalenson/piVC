@@ -5,9 +5,6 @@ open Ast
 open Semantic_checking
 open Utils ;;
 
-let dp_server_address = "127.0.0.1" ;;
-let dp_server_port = 4243 ;;
-
 let verify_vc vc =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   let server_addr = (Unix.inet_addr_of_string Constants.dp_server_address) in
@@ -16,10 +13,12 @@ let verify_vc vc =
   let outchan = Unix.out_channel_of_descr sock in
   let vc_yices_string = Transform_yices.get_yices_string vc in
   Net_utils.send_output outchan vc_yices_string;
+  flush outchan;
   let response = Net_utils.get_input inchan in  
-  if (response = "sat") then
+  Unix.close sock;
+  if (response = "unsat") then
     true
-  else if (response = "unsat") then
+  else if (response = "sat") then
     false
   else
     assert false

@@ -109,7 +109,7 @@ let get_yices_string vc =
   
   (* First, find all vars and rename them. *)
   let var_names = Hashtbl.create 10 in
-  let new_vc = parse_expr vc var_names in
+  let new_vc = Not (get_dummy_location (), parse_expr vc var_names) in
   let defines = Hashtbl.fold build_define_string var_names "" in
   let vc_string = yices_string_of_expr new_vc in
   defines ^ "(assert " ^ vc_string ^ ")\n(check)\n" ;;

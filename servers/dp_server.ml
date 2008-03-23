@@ -6,9 +6,7 @@ open Net_utils ;;
  *)
 let rec getsat id =
   try
-    print_endline "a";
     Ci_yices.wait id;
-    print_endline "b";
     let recv = Ci_yices.recv id in
       match recv with
 	| "sat" -> "sat"
@@ -24,12 +22,16 @@ let rec getsat id =
 	assert false ;;
 
 let verify ic oc =
-  print_string "Beginning verify.";
+  print_endline "Beginning verify.";
   let input = get_input ic in
+  print_endline ("dp got input: " ^ input);
   Ci_yices.init ();
   let id = Ci_yices.new_context () in
+  print_endline "Sending to yices.";
   Ci_yices.send id input;
+  print_endline "Getting response.";
   let is_sat = getsat id in
+  print_endline ("Got response: " ^ is_sat);
   send_output oc is_sat;
   flush oc;
-  print_string "End verify.";
+  print_endline "End verify.";

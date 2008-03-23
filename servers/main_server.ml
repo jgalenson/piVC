@@ -21,7 +21,7 @@ let rec compile ic oc =
     Buffer.contents buf
   in*)
 
-  print_string "Beginning compile.";
+  print_endline "Beginning compile.";
   let code = get_input ic in
   (* print_endline code; *)
   let (program, errors) = Parse_utils.parse_string code in
@@ -39,7 +39,7 @@ let rec compile ic oc =
   in
     send_output oc get_output_to_return_to_client;
   flush oc;
-  print_string "End compile.";
+  print_endline "End compile.";
 
 
 and xml_of_location location = 
