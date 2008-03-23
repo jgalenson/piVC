@@ -102,13 +102,16 @@ let rec yices_string_of_type t = match t with
   | Array (typ, l) -> "(-> int " ^ (yices_string_of_type typ) ^ ")"
   | _ -> raise (InvalidVC ("Unimplemented type: " ^ (string_of_type t))) (* TODO: Finish *)
 
+(* Builds a big string out of all the variables we need to define. *)
 let build_define_string id (name, t) cur_string =
   cur_string ^ "(define " ^ name ^ "::" ^ (yices_string_of_type t) ^ ")\n" ;;
 
+(* Turns the negation of this VC into a yices-readable string. *)
 let get_yices_string vc =
   
   (* First, find all vars and rename them. *)
   let var_names = Hashtbl.create 10 in
+  (* We negate it since F is valid iff not F is unsat. *)
   let new_vc = Not (get_dummy_location (), parse_expr vc var_names) in
   let defines = Hashtbl.fold build_define_string var_names "" in
   let vc_string = yices_string_of_expr new_vc in

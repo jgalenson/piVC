@@ -18,7 +18,5 @@ main_server_executable.cmx: server_framework.cmx main_server.cmx \
     main_server_executable.cmi 
 server_framework.cmo: xml_generator.cmi server_framework.cmi 
 server_framework.cmx: xml_generator.cmx server_framework.cmi 
-test_yices.cmo: ci_yices.cmi test_yices.cmi 
-test_yices.cmx: ci_yices.cmx test_yices.cmi 
 xml_generator.cmo: xml_generator.cmi 
 xml_generator.cmx: xml_generator.cmi 

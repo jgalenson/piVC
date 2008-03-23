@@ -93,7 +93,7 @@ and xml_of_verified_program (all_valid, functions) =
         function_node
   and xml_of_basic_path (nodes, vc, valid) =
     let basic_path_node = Xml_generator.create "basic_path" in
-      add_attribute ("status", proved_of_bool all_valid) basic_path_node;
+      add_attribute ("status", proved_of_bool valid) basic_path_node;
       let path_node = Xml_generator.create "path" in
         add_child path_node basic_path_node;
         let vc_node = Xml_generator.create "vc" in

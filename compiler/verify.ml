@@ -5,6 +5,7 @@ open Ast
 open Semantic_checking
 open Utils ;;
 
+(* Verifies a VC. *)
 let verify_vc vc =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   let server_addr = (Unix.inet_addr_of_string Constants.dp_server_address) in
@@ -16,6 +17,7 @@ let verify_vc vc =
   flush outchan;
   let response = Net_utils.get_input inchan in  
   Unix.close sock;
+  (* A VC is valid iff its negation is unsatisfiable. *)
   if (response = "unsat") then
     true
   else if (response = "sat") then
