@@ -1,4 +1,6 @@
 import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 
 import javax.swing.DefaultListCellRenderer;
@@ -10,8 +12,8 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import data_structures.Location;
 import data_structures.PiError;
-
 
 public class PiErrorOutput extends JPanel {
 	
@@ -30,18 +32,38 @@ public class PiErrorOutput extends JPanel {
 	private void initList() {
 		list.setCellRenderer(new MyListCellRenderer());
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		// Highlight an error in the code when it is selected.
+		// Catch selection clicks and clicks on selected object
+		list.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getButton() != MouseEvent.BUTTON1)
+					return;
+				int index = list.locationToIndex(e.getPoint());
+				Object obj = list.getModel().getElementAt(index);
+				errorClicked(obj);
+			}
+		});
+		// Catch unselection
 		list.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
 					Object obj = list.getSelectedValue();
-					if (obj == null)  // unselecting
-						piCode.removeAllHighlights();
-					else
-						piCode.highlight(((PiError)obj).getLocation(), PiCode.redHP);
+					if (obj == null)
+						errorClicked(obj);
 				}
 			}
-		});	
+		});
+	}
+	
+	private void errorClicked(Object obj) {
+		if (obj == null)  // unselecting
+			piCode.removeAllHighlights();
+		else {
+			Location loc = ((PiError)obj).getLocation();
+			piCode.highlight(loc, PiCode.redHP);
+			piCode.setCaretPosition(loc.getStartByte());
+			piCode.requestFocusInWindow();
+		}	
 	}
 	
 	/**
