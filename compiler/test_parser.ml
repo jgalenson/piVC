@@ -3,6 +3,7 @@
 open Parse_utils
 open Semantic_checking
 open Ast
+open Verify
   
 let print_basic_paths_and_vcs all_info =
   let print_paths_and_vcs (_, info) =

@@ -3,6 +3,7 @@ open Utils
 open Ast
 open Semantic_checking
 open Server_framework
+open Net_utils
 
 (*
  * Code for the main server.
@@ -20,6 +21,7 @@ let rec compile ic oc =
     Buffer.contents buf
   in*)
 
+  print_string "Beginning compile.";
   let code = get_input ic in
   (* print_endline code; *)
   let (program, errors) = Parse_utils.parse_string code in
@@ -28,15 +30,16 @@ let rec compile ic oc =
   let get_output_to_return_to_client = 
     match errors with
         [] -> (
-          let program_info = Parse_utils.get_all_info (Utils.elem_from_opt program) in
-          let verified_program_info = Parse_utils.verify_program program_info in
+          let program_info = Verify.get_all_info (Utils.elem_from_opt program) in
+          let verified_program_info = Verify.verify_program program_info in
             Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
               )
       | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
 
   in
     send_output oc get_output_to_return_to_client;
-  flush oc
+  flush oc;
+  print_string "End compile.";
 
 
 and xml_of_location location = 
@@ -118,6 +121,3 @@ and xml_of_verified_program (all_valid, functions) =
         add_child (xml_of_function func) result_node in
         List.iter process_function functions;
         transmission_node
-
-    
-let _ = run_server compile

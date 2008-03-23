@@ -2,22 +2,23 @@ PROJ_DIR = .
 
 OCFLAGS = -dtypes
 
-INCDIR = $(PROJ_DIR:%=-I %) -I ../language -I ../compiler -I xml-light
+INCDIR = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../compiler -I xml-light
 
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-SERVER_OBJS = xml_generator.cmo server_framework.cmo ci_yices.cmo
+UTILS_OBJS = net_utils.cmo constants.cmo
+SERVER_OBJS = xml_generator.cmo server_framework.cmo ci_yices.cmo main_server.cmo dp_server.cmo
 SERVER_INCLUDES = str.cma unix.cma xml-light.cma
-COMPILER_OBJS = utils.cmo semantic_checking.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo parse_utils.cmo utils.cmo
+COMPILER_OBJS = utils.cmo semantic_checking.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo parse_utils.cmo transform_yices.cmo verify.cmo utils.cmo
 LANGUAGE_OBJS = ast.cmo lexer.cmo parser.cmo scope_stack.cmo
 
 default : depend servers
 
-servers : $(SERVER_OBJS) main_server.cmo dp_server.cmo test_yices.cmo
-	$(OC) -o main_server $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) main_server.cmo
-	$(OC) -o dp_server $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) dp_server.cmo
-	$(OC) -o test_yices $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_INCLUDES) $(SERVER_OBJS) test_yices.cmo
+servers : $(SERVER_OBJS) main_server_executable.cmo dp_server_executable.cmo both_servers.cmo
+	$(OC) -o main_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) main_server_executable.cmo
+	$(OC) -o dp_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) dp_server_executable.cmo
+	$(OC) -o both_servers $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) both_servers.cmo
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
@@ -31,6 +32,7 @@ clean :
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
 	rm main_server
 	rm dp_server
+	rm both_servers
 
 depend:
 	$(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend

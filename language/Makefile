@@ -2,7 +2,7 @@ PROJ_DIR = .
 
 OCFLAGS = -dtypes
 
-INCDIR = $(PROJ_DIR:%=-I %)
+INCDIR = $(PROJ_DIR:%=-I %) -I ../utils
 
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep

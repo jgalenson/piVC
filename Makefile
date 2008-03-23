@@ -11,9 +11,12 @@ CC = gcc $(CCFLAGS) $(INCDIR)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 JAVAC = javac
 
-default : make_all
+default : backend frontend
 
-make_all :
+backend :
+	cd utils ;\
+	make; \
+
 	cd language; \
 	make; \
 
@@ -23,11 +26,16 @@ make_all :
 	cd servers; \
 	make; \
 
+
+frontend:
 	cd client; \
 	make; \
 
 
 clean :
+	cd utils; \
+	make clean; \
+
 	cd language; \
 	make clean; \
 
