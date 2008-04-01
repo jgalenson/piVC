@@ -1,8 +1,5 @@
 Jason
-	change all refs to node to step
-	Fix basic path bugs
-	Forall, exists, and variables defined in them
-	DP setup: Give VarDecls gids, Identifiers VarDecl ref
+	change all refs from node to step
 Joel
 	DP stuff (see Aaron's second email 1/23/08): new context, declare (renamed) variables, push assertion, getsat, delete context
 
@@ -35,3 +32,40 @@ Maybe, maybe not
 Notes
 -----
 See http://www.ocaml-programming.de/packages/documentation/findlib/guide-html/quickstart.html for info on findlib
+
+
+
+-----------------------------
+Proposed High-level timetable
+-----------------------------
+
+Unless otherwise specified, deadlines are at the end of the week
+
+Week 1
+Some stuff working for array DP
+
+Week 2
+Everything working for array DP
+
+Week 3
+Equivilent in functionality to Aaron's version, with no remaining bugs
+
+Week 4
+Couter-example generation
+
+Week 5
+VC caching
+
+Week 6
+Support for one other DP (perhaps sets)
+
+Week 7
+Proof of termination
+
+Week 8
+Fully-working version, only polishing is necessary
+
+Week 9
+Finished, ready-to-go
+
+Week 10
