@@ -33,3 +33,40 @@ Notes
 -----
 See http://www.ocaml-programming.de/packages/documentation/findlib/guide-html/quickstart.html for info on findlib
 
+
+-----------------------------
+Proposed High-level timetable
+-----------------------------
+
+(Note that this does not reflect when we will be working on the stuff, but rather when we will be finished working on the stuff. e.g. Although I have put "proof of termination" down for week 7, it'll obviously take much longer than 1 week to do it.)
+
+Unless otherwise specified, deadlines are at the end of the week
+
+Week 1
+Some stuff working for array DP
+
+Week 2
+Everything working for array DP
+
+Week 3
+Equivilent in functionality to Aaron's version, with no remaining bugs
+
+Week 4
+Couter-example generation
+
+Week 5
+VC caching
+
+Week 6
+Support for one other DP (perhaps sets)
+
+Week 7
+Proof of termination
+
+Week 8
+Fully-working version, only polishing is necessary
+
+Week 9
+Finished, ready-to-go
+
+Week 10
