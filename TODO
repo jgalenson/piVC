@@ -1,3 +1,6 @@
+Either
+Figure out way to cleanly stop server. Currently, it remains bound to ports for awhile after ctrl-C is executed, which makes restarting after a recompile time-consuming.
+
 Jason
 	change all refs from node to step
 Joel

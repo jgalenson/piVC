@@ -4,13 +4,8 @@
   open Ast
 
 
-
-
-
-
 exception NoCondition
 exception ExprNotIdent
-
 
 
 type temp_expr =
@@ -78,6 +73,11 @@ and condition_from_temp_expr = function
     | Implies (loc,t1, t2) -> condition_from_temp_expr t2
     | EmptyExpr -> raise NoCondition
 
+(* "has_condition" reflects whether this expression is followed by a while loop condition.
+   We don't know whether the condition is a condition or an argument of a function call until
+   after we're well advanced in the parsing, so we put the condition in the expression. When we
+   reach the end, we yank out the final condition and put it as the loop condition.
+*)
 and expr_from_temp_expr has_condition = function
     | Assign (loc,l, e) -> Ast.Assign(loc,l,expr_from_temp_expr has_condition e)
     | Constant (loc,c) -> Ast.Constant(loc,c)
@@ -223,6 +223,7 @@ VarDecl   : Var T_Semicolon                 { $1 }
           ;
 
 Stmt       : VarDecl { Ast.VarDeclStmt($1.location_vd, $1) }
+           | VarDeclAndAssign { $1 }
            | OptionalExpr T_Semicolon {Ast.Expr((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),expr_from_temp_expr false $1) }
            | IfStmt { $1 }
            | WhileStmt { $1 }
@@ -231,6 +232,15 @@ Stmt       : VarDecl { Ast.VarDeclStmt($1.location_vd, $1) }
            | ReturnStmt { $1 }
 	   | AssertStmt { $1 }
            | StmtBlock { $1 }
+;
+
+VarDeclAndAssign : Var T_Assign Expr T_Semicolon {
+                     Ast.StmtBlock(create_location $1.location_vd.loc_start (Parsing.rhs_end_pos 4),
+                                   [Ast.VarDeclStmt(get_dummy_location (), $1);
+                                    Ast.Expr(get_dummy_location (), Ast.Assign(get_dummy_location (), Ast.NormLval(get_dummy_location (), $1.varName), expr_from_temp_expr false $3))
+                                   ]
+                                  )
+}
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/

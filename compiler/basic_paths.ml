@@ -185,7 +185,7 @@ let generate_paths_for_func func program =
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;
             generate_path curr_path remaining_stmts closing_scope_actions
 
-        | Ast.StmtBlock(loc, stmts) -> raise (UnexpectedStatementException)
+        | Ast.StmtBlock(loc, stmts) -> generate_path curr_path (stmts @ remaining_stmts) closing_scope_actions
         | Ast.EmptyStmt -> generate_path curr_path remaining_stmts closing_scope_actions
 	)
   in generate_path [func_pre_condition] (get_statement_list func.stmtBlock) [];
