@@ -8,7 +8,7 @@ open Utils ;;
 (* Verifies a VC. *)
 let verify_vc vc =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-  let server_addr = (Unix.inet_addr_of_string Constants.dp_server_address) in
+  let server_addr = Constants.dp_server_address in
   Unix.connect sock (Unix.ADDR_INET(server_addr, Constants.dp_server_port));
   let inchan = Unix.in_channel_of_descr sock in
   let outchan = Unix.out_channel_of_descr sock in

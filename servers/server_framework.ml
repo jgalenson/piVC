@@ -42,7 +42,8 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
       reaper Sys.sigint
 
 let get_my_addr () =
-  (Unix.gethostbyname(Unix.gethostname())).Unix.h_addr_list.(0) ;;
+  (*(Unix.gethostbyname(Unix.gethostname())).Unix.h_addr_list.(0) ;;*)
+  Unix.inet_addr_any ;;
 
 let start_server serv_fun port =
   let my_address = get_my_addr () in
