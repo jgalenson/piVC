@@ -6,6 +6,7 @@
 
 exception NoCondition
 exception ExprNotIdent
+exception UnexpectedStmt
 
 
 type temp_expr =
@@ -13,6 +14,7 @@ type temp_expr =
   | Constant of Ast.location * Ast.constant
   | LValue of Ast.location * Ast.lval
   | TempCall of Ast.location * temp_expr * temp_expr list
+  | TempVarDeclAndAssign of Ast.stmt * expr
   | Plus of Ast.location * temp_expr * temp_expr
   | Minus of Ast.location * temp_expr * temp_expr
   | Times of Ast.location * temp_expr * temp_expr
@@ -34,6 +36,23 @@ type temp_expr =
   | Length of Ast.location * temp_expr
   | EmptyExpr
 
+let condense_stmt_list sl = match List.length sl with
+    1 -> List.hd sl
+  | 2 -> 
+    begin
+      match List.nth sl 1 with
+          StmtBlock(loc,stmts) -> StmtBlock(get_dummy_location (), List.hd sl::stmts)
+        | _ -> StmtBlock(get_dummy_location (), sl)    
+    end
+  | _ -> raise UnexpectedStmt
+
+
+let tempVarDeclAndAssign_from_stmt_list stmts = 
+  let exp = match (List.nth stmts 1) with
+      Ast.Expr(loc, exp) -> exp
+    | _ -> raise UnexpectedStmt
+  in
+  TempVarDeclAndAssign((List.nth stmts 0), exp)
 
 let identifier_of_expression expr =
   match expr with
@@ -43,6 +62,15 @@ let identifier_of_expression expr =
                         )
     | _ -> raise ExprNotIdent (*TODO: you should raise a semantic error (not an exception) if the expr is not a non-array ident*)
 
+(*
+let decl_stmt_of_StmtBlock s = match s with
+    StmtBlock(loc, stmts) -> List.hd stmts
+  | _ -> raise UnexpectedStmt
+*)
+let assign_expr_of_stmt s = match s with
+    Expr(loc, expr) -> expr
+  | _ -> raise UnexpectedStmt
+
 let rec expr_list_of_temp_expr_list = function
      | [] -> []
      | x :: l -> expr_from_temp_expr false x :: expr_list_of_temp_expr_list l
@@ -51,7 +79,13 @@ and condition_from_temp_expr = function
     | Assign (loc,l, e) -> raise NoCondition
     | Constant (loc,c) -> raise NoCondition
     | LValue (loc,l) -> raise NoCondition
-    | TempCall (loc,s, el) -> el
+    | TempVarDeclAndAssign(l,s) -> raise NoCondition
+    | TempCall (loc,s, el) -> 
+        begin
+          match List.hd el with
+              TempVarDeclAndAssign(s,e) -> (Some(s), e::List.tl (expr_list_of_temp_expr_list el))
+            | _ -> (None, expr_list_of_temp_expr_list el)
+        end
     | Plus (loc,t1, t2) -> condition_from_temp_expr t2
     | Minus (loc,t1, t2) -> condition_from_temp_expr t2
     | Times (loc,t1, t2) -> condition_from_temp_expr t2
@@ -87,6 +121,7 @@ and expr_from_temp_expr has_condition = function
                                  true  -> expr_from_temp_expr false s
                                | false -> Ast.Call(loc,identifier_of_expression s, expr_list_of_temp_expr_list el)
                               )
+    | TempVarDeclAndAssign(s,e) -> e
     | Plus (loc,t1, t2) -> Ast.Plus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | Minus (loc,t1, t2) -> Ast.Minus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | Times (loc,t1, t2) -> Ast.Times(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
@@ -107,7 +142,6 @@ and expr_from_temp_expr has_condition = function
     | Iff (loc,t1, t2) -> Ast.Iff(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | Implies (loc,t1, t2) -> Ast.Implies(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | EmptyExpr -> Ast.EmptyExpr
-
 
 
 %}
@@ -215,50 +249,55 @@ StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock((create_lo
 ;
 
 
-StmtList : StmtList Stmt { $1 @ [$2] }
+StmtList : StmtList Stmt { $1 @ $2 }
          | { [] }
 ;
           
 VarDecl   : Var T_Semicolon                 { $1 }
           ;
 
-Stmt       : VarDecl { Ast.VarDeclStmt($1.location_vd, $1) }
-           | VarDeclAndAssign { $1 }
-           | OptionalExpr T_Semicolon {Ast.Expr((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),expr_from_temp_expr false $1) }
-           | IfStmt { $1 }
-           | WhileStmt { $1 }
-           | ForStmt { $1 }
-           | BreakStmt { $1 }
-           | ReturnStmt { $1 }
-	   | AssertStmt { $1 }
-           | StmtBlock { $1 }
+Stmt       : VarDecl { [Ast.VarDeclStmt($1.location_vd, $1)] }
+           | VarDeclAndAssign T_Semicolon { $1 }
+           | OptionalExpr T_Semicolon {[Ast.Expr((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),expr_from_temp_expr false $1)] }
+           | IfStmt { [$1] }
+           | WhileStmt { [$1] }
+           | ForStmt { [$1] }
+           | BreakStmt { [$1] }
+           | ReturnStmt { [$1] }
+	   | AssertStmt { [$1] }
+           | StmtBlock { [$1] }
 ;
 
-VarDeclAndAssign : Var T_Assign Expr T_Semicolon {
-                     Ast.StmtBlock(create_location $1.location_vd.loc_start (Parsing.rhs_end_pos 4),
-                                   [Ast.VarDeclStmt(get_dummy_location (), $1);
-                                    Ast.Expr(get_dummy_location (), Ast.Assign(get_dummy_location (), Ast.NormLval(get_dummy_location (), $1.varName), expr_from_temp_expr false $3))
-                                   ]
-                                  )
+VarDeclAndAssign : Var T_Assign Expr {
+                     [
+                       Ast.VarDeclStmt(get_dummy_location (), $1);
+                       Ast.Expr(get_dummy_location (), Ast.Assign(get_dummy_location (), Ast.NormLval(get_dummy_location (), $1.varName), expr_from_temp_expr false $3))
+                     ]
 }
 ;
 
 /* Adding the %prec attribute gives the else higher precedence, so it always binds with an else if possible*/
-IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 7)), expr_from_temp_expr false $3, $5, $7) }
-             | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), expr_from_temp_expr false $3, $5, EmptyStmt) }
+IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 7)), expr_from_temp_expr false $3, condense_stmt_list $5, condense_stmt_list $7) }
+             | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), expr_from_temp_expr false $3, condense_stmt_list $5, EmptyStmt) }
 ;
 
 WhileStmt  : T_While T_Assert Annotation Stmt {
-               let condition = expr_from_temp_expr false (List.nth (condition_from_temp_expr $3) 0) in
-               Ast.WhileStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), condition, $4, expr_from_temp_expr true $3)
+               let condition = List.nth (snd (condition_from_temp_expr $3)) 0 in
+               Ast.WhileStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), (condition), condense_stmt_list $4, expr_from_temp_expr true $3)
 	   }
 
-;/*T_LParen Expr T_RParen*/
+;
 
 ForStmt    : T_For T_Assert Annotation Stmt {
-             let for_components = condition_from_temp_expr $3 in
-               Ast.ForStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 9)), expr_from_temp_expr false (List.nth for_components 0), expr_from_temp_expr false (List.nth for_components 1), expr_from_temp_expr false (List.nth for_components 2), $4, expr_from_temp_expr true $3) }
-;/*T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen*/
+               let assign_stmt_and_for_components = condition_from_temp_expr $3 in
+               let for_components = snd assign_stmt_and_for_components in
+               let for_stmt = Ast.ForStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 9)), (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $4, expr_from_temp_expr true $3) in
+               let assign_stmt = fst assign_stmt_and_for_components in
+                 match assign_stmt with
+                     None -> for_stmt
+                   | Some(stmt) -> Ast.StmtBlock(Ast.location_of_stmt for_stmt, [stmt;for_stmt])
+}
+;
 
 ReturnStmt : T_Return OptionalExpr T_Semicolon {Ast.ReturnStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), expr_from_temp_expr false $2) }
 ;
@@ -305,8 +344,9 @@ LValue   : Identifier                          { Ast.NormLval ((create_location 
          | Identifier T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1, expr_from_temp_expr false $3) }
 ;
 
-Call     : Expr T_LParen Actuals T_RParen %prec T_LParen                                   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
-         | Expr T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
+Call     : Expr T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
+         | Expr T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
+         | Expr T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
 
 /*         | Expr T_Period Identifier T_LParen Actuals T_RParen {}*/
 ;
