@@ -29,6 +29,7 @@ public class PiGui extends JFrame {
 	
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
+	private static final String TITLE = "PiVC";
 	
 	private PiCode piCode;
 	private PiErrorOutput piErrorOutput;
@@ -44,7 +45,7 @@ public class PiGui extends JFrame {
 	private ArrayList<DirtyChangedListener> dirtyChangedListeners;
 
 	public PiGui() {
-		super("PiVC");
+		super(TITLE);
 		setLayout(new BorderLayout());
 		useSystemLookAndFeel();
 		
@@ -76,9 +77,10 @@ public class PiGui extends JFrame {
 				return;
 		}
 		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-			loadFile(fileChooser.getSelectedFile());
             curFile = fileChooser.getSelectedFile();
+			loadFile(curFile);
             setDirty(false);
+            setTitle(TITLE + " - " + curFile.getName());
 		}
 	}
 

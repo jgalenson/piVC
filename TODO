@@ -7,10 +7,7 @@ Jason
 	config files (ports to bind to, IP/ports to connect to, saved files dir)
         locations for vardecl assign combo stmts
 Joel
-	Figure out way to cleanly stop server. Currently, it remains bound to ports for awhile after ctrl-C is executed, which makes restarting after a recompile time-consuming.
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
-	Display currently-opened filename in GUI (titlebar?)
-	Change default indent to 2.
 
 -----------------------------
 Proposed High-level timetable

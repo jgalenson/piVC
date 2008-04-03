@@ -1,8 +1,10 @@
 import java.awt.Color;
+import java.awt.Font;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
+import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -17,10 +19,13 @@ import data_structures.Location;
 /**
  * A class for the code section on the left-hand side.
  */
-public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
+public class PiCode extends JTextArea implements DocumentListener, DirtyChangedListener {
 
 	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 	public static DefaultHighlighter.DefaultHighlightPainter redHP = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
+	
+	private static final int TAB_SIZE = 2;
+	private static final Font DEFAULT_FONT = new JTextPane().getFont();
 	
 	private PiGui piGui;
 	private boolean justLoaded;
@@ -33,6 +38,8 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
 		addUndoableEditListener();
+		setTabSize(TAB_SIZE);
+		setFont(DEFAULT_FONT);
 	}
 	
 	/**
@@ -128,6 +135,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 		undo.discardAllEdits();
 		piGui.undoChangeHappened(undo);
 		addUndoableEditListener();
+		setTabSize(TAB_SIZE);
 	}
 
 	/**
