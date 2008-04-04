@@ -5,8 +5,6 @@ Short-term TODOs
 Jason
 	change all refs from node to step
 	config files (ports to bind to, IP/ports to connect to, saved files dir)
-        locations for vardecl assign combo stmts
-        move info svnnotify message to end of email
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
 

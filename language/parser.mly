@@ -38,13 +38,14 @@ type temp_expr =
   | Length of Ast.location * temp_expr
   | EmptyExpr
 
+(*Condenses a list of statements into either a single statement or statement block.*)
 let condense_stmt_list sl = match List.length sl with
     1 -> List.hd sl
   | 2 -> 
     begin
       match List.nth sl 1 with
-          StmtBlock(loc,stmts) -> StmtBlock(get_dummy_location (), List.hd sl::stmts)
-        | _ -> StmtBlock(get_dummy_location (), sl)    
+          StmtBlock(loc,stmts) -> StmtBlock(create_location (location_of_stmt (List.nth sl 0)).loc_start loc.loc_end, List.hd sl::stmts)
+        | _ -> StmtBlock(create_location (location_of_stmt (List.nth sl 0)).loc_start (location_of_stmt (List.nth sl 1)).loc_end, sl)    
     end
   | _ -> raise UnexpectedStmt
 
@@ -268,8 +269,10 @@ Stmt       : VarDecl { [Ast.VarDeclStmt($1.location_vd, $1)] }
 
 VarDeclAndAssign : Var T_Assign Expr {
                      [
-                       Ast.VarDeclStmt(get_dummy_location (), $1);
-                       Ast.Expr(get_dummy_location (), Ast.Assign(get_dummy_location (), Ast.NormLval(get_dummy_location (), $1.varName), expr_from_temp_expr false $3))
+                       Ast.VarDeclStmt($1.location_vd, $1);
+                       let assign_rhs_expr = expr_from_temp_expr false $3 in
+                       let loc = create_location ($1.varName.location_id.loc_start) ((location_of_expr assign_rhs_expr).loc_end) in
+                         Ast.Expr(loc, Ast.Assign(loc, Ast.NormLval($1.varName.location_id, $1.varName), assign_rhs_expr))
                      ]
 }
 ;
@@ -310,6 +313,7 @@ BreakStmt : T_Break T_Semicolon { Ast.BreakStmt (create_location (Parsing.rhs_st
 AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), expr_from_temp_expr false $2) }
            ;
 
+/*All quantified variables are deemed integers*/
 CommaSeperatedListOfVarDecls : Identifier T_Comma CommaSeperatedListOfVarDecls {(create_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
                              | Identifier { [create_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
   

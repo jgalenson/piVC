@@ -52,12 +52,12 @@ let get_statement_list stmts =
 let create_rv_decl t ident = 
   {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some(-1));}
 
-let create_rv_expression expr t = 
+let create_rv_expression expr t loc = 
 
   let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
     rv_ident.decl := Some(create_rv_decl t rv_ident);
     let rv_lval = Ast.NormLval(Ast.get_dummy_location (), rv_ident) in
-    let rv_assignment = Ast.Assign(Ast.location_of_expr expr, rv_lval, expr) in
+    let rv_assignment = Ast.Assign(loc, rv_lval, expr) in
       rv_assignment
 
 
@@ -181,7 +181,7 @@ let generate_paths_for_func func program =
               (*Use the statements that follow the scope close.*)
           )
         | Ast.ReturnStmt(loc, exp) -> (
-	    Queue.add (List.append curr_path [Expr (create_rv_expression exp func.returnType); func_post_condition]) all_paths
+	    Queue.add (List.append curr_path [Expr (create_rv_expression exp func.returnType loc); func_post_condition]) all_paths
           )
         | Ast.AssertStmt(loc, exp) -> 
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;

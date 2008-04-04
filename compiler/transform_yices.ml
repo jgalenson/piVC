@@ -66,7 +66,7 @@ let rec yices_string_of_expr e =
 	  match c with
 	    | ConstInt (loc, i) -> string_of_int i
 	    | ConstFloat (loc, f) -> string_of_float f
-	    | ConstBool (loc, b) -> if b then "true" else "false"
+	    | ConstBool (loc, b) -> string_of_bool b
 	end
     | LValue (loc, lval) ->
 	begin
