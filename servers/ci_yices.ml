@@ -25,8 +25,9 @@ let create () =
   let im, om = Unix.pipe () in
     Unix.set_nonblock im;
     let pid = (Unix.create_process "./yices" [|"yices"|] ip om log) in
+      ignore(pid);(*doing this to supress unused variable warning*)
       Unix.close ip; (* if you get a broken pipe... *)
-      Unix.close om; (* ...comment these two lines. *)
+      Unix.close om; (* ...comment out these two lines. *)
       { ic = Unix.in_channel_of_descr im;
 	oc = Unix.out_channel_of_descr op;
 	fd = (im, op);

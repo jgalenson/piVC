@@ -2,6 +2,8 @@ open Ast ;;
 
 exception InvalidVC of string ;;
 
+let yices_name id name = "__" ^ (string_of_int id) ^ "_" ^ name;;
+
 (* Returns a new identifier with a its unique name.
    We make the name based on the id of the identifier.
    We use the var_names hash table to cache these names
@@ -12,7 +14,7 @@ let rename_and_replace_id ident var_names =
     if (Hashtbl.mem var_names id) then
       fst (Hashtbl.find var_names id)
     else
-      let new_var_name = "__" ^ (string_of_int id) ^ "_" ^ ident.name in
+      let new_var_name = yices_name id ident.name in
 	Hashtbl.add var_names id (new_var_name, type_of_identifier ident);
 	new_var_name
   in
@@ -32,6 +34,8 @@ let rec parse_expr e var_names =
     | IDiv (loc, t1, t2) -> IDiv (loc, pe t1, pe t2)
     | Mod (loc, t1, t2) -> Mod (loc, pe t1, pe t2)
     | UMinus (loc, t) -> UMinus (loc, pe t)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,pe e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,pe e)
     | LT (loc, t1, t2) -> LT (loc, pe t1, pe t2)
     | LE (loc, t1, t2) -> LE (loc, pe t1, pe t2)
     | GT (loc, t1, t2) -> GT (loc, pe t1, pe t2)
@@ -77,6 +81,7 @@ let rec yices_string_of_expr e =
     | IDiv (loc, t1, t2) -> "(div " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | Mod (loc, t1, t2) -> "(mod " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | UMinus (loc, t) -> "(- " ^ (ysoe t) ^ ")"
+    | ForAll (loc, decls, e) -> "(forall (" ^ build_define_string_for_quantifier decls ^ ")" ^ ysoe e ^ ")"
     | LT (loc, t1, t2) -> "(< " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | LE (loc, t1, t2) -> "(<= " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | GT (loc, t1, t2) -> "(> " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
@@ -93,9 +98,9 @@ let rec yices_string_of_expr e =
     | Implies (loc, t1, t2) -> "(=> " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | _ -> raise (InvalidVC ("Unexpected expr type in VC: " ^ (string_of_expr e)))
   in
-    ysoe e ;;
+    ysoe e 
 
-let rec yices_string_of_type t = match t with
+and yices_string_of_type t = match t with
   | Bool (loc) -> "bool"
   | Int (loc) -> "int"
   | Float (loc) -> "real"
@@ -103,8 +108,20 @@ let rec yices_string_of_type t = match t with
   | _ -> raise (InvalidVC ("Unimplemented type: " ^ (string_of_type t))) (* TODO: Finish *)
 
 (* Builds a big string out of all the variables we need to define. *)
-let build_define_string id (name, t) cur_string =
-  cur_string ^ "(define " ^ name ^ "::" ^ (yices_string_of_type t) ^ ")\n" ;;
+and build_define_string id (name, t) cur_string =
+  cur_string ^ "(define " ^ name ^ "::" ^ (yices_string_of_type t) ^ ")\n" 
+
+(* Builds a big string out of all the varDecls in a quantifier we need to define as being specific to that quantifier. *)
+and build_define_string_for_quantifier decls = 
+  let rec space_after_all_elems decls = 
+    match decls with
+        decl :: rest -> (yices_name (Ast.var_id_of_varDecl decl) (string_of_identifier decl.varName))  ^ "::" ^ yices_string_of_type decl.varType ^ " " ^ space_after_all_elems rest
+      | [] -> ""
+  in
+  let str_with_space_at_end = space_after_all_elems decls in
+    String.sub str_with_space_at_end 0 ((String.length str_with_space_at_end)-1);;
+
+
 
 (* Turns the negation of this VC into a yices-readable string. *)
 let get_yices_string vc =

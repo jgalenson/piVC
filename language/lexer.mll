@@ -74,8 +74,8 @@ rule lang = parse
   | "null"                               {updateLocation(lexbuf); T_Null}
   | "while"                              {updateLocation(lexbuf); T_While}
   | "for"                                {updateLocation(lexbuf); T_For}
-(*  | "forall"                             {updateLocation(lexbuf); T_ForAll}*)
-(*  | "exists"                             {updateLocation(lexbuf); T_Exists}*)
+  | "forall"                             {updateLocation(lexbuf); T_ForAll}
+  | "exists"                             {updateLocation(lexbuf); T_Exists}
   | "<->"                                {updateLocation(lexbuf); T_Iff}
   | "->"                                 {updateLocation(lexbuf); T_Implies}
   | "@pre"                               {updateLocation(lexbuf); T_Pre}
@@ -104,6 +104,7 @@ rule lang = parse
   | '?'					 {updateLocation(lexbuf); T_QuestionMark}
   | '@'					 {updateLocation(lexbuf); T_Assert}
   | '|'					 {updateLocation(lexbuf); T_Bar}
+  | '%'					 {updateLocation(lexbuf); T_Mod}
   | eof					 {updateLocation(lexbuf); T_EOF}
   | '\n'                                 {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
   | _ as token                           {updateLocation(lexbuf); print_endline ("read unknown token" ^ (Char.escaped token)); T_Unknown}

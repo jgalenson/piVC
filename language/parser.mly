@@ -22,6 +22,8 @@ type temp_expr =
   | IDiv of Ast.location * temp_expr * temp_expr	
   | Mod of Ast.location * temp_expr * temp_expr
   | UMinus of Ast.location * temp_expr
+  | ForAll of location * varDecl list * temp_expr
+  | Exists of location * varDecl list * temp_expr
   | LT of Ast.location * temp_expr * temp_expr
   | LE of Ast.location * temp_expr * temp_expr
   | GT of Ast.location * temp_expr * temp_expr
@@ -62,11 +64,6 @@ let identifier_of_expression expr =
                         )
     | _ -> raise ExprNotIdent (*TODO: you should raise a semantic error (not an exception) if the expr is not a non-array ident*)
 
-(*
-let decl_stmt_of_StmtBlock s = match s with
-    StmtBlock(loc, stmts) -> List.hd stmts
-  | _ -> raise UnexpectedStmt
-*)
 let assign_expr_of_stmt s = match s with
     Expr(loc, expr) -> expr
   | _ -> raise UnexpectedStmt
@@ -93,6 +90,8 @@ and condition_from_temp_expr = function
     | IDiv (loc,t1, t2) -> condition_from_temp_expr t2
     | Mod (loc,t1, t2) -> condition_from_temp_expr t2
     | UMinus (loc,t) -> condition_from_temp_expr t
+    | ForAll (loc,decls,e) -> condition_from_temp_expr e
+    | Exists (loc,decls,e) -> condition_from_temp_expr e
     | LT (loc,t1, t2) -> condition_from_temp_expr t2
     | LE (loc,t1, t2) -> condition_from_temp_expr t2
     | GT (loc,t1, t2) -> condition_from_temp_expr t2
@@ -129,6 +128,8 @@ and expr_from_temp_expr has_condition = function
     | IDiv (loc,t1, t2) -> Ast.IDiv(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | Mod (loc,t1, t2) -> Ast.Mod(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | UMinus (loc,t) -> Ast.UMinus(loc, expr_from_temp_expr has_condition t)
+    | ForAll (loc,decls,e) -> Ast.ForAll(loc, decls, expr_from_temp_expr has_condition e)
+    | Exists (loc,decls,e) -> Ast.Exists(loc, decls, expr_from_temp_expr has_condition e)
     | LT (loc,t1, t2) -> Ast.LT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | LE (loc,t1, t2) -> Ast.LE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | GT (loc,t1, t2) -> Ast.GT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
@@ -166,28 +167,25 @@ and expr_from_temp_expr has_condition = function
 %token T_Return T_Break
 %token T_Break T_Return
 %token T_Typedef T_Struct
-%token T_Assert T_Bar T_Div T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
+%token T_Assert T_Bar T_Div T_Mod T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark
 %token T_ForAll T_Exists T_Iff T_Implies T_Pre T_Post
 %token T_Unknown
 %token T_EOF
 
 
-
-
-//%type <int>  DeclList //change these
-//%type <int>      Decl //change these
-
 %nonassoc T_Assign
 %nonassoc T_Iff T_Implies
 %left T_Or
 %left T_And
+%left T_ForAll T_Exists
 %nonassoc T_Equal T_NotEqual
 %nonassoc T_Less T_Greater T_LessEqual T_GreaterEqual
 %left T_Plus T_Minus
-%left T_Star T_Slash T_Div '%'
+%left T_Star T_Slash T_Div T_Mod
 %right T_Not UnaryMinus
 %left T_LSquareBracket T_Period
 %left T_LParen
+
 
 %nonassoc T_If
 %nonassoc T_Else
@@ -311,6 +309,9 @@ BreakStmt : T_Break T_Semicolon { Ast.BreakStmt (create_location (Parsing.rhs_st
 
 AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), expr_from_temp_expr false $2) }
            ;
+
+CommaSeperatedListOfVarDecls : Identifier T_Comma CommaSeperatedListOfVarDecls {(create_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
+                             | Identifier { [create_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
   
 Expr     : LValue T_Assign Expr { Assign ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $1, $3) }
          | Constant { Constant ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
@@ -322,8 +323,10 @@ Expr     : LValue T_Assign Expr { Assign ( (create_location (Parsing.rhs_start_p
          | Expr T_Star Expr { Times((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Slash Expr { Div((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Div Expr { IDiv((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
-         | Expr '%' Expr { Mod ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
+         | Expr T_Mod Expr { Mod ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | T_Minus Expr %prec UnaryMinus { UMinus ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)),$2) }
+         | T_ForAll CommaSeperatedListOfVarDecls T_Period Expr %prec T_ForAll { ForAll ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$2,$4) }
+         | T_Exists CommaSeperatedListOfVarDecls T_Period Expr %prec T_Exists { Exists ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$2,$4) }             
          | Expr T_Less Expr { LT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_LessEqual Expr { LE ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
          | Expr T_Greater Expr { GT ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)),$1, $3) }
@@ -340,15 +343,12 @@ Expr     : LValue T_Assign Expr { Assign ( (create_location (Parsing.rhs_start_p
 ;
 
 LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
-/*         | Expr T_Period Identifier                 {}*/
          | Identifier T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1, expr_from_temp_expr false $3) }
 ;
 
 Call     : Expr T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
          | Expr T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
          | Expr T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
-
-/*         | Expr T_Period Identifier T_LParen Actuals T_RParen {}*/
 ;
 
 ExprList : ExprList T_Comma Expr  { $1 @ [$3] }
@@ -363,7 +363,6 @@ Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 
          | T_FloatConstant  { ConstFloat ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 1)),$1)}
          | T_True           { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), true) }
          | T_False          { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), false) }	     
-/*         | T_Null           { $1 }*/
 ;
 
 Annotation : Expr    %prec T_Period                            { $1 }

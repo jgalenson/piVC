@@ -57,6 +57,8 @@ and expr =
   | IDiv of location * expr * expr	
   | Mod of location * expr * expr
   | UMinus of location * expr
+  | ForAll of location * varDecl list * expr
+  | Exists of location * varDecl list * expr
   | LT of location * expr * expr
   | LE of location * expr * expr
   | GT of location * expr * expr

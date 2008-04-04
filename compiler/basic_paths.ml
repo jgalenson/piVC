@@ -116,6 +116,8 @@ let generate_paths_for_func func program =
     | IDiv (loc,t1, t2) -> IDiv(loc, gnfe t1, gnfe t2)
     | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
     | UMinus (loc,t) -> UMinus(loc, gnfe t)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,gnfe e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,gnfe e)
     | LT (loc,t1, t2) -> LT(loc, gnfe t1, gnfe t2)
     | LE (loc,t1, t2) -> LE(loc, gnfe t1, gnfe t2)
     | GT (loc,t1, t2) -> GT(loc, gnfe t1, gnfe t2)

@@ -193,62 +193,33 @@ and check_and_get_return_type is_annotation scope_stack e errors =
       rightType
 
   and check_and_get_return_type_predicate e =
-      begin
+    begin
         match e with
           | Call(loc, ident, ac) ->
               begin
-                let check_quantifier_actuals actuals = 
-                  match List.length ac with
-                      4 ->
-                        begin
-                          Scope_stack.enter_scope scope_stack;
-                          (*Check second and third arguments*)
-                          begin
-                            let check_for_int_bounds arg = 
-                              match cagrt arg with 
-                                  ErrorType -> ()
-                                | Int(l) -> ()
-                                | _ -> add_error SemanticError "Bound is not an an integer" (Ast.location_of_expr arg) errors
-                            in 
-                              check_for_int_bounds (List.nth actuals 1);
-                              check_for_int_bounds (List.nth actuals 2)
-                          end;
-                          (*Check first argument*)
-                          begin
-                            let decl_ok = ref true in
-                            let decl_arg = List.nth actuals 0 in
-                              begin
-                                match decl_arg with
-                                    LValue(loc, lval) ->
-                                      begin
-                                        match lval with
-                                            NormLval(loc, ident) ->
-                                              begin
-                                                Scope_stack.insert_decl (Ast.VarDecl(loc,(Ast.create_varDecl (Int(get_dummy_location())) ident loc))) scope_stack;
-                                                annotate_ident ident scope_stack
-                                              end
-                                          | _ -> decl_ok := false
-                                      end
-                                  | _ -> decl_ok := false
-                              end;
-                              match !decl_ok with
-                                  true -> ()
-                                | false -> add_error SemanticError "Incorrect declaration of quantified variable" (location_of_expr (decl_arg)) errors
-                          end;
-                          (*Check fourth argument*)
-                          ignore(cagrt (List.nth actuals 3));
-                          Scope_stack.exit_scope scope_stack
-                        end
-                    | _ -> add_error SemanticError "Incorrect number of quantifier arguments. Quantifiers have 4 arguments: var_name, low_bound_inclusive, high_bound_inclusive, expr."  loc errors
-                in
-                  match ident.name with
-                      "forall" -> check_quantifier_actuals ac
-                    | "exists" -> check_quantifier_actuals ac
-                    | _ -> (add_error SemanticError "Unrecognized predicate name in annotation" ident.location_id errors)
+                match ident.name with
+                    _ -> (add_error SemanticError "Unrecognized predicate name in annotation" ident.location_id errors)
               end
           | _ -> (raise (SemanticCheckingError "Predicate is not a call"))
       end;
+    Bool(get_dummy_location ()) 
+
+
+  and check_and_get_return_type_quantifier loc decls expr = 
+    begin
+      match is_annotation with
+          true ->
+            begin
+              Scope_stack.enter_scope scope_stack;
+              let insert_decl_into_scope_stack decl = Scope_stack.insert_decl (Ast.VarDecl(decl.location_vd, decl)) scope_stack in
+              List.iter insert_decl_into_scope_stack decls;
+              ignore(cagrt expr);
+              Scope_stack.exit_scope scope_stack                
+            end
+        | false -> (add_error SemanticError "Quantifier outside of annotation not permitted" loc errors)
+    end;
     Bool(get_dummy_location ())
+            
 
   and cagrt e = match e with
     | Assign (loc,l,e) ->
@@ -264,7 +235,7 @@ and check_and_get_return_type is_annotation scope_stack e errors =
 	  | ConstBool (l, b) -> Bool (loc)
 	end
     | LValue (loc,l) -> check_and_get_return_type_lval is_annotation scope_stack l errors
-    | Call (loc, ident, ac) -> (* Check this more? *)
+    | Call (loc, ident, ac) -> (* TODO: Check this more? *)
         begin
         match is_annotation with
             true ->
@@ -328,6 +299,8 @@ and check_and_get_return_type is_annotation scope_stack e errors =
 	  end
 	else
 	  rtype
+    | ForAll (loc,i,e) -> check_and_get_return_type_quantifier loc i e
+    | Exists (loc,i,e) -> check_and_get_return_type_quantifier loc i e
     | LT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | LE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | GT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2

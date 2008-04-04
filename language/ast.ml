@@ -108,6 +108,8 @@ and expr =
   | IDiv of location * expr * expr	
   | Mod of location * expr * expr
   | UMinus of location * expr
+  | ForAll of location * varDecl list * expr
+  | Exists of location * varDecl list * expr
   | LT of location * expr * expr
   | LE of location * expr * expr
   | GT of location * expr * expr
@@ -214,6 +216,8 @@ let location_of_expr = function
     | IDiv (loc,t1, t2) -> loc
     | Mod (loc,t1, t2) -> loc
     | UMinus (loc,t) -> loc
+    | ForAll (loc,decls,e) -> loc
+    | Exists (loc,decls,e) -> loc
     | LT (loc,t1, t2) -> loc
     | LE (loc,t1, t2) -> loc
     | GT (loc,t1, t2) -> loc
@@ -263,6 +267,14 @@ and string_of_type typ =
   in
   sot typ
    
+let get_delimited_list_of_decl_names decls delimiter = 
+  let rec delimiter_after_all_elems decls = 
+    match decls with
+        decl :: rest -> string_of_identifier decl.varName ^ delimiter ^ delimiter_after_all_elems rest
+      | [] -> ""
+  in
+  let str_with_delimiter_at_end = delimiter_after_all_elems decls in
+    String.sub str_with_delimiter_at_end 0 ((String.length str_with_delimiter_at_end)-(String.length delimiter))
 
 (* temp *)
 let rec string_of_lval lval = match lval with
@@ -287,6 +299,8 @@ and string_of_expr e =
     | IDiv (loc,t1, t2) -> (soe t1) ^ " div " ^ (soe t2)					       
     | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
     | UMinus (loc,t) -> "-" ^ (soe t)
+    | ForAll (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
+    | Exists (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
     | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
     | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
     | GT (loc,t1, t2) -> (soe t1) ^ " > " ^ (soe t2)

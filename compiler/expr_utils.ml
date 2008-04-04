@@ -35,8 +35,22 @@ let sub_idents_in_lval_expr lval_expr ident_subs = match lval_expr with
   | _ -> (raise NotLValueExpr)
 
 
-(* substitutes variable names, but does not substitue function/predicate names *)
+(* Substitutes variable names, but does not substitue function/predicate names.
+   Also, if it runs across var decls due to a quantifier, it won't replace those new identifiers*)
 let rec sub_idents_in_expr expr ident_subs = 
+  let rec get_new_ident_subs old_ident_subs decls = 
+    match old_ident_subs with
+        sub :: subs -> 
+          begin
+            let sub_matches_decl sub decl = 
+              (String.compare (fst sub) decl.varName.name)==0
+            in
+            match List.filter (sub_matches_decl sub) decls with
+                [] -> sub :: get_new_ident_subs subs decls
+              | _ -> get_new_ident_subs subs decls
+          end
+      | _ -> []
+  in
     match expr with
     | Assign (loc,l, e) -> Assign(loc, sub_idents_in_lval l ident_subs, sub_idents_in_expr e ident_subs)
     | Constant (loc,c) -> expr
@@ -49,6 +63,8 @@ let rec sub_idents_in_expr expr ident_subs =
     | IDiv (loc,t1, t2) -> IDiv(loc, sub_idents_in_expr t1 ident_subs, sub_idents_in_expr t2 ident_subs)
     | Mod (loc,t1, t2) -> Mod(loc, sub_idents_in_expr t1 ident_subs, sub_idents_in_expr t2 ident_subs)
     | UMinus (loc,t) -> UMinus(loc, sub_idents_in_expr t ident_subs)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,sub_idents_in_expr e (get_new_ident_subs ident_subs decls))
+    | Exists (loc,decls,e) -> Exists(loc,decls,sub_idents_in_expr e (get_new_ident_subs ident_subs decls))
     | LT (loc,t1, t2) -> LT(loc, sub_idents_in_expr t1 ident_subs, sub_idents_in_expr t2 ident_subs)
     | LE (loc,t1, t2) -> LE(loc, sub_idents_in_expr t1 ident_subs, sub_idents_in_expr t2 ident_subs)
     | GT (loc,t1, t2) -> GT(loc, sub_idents_in_expr t1 ident_subs, sub_idents_in_expr t2 ident_subs)
