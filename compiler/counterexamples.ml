@@ -9,12 +9,12 @@ type variable =
 
 type example = variable * string ;;
 
+let rec variable_to_string v =
+  match v with
+    | Var (s) -> s
+    | ArrayVar (v, s) -> (variable_to_string v) ^ "[" ^ s  ^ "]";;
+
 let counterexample_to_string cx =
-  let rec variable_to_string v =
-    match v with
-      | Var (s) -> s
-      | ArrayVar (v, s) -> (variable_to_string v) ^ "." ^ s
-  in
   let example_to_string prev (lhs, rhs) =
     let new_part = (variable_to_string lhs) ^ "=" ^ rhs in 
     if prev = "" then new_part else prev ^ "\n" ^ new_part
@@ -57,5 +57,9 @@ let parse_counterexamples str rev_var_names =
     (lhs, rhs)
   in
   let data = List.map map_fn parts in
-  print_endline ("Counterexample: " ^ (counterexample_to_string data));
-  data ;;
+  let sort_fn (lhs1, _) (lhs2, _) =
+    String.compare (variable_to_string lhs1) (variable_to_string lhs2)
+  in
+  let sorted_data = List.sort sort_fn data in (* Do we need this? *)
+  print_endline ("Counterexample: " ^ (counterexample_to_string sorted_data));
+  sorted_data ;;
