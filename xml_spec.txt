@@ -46,6 +46,11 @@ Server no errors:
 				<vc>
 					string goes here
 				</vc>
+				<counterexample>  // optional tag (only there if invalid)
+					var1 = val1
+					var2 = val2
+					// ...
+				</counterexample>
 			</basic_path>
 			// more basic paths as siblings
 		</function>

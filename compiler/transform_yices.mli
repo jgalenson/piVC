@@ -1,4 +1,4 @@
 (* transform_yices *)
 
-val get_yices_string : Ast.expr -> string ;;
+val transform_for_yices : Ast.expr -> string * (string, Ast.identifier) Hashtbl.t ;;
 

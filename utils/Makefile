@@ -7,7 +7,7 @@ INCDIR = $(PROJ_DIR:%=-I %)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-NET_UTILS_OBJS = net_utils.cmo constants.cmo
+NET_UTILS_OBJS = net_utils.cmo constants.cmo scanner.cmo utils.cmo
 
 default : depend netutils
 

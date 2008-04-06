@@ -8,7 +8,7 @@ let yices_name id name = "__" ^ (string_of_int id) ^ "_" ^ name;;
    We make the name based on the id of the identifier.
    We use the var_names hash table to cache these names
    and their associated types. *)
-let rename_and_replace_id ident var_names =
+let rename_and_replace_id ident var_names rev_var_names =
   let id = id_of_identifier ident in
   let new_name = 
     if (Hashtbl.mem var_names id) then
@@ -16,12 +16,13 @@ let rename_and_replace_id ident var_names =
     else
       let new_var_name = yices_name id ident.name in
 	Hashtbl.add var_names id (new_var_name, type_of_identifier ident);
+	Hashtbl.add rev_var_names new_var_name ident;
 	new_var_name
   in
     {name = new_name; location_id = ident.location_id; decl = ident.decl} ;;
 
 (* Transforms an expr by renaming any identifiers in it. *)
-let rec parse_expr e var_names =
+let rec parse_expr e var_names rev_var_names =
   let rec pe = function
     | Assign (loc, lval, e) -> Assign (loc, pl lval, pe e)
     | Constant (loc, c) -> Constant (loc, c)
@@ -49,14 +50,14 @@ let rec parse_expr e var_names =
     | Iff (loc, t1, t2) -> Iff (loc, pe t1, pe t2)
     | Implies (loc, t1, t2) -> Implies (loc, pe t1, pe t2)
     | EmptyExpr -> EmptyExpr
-  and pl l = parse_lval l var_names
+  and pl l = parse_lval l var_names rev_var_names
   in
     pe e
 
 (* Transforms an lval by renaming any identifiers in it. *)
-and parse_lval lval var_names = match lval with
-  | NormLval (loc, id) -> NormLval (loc, rename_and_replace_id id var_names)
-  | ArrayLval (loc, id, e) -> ArrayLval (loc, rename_and_replace_id id var_names, parse_expr e var_names) ;;
+and parse_lval lval var_names rev_var_names = match lval with
+  | NormLval (loc, id) -> NormLval (loc, rename_and_replace_id id var_names rev_var_names)
+  | ArrayLval (loc, id, e) -> ArrayLval (loc, rename_and_replace_id id var_names rev_var_names, parse_expr e var_names rev_var_names) ;;
 
 (* Convert our AST to be yices-readable. *)
 let rec yices_string_of_expr e =
@@ -121,15 +122,15 @@ and build_define_string_for_quantifier decls =
   let str_with_space_at_end = space_after_all_elems decls in
     String.sub str_with_space_at_end 0 ((String.length str_with_space_at_end)-1);;
 
-
-
 (* Turns the negation of this VC into a yices-readable string. *)
-let get_yices_string vc =
+let transform_for_yices vc =
   
   (* First, find all vars and rename them. *)
   let var_names = Hashtbl.create 10 in
+  let rev_var_names = Hashtbl.create 10 in
   (* We negate it since F is valid iff not F is unsat. *)
-  let new_vc = parse_expr vc var_names in
+  let new_vc = parse_expr vc var_names rev_var_names in
   let defines = Hashtbl.fold build_define_string var_names "" in
   let vc_string = yices_string_of_expr new_vc in
-  defines ^ "(assert " ^ vc_string ^ ")\n(check)\n" ;;
+  let yices_string = "(set-evidence! true)\n" ^ defines ^ "(assert " ^ vc_string ^ ")\n(check)\n" in
+  (yices_string, rev_var_names)

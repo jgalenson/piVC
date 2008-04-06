@@ -13,29 +13,30 @@ let verify_vc vc =
   let inchan = Unix.in_channel_of_descr sock in
   let outchan = Unix.out_channel_of_descr sock in
   let negated_vc = Not (get_dummy_location (), vc) in
-  let vc_yices_string = Transform_yices.get_yices_string negated_vc in
-  Net_utils.send_output outchan vc_yices_string;
+  let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc in
+  Net_utils.send_output outchan vc;
   flush outchan;
   let response = Net_utils.get_input inchan in  
   Unix.close sock;
   (* A VC is valid iff its negation is unsatisfiable. *)
   if (response = "unsat") then
-    true
-  else if (response = "sat") then
-    false
+    (true, None)
+  else if (String.sub response 0 3 = "sat") then
+    (false, Some (Counterexamples.parse_counterexamples response rev_var_names))
   else
-    assert false
+    assert false ;;
   
-(* Returns (fn * bool * (Basic Path * VC * bool) list) list. *)
+(* Returns (fn * bool * (Basic Path * VC * bool * example list option) list) list. *)
 let verify_program program_info = 
   let rec verify_function func = 
     let verified_basic_paths = List.map verify_basic_path (snd func) in
-    let path_is_pass (path, vc, pass) = pass in
+    let path_is_pass (path, vc, pass, count) = pass in
     let all_paths_passed = List.for_all path_is_pass verified_basic_paths in
     (fst func, all_paths_passed, verified_basic_paths)
   and verify_basic_path path_info =
+    let vc_result = verify_vc (snd path_info) in
     (* TODO: Rewrite so we make only one request to server. *)
-    (fst path_info, snd path_info, verify_vc (snd path_info))
+    (fst path_info, snd path_info, fst vc_result, snd vc_result)
   in 
   let verified_functions = List.map verify_function program_info in
   let func_is_pass (name,pass,info) = pass in

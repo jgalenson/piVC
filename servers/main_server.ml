@@ -91,7 +91,7 @@ and xml_of_verified_program (all_valid, functions) =
         add_child (xml_of_basic_path basic_path) function_node in
         List.iter process_basic_path basic_paths;
         function_node
-  and xml_of_basic_path (nodes, vc, valid) =
+  and xml_of_basic_path (nodes, vc, valid, counterexample) =
     let basic_path_node = Xml_generator.create "basic_path" in
       add_attribute ("status", proved_of_bool valid) basic_path_node;
       let path_node = Xml_generator.create "path" in
@@ -99,6 +99,12 @@ and xml_of_verified_program (all_valid, functions) =
         let vc_node = Xml_generator.create "vc" in
           set_text (Ast.string_of_expr vc) vc_node;
           add_child vc_node basic_path_node;
+	  if (Utils.is_some counterexample) then
+	    begin
+	      let counterexample_node = Xml_generator.create "counterexample" in
+	      set_text (Counterexamples.counterexample_to_string (Utils.elem_from_opt counterexample)) counterexample_node;
+	      add_child counterexample_node basic_path_node;
+	    end;
           let process_step step = 
             add_child (xml_of_step step) path_node in
             List.iter process_step nodes;

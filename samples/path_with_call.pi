@@ -1,0 +1,15 @@
+@pre true
+@post rv > x && rv > y
+int incr(int x, int y) {
+	return x + y + 1;
+}
+
+@pre true
+@post true
+void main() {
+	int x;
+	x := 42;
+	int y;
+	y := incr(x, 2 * x);
+	@ y > x;
+}
