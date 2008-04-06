@@ -9,6 +9,7 @@ let rec getresponse id =
     let recv = Ci_yices.recv id in
       match recv with
 	| "sat" -> "sat\n" ^ (getresponse id)
+        | "unknown" -> "unknown"
 	| "unsat" -> "unsat"
 	| "Logical context is inconsistent. Use (pop) to restore the previous state." 
 	  -> getresponse id

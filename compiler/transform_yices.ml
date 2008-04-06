@@ -37,6 +37,7 @@ let rec parse_expr e var_names rev_var_names =
     | UMinus (loc, t) -> UMinus (loc, pe t)
     | ForAll (loc,decls,e) -> ForAll(loc,decls,pe e)
     | Exists (loc,decls,e) -> Exists(loc,decls,pe e)
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(loc, pe exp, pe assign_to, pe assign_val)
     | LT (loc, t1, t2) -> LT (loc, pe t1, pe t2)
     | LE (loc, t1, t2) -> LE (loc, pe t1, pe t2)
     | GT (loc, t1, t2) -> GT (loc, pe t1, pe t2)
@@ -57,7 +58,7 @@ let rec parse_expr e var_names rev_var_names =
 (* Transforms an lval by renaming any identifiers in it. *)
 and parse_lval lval var_names rev_var_names = match lval with
   | NormLval (loc, id) -> NormLval (loc, rename_and_replace_id id var_names rev_var_names)
-  | ArrayLval (loc, id, e) -> ArrayLval (loc, rename_and_replace_id id var_names rev_var_names, parse_expr e var_names rev_var_names) ;;
+  | ArrayLval (loc, arr, e) -> ArrayLval (loc, parse_expr arr var_names rev_var_names, parse_expr e var_names rev_var_names) ;;
 
 (* Convert our AST to be yices-readable. *)
 let rec yices_string_of_expr e =
@@ -73,7 +74,7 @@ let rec yices_string_of_expr e =
 	begin
 	  match lval with
 	    | NormLval (loc, ident) -> ident.name
-	    | ArrayLval (loc, ident, e) -> "(" ^ ident.name ^ " " ^ (ysoe e) ^ ")"
+	    | ArrayLval (loc, arr, e) -> "(" ^ (ysoe arr) ^ " " ^ (ysoe e) ^ ")"
 	end
     | Plus (loc, t1, t2) -> "(+ " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | Minus (loc, t1, t2) -> "(- " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
@@ -83,6 +84,8 @@ let rec yices_string_of_expr e =
     | Mod (loc, t1, t2) -> "(mod " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | UMinus (loc, t) -> "(- " ^ (ysoe t) ^ ")"
     | ForAll (loc, decls, e) -> "(forall (" ^ build_define_string_for_quantifier decls ^ ")" ^ ysoe e ^ ")"
+    | Exists (loc, decls, e) -> "(exists (" ^ build_define_string_for_quantifier decls ^ ")" ^ ysoe e ^ ")"
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> "(update " ^ ysoe exp ^ " (" ^ ysoe assign_to ^ ") " ^ ysoe assign_val ^ ")"
     | LT (loc, t1, t2) -> "(< " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | LE (loc, t1, t2) -> "(<= " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | GT (loc, t1, t2) -> "(> " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
@@ -97,6 +100,7 @@ let rec yices_string_of_expr e =
 	   But what if this is the length of say a function that returns an arr or 2d_arr[i]? *)
     | Iff (loc, t1, t2) -> "(= " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | Implies (loc, t1, t2) -> "(=> " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
+    | EmptyExpr -> ""
     | _ -> raise (InvalidVC ("Unexpected expr type in VC: " ^ (string_of_expr e)))
   in
     ysoe e 

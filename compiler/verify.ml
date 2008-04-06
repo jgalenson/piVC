@@ -19,7 +19,7 @@ let verify_vc vc =
   let response = Net_utils.get_input inchan in  
   Unix.close sock;
   (* A VC is valid iff its negation is unsatisfiable. *)
-  if (response = "unsat") then
+  if (response = "unsat" or response = "unknown") then
     (true, None)
   else if (String.sub response 0 3 = "sat") then
     (false, Some (Counterexamples.parse_counterexamples response rev_var_names))

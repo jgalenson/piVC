@@ -12,6 +12,14 @@ type error = {
   msg  : string;
 };;
 
+
+
+let get_type_error_msg expr_name given expected =
+  expr_name ^ " expr type is '" ^ (string_of_type given) ^ "' but should be " ^ expected ;;
+
+let get_non_int_index_error_msg expr =
+  "Array index '" ^ (string_of_expr expr) ^ "' must be an integer" ;;
+
 let string_of_error_type t = match t with
   | SyntaxError -> "Syntax Error"
   | SemanticError -> "Semantic Error" ;;
@@ -104,16 +112,24 @@ let rec check_and_get_return_type_lval is_annotation s lval errors = match lval 
       end;
 
   | ArrayLval(loc, arr, index) ->
-      annotate_ident arr s;
-      begin
-        let typeOfIndex = check_and_get_return_type is_annotation s index errors in
+      let typeOfIndex = check_and_get_return_type is_annotation s index errors in
         begin
-	  match typeOfIndex with
+          match typeOfIndex with
             | Int(l) -> ()
             | _ ->
-		let error_msg = "Array index '" ^ (string_of_expr index) ^ "' must be an integer" in
-		add_error SemanticError error_msg loc errors
+	        let error_msg = get_non_int_index_error_msg index in
+		  add_error SemanticError error_msg loc errors
         end;
+        let typeOfArray = check_and_get_return_type is_annotation s arr errors in
+          match typeOfArray with
+              Array(t,loc) -> t
+            | _ ->
+                begin
+                  let error_msg = "'" ^ (string_of_expr arr) ^ "' is of type '" ^ string_of_type typeOfArray ^ "' but should be an array" in
+                    add_error SemanticError error_msg loc errors; ErrorType
+                end
+
+(*
         let lookupResult = (Scope_stack.lookup_decl arr.name s) in
         begin
 	  match lookupResult with
@@ -129,7 +145,8 @@ let rec check_and_get_return_type_lval is_annotation s lval errors = match lval 
 		     add_error SemanticError error_msg loc errors; ErrorType
              end
         end
-      end
+*)
+      
  
 	
 and check_for_same_type t1 t2 loc errors = 
@@ -143,10 +160,6 @@ and check_for_same_type t1 t2 loc errors =
     true
   
 and check_and_get_return_type is_annotation scope_stack e errors =
-
-  let get_type_error_msg expr_name given expected =
-    expr_name ^ " expr type is '" ^ (string_of_type given) ^ "' but should be " ^ expected
-  in
   
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
@@ -301,6 +314,30 @@ and check_and_get_return_type is_annotation scope_stack e errors =
 	  rtype
     | ForAll (loc,i,e) -> check_and_get_return_type_quantifier loc i e
     | Exists (loc,i,e) -> check_and_get_return_type_quantifier loc i e
+    | ArrayUpdate (loc, expr, assign_to, assign_val) -> 
+        begin
+          let expr_type = cagrt expr in
+          let assign_to_type = cagrt assign_to in
+          let assign_val_type = cagrt assign_val in
+            begin
+              match expr_type with
+                  Array(t,loc) ->
+                    begin
+                      match types_equal t assign_val_type with
+                          true -> ignore()
+                        | false -> add_error SemanticError (get_type_error_msg (string_of_expr assign_val) assign_val_type (string_of_type t)) (location_of_expr assign_val) errors
+                          
+                    end
+                | ErrorType -> ignore ()
+                | _ -> add_error SemanticError "Array update applied to non-array" loc errors
+            end;
+            begin
+              match assign_to_type with
+                  Int(loc) -> ignore()
+                | _ -> add_error SemanticError (get_non_int_index_error_msg assign_to) (location_of_expr assign_to) errors
+            end;              
+            expr_type
+        end
     | LT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | LE (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
     | GT (loc,t1, t2) -> check_and_get_return_type_relational loc t1 t2
@@ -356,7 +393,7 @@ let rec check_stmt scope_stack returnType errors stmt =
       check_stmt scope_stack returnType errors block;
       
   | ForStmt (loc, init, test, incr, block, annotation) ->
-      ignore (check_and_get_return_type false scope_stack annotation errors);
+      ignore (check_and_get_return_type true scope_stack annotation errors);
       ignore (check_and_get_return_type false scope_stack init errors);
       let testType = check_and_get_return_type false scope_stack test errors in
       if not (is_boolean_type testType loc) then

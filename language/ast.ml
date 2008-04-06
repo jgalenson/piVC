@@ -89,7 +89,7 @@ let create_identifier name location =
 
 type lval =
   | NormLval of location * identifier
-  | ArrayLval of location * identifier * expr
+  | ArrayLval of location * expr * expr
 
 and constant =
   | ConstInt of location * int
@@ -110,6 +110,7 @@ and expr =
   | UMinus of location * expr
   | ForAll of location * varDecl list * expr
   | Exists of location * varDecl list * expr
+  | ArrayUpdate of location * expr * expr * expr
   | LT of location * expr * expr
   | LE of location * expr * expr
   | GT of location * expr * expr
@@ -139,13 +140,13 @@ and stmt =
 
 	
 type fnDecl = {
-  fnName       : identifier;
-  formals    : varDecl list;
-  returnType   : varType;
-  stmtBlock : stmt;
-  preCondition : expr;
+  fnName        : identifier;
+  formals       : varDecl list;
+  returnType    : varType;
+  stmtBlock     : stmt;
+  preCondition  : expr;
   postCondition : expr;
-  location_fd : location;
+  location_fd   : location;
 }
 let create_fnDecl name formals returnType stmtBlock preCondition postCondition location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; location_fd = location;}
 
@@ -187,9 +188,15 @@ let get_root_decl program (declName:string) =
     find_decl program.decls;
     !decl_to_return
 
+(*
+let identifier_of_lval lval = match lval with
+    NormLval(loc,id) -> id
+  | ArrayLval(loc,id,index) -> id
+*)
+
 let location_of_decl decl = 
   match decl with
-    VarDecl(l,d) -> l
+      VarDecl(l,d) -> l
     | FnDecl(l,d) -> l
 
 let location_of_stmt = function
@@ -218,6 +225,7 @@ let location_of_expr = function
     | UMinus (loc,t) -> loc
     | ForAll (loc,decls,e) -> loc
     | Exists (loc,decls,e) -> loc
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> loc
     | LT (loc,t1, t2) -> loc
     | LE (loc,t1, t2) -> loc
     | GT (loc,t1, t2) -> loc
@@ -279,7 +287,7 @@ let get_delimited_list_of_decl_names decls delimiter =
 (* temp *)
 let rec string_of_lval lval = match lval with
   | NormLval (loc, s) -> string_of_identifier s
-  | ArrayLval (loc, t1, t2) -> (string_of_identifier t1) ^ "[" ^ (string_of_expr t2) ^ "]"
+  | ArrayLval (loc, t1, t2) -> (string_of_expr t1) ^ "[" ^ (string_of_expr t2) ^ "]"
 (* temp *)
 and string_of_constant c = match c with
    | ConstInt (loc,c) -> string_of_int c
@@ -300,7 +308,8 @@ and string_of_expr e =
     | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
     | UMinus (loc,t) -> "-" ^ (soe t)
     | ForAll (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
-    | Exists (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
+    | Exists (loc,decls,e) -> "exists " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
+    | ArrayUpdate (loc,exp,assign_to,assign_val) -> soe exp ^ "{" ^ soe assign_to ^ " <- " ^ soe assign_val ^ "}"
     | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
     | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
     | GT (loc,t1, t2) -> (soe t1) ^ " > " ^ (soe t2)

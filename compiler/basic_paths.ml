@@ -49,7 +49,7 @@ let get_statement_list stmts =
       StmtBlock(loc,stmt_list) -> stmt_list
     | _ -> [stmts]
 
-let create_rv_decl t ident = 
+let create_rv_decl t ident =
   {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some(-1));}
 
 let create_rv_expression expr t loc = 
@@ -118,6 +118,7 @@ let generate_paths_for_func func program =
     | UMinus (loc,t) -> UMinus(loc, gnfe t)
     | ForAll (loc,decls,e) -> ForAll(loc,decls,gnfe e)
     | Exists (loc,decls,e) -> Exists(loc,decls,gnfe e)
+    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc,gnfe expr, gnfe assign_to, gnfe assign_val)
     | LT (loc,t1, t2) -> LT(loc, gnfe t1, gnfe t2)
     | LE (loc,t1, t2) -> LE(loc, gnfe t1, gnfe t2)
     | GT (loc,t1, t2) -> GT(loc, gnfe t1, gnfe t2)
@@ -181,7 +182,9 @@ let generate_paths_for_func func program =
               (*Use the statements that follow the scope close.*)
           )
         | Ast.ReturnStmt(loc, exp) -> (
-	    Queue.add (List.append curr_path [Expr (create_rv_expression exp func.returnType loc); func_post_condition]) all_paths
+            match func.returnType with
+                Void(loc) -> Queue.add (List.append curr_path [func_post_condition]) all_paths
+              | _ -> Queue.add (List.append curr_path [Expr (create_rv_expression exp func.returnType loc); func_post_condition]) all_paths
           )
         | Ast.AssertStmt(loc, exp) -> 
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;

@@ -78,6 +78,7 @@ rule lang = parse
   | "exists"                             {updateLocation(lexbuf); T_Exists}
   | "<->"                                {updateLocation(lexbuf); T_Iff}
   | "->"                                 {updateLocation(lexbuf); T_Implies}
+  | "<-"                                 {updateLocation(lexbuf); T_LeftArrow}
   | "@pre"                               {updateLocation(lexbuf); T_Pre}
   | "@post"                              {updateLocation(lexbuf); T_Post}
   | "div"                                {updateLocation(lexbuf); T_Div}

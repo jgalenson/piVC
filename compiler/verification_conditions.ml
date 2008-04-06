@@ -4,6 +4,7 @@ open Basic_paths
 open Expr_utils
 
 exception InvalidPath of string ;;
+exception UnexpectedExpr
 
 (* Gets the Ast.Expr out of a path node. *)
 let get_expr_from_path_node n = match n with
@@ -28,10 +29,27 @@ let get_vc path =
       match instr with
       | Assume (e) ->
 	  Ast.Implies (dummy_loc, e, formula)
-      | Expr (e) ->
+      | Expr (exp) ->
 	  begin
-	    match e with
-	      | Ast.Assign (_,l,e) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
+	    match exp with
+	      | Ast.Assign (_,l,e) ->
+                  begin
+                    match l with
+                        Ast.NormLval(loc,id) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
+                      | Ast.ArrayLval(loc,arr,index) ->
+                          begin
+                            match array_name_from_lval l with
+                                Some(name) ->
+                                  begin
+                                    let array_update = array_write_to_array_update (Ast.LValue(Ast.get_dummy_location(),l)) e in
+                                      match array_update with
+                                          Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr formula [(name,update_to)]
+                                        | _ -> raise UnexpectedExpr
+                                  end
+                                    (*TODO-A: possibly clean up the above two lines...possibly use update_from instead of name*)
+                              | None -> formula
+                          end
+                  end
 	      | _ -> formula
 	  end
       | _ -> raise (InvalidPath "Annotation in middle of path")

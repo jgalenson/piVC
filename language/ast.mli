@@ -38,7 +38,7 @@ val create_varDecl : varType -> identifier -> location -> varDecl
 val create_identifier : string -> location -> identifier
 type lval =
   | NormLval of location * identifier
-  | ArrayLval of location * identifier * expr
+  | ArrayLval of location * expr * expr
 
 and constant =
   | ConstInt of location * int
@@ -59,6 +59,7 @@ and expr =
   | UMinus of location * expr
   | ForAll of location * varDecl list * expr
   | Exists of location * varDecl list * expr
+  | ArrayUpdate of location * expr * expr * expr
   | LT of location * expr * expr
   | LE of location * expr * expr
   | GT of location * expr * expr
@@ -111,6 +112,8 @@ type program = {
 val create_program : decl list -> location -> program
 
 val get_root_decl : program -> string -> decl option
+
+(*val identifier_of_lval : lval -> identifier*)
 
 val location_of_decl : decl -> location 
 
