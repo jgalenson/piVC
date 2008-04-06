@@ -6,6 +6,7 @@ Jason
         don't restrict array reads to identifiers
 	change all refs from node to step
 	config files (ports to bind to, IP/ports to connect to, saved files dir)
+        fix unknown yices return value
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
         Bug: filename outdated in client title bar after save as operation
