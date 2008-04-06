@@ -7,11 +7,13 @@ public class BasicPath {
 	private ArrayList<Step> steps;
 	private VerificationCondition vc;
 	private boolean isValid;
+	private Counterexample counterexample;
 	
-	public BasicPath(ArrayList<Step> steps, VerificationCondition vc, boolean isValid) {
+	public BasicPath(ArrayList<Step> steps, VerificationCondition vc, boolean isValid, Counterexample counterexample) {
 		this.steps = steps;
 		this.vc = vc;
 		this.isValid = isValid;
+		this.counterexample = counterexample;
 	}
 	
 	public int getNumSteps() {
@@ -35,6 +37,10 @@ public class BasicPath {
 		for (Step step: steps)
 			locations.add(step.getLocation());
 		return locations;
+	}
+	
+	public Counterexample getCounterexample() {
+		return counterexample;
 	}
 
 }

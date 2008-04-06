@@ -9,6 +9,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import data_structures.BasicPath;
+import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Location;
 import data_structures.PiError;
@@ -107,6 +108,7 @@ public class ServerResponseParser {
 		boolean isValid = valid.equals("valid") ? true : false;
 		ArrayList<Step> steps = null;
 		VerificationCondition vc = null;
+		Counterexample counterexample = null;
 		NodeList children = basicPath.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
@@ -114,10 +116,12 @@ public class ServerResponseParser {
 				steps = parsePath(child);
 			if ("vc".equals(child.getNodeName()))
 				vc = new VerificationCondition(child.getTextContent(), isValid);
+			if ("counterexample".equals(child.getNodeName()))
+				counterexample = new Counterexample(child.getTextContent());
 		}
-		if (steps == null || vc == null)
+		if (steps == null || vc == null || (!vc.isValid() && counterexample == null))
 			throw new RuntimeException("Invalid basic_path tag");
-		return new BasicPath(steps, vc, isValid);
+		return new BasicPath(steps, vc, isValid, counterexample);
 	}
 
 	/**

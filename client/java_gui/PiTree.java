@@ -12,6 +12,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
 import data_structures.BasicPath;
+import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Step;
 import data_structures.VerificationCondition;
@@ -72,6 +73,7 @@ public class PiTree extends JPanel {
 		tree.setShowsRootHandles(true);
 		tree.setRootVisible(true);
 		tree.setEditable(false);
+		tree.setRowHeight(0);  // For counterexamples, so we can have differently-sized rows.
 	}
 	
 	/**
@@ -116,6 +118,8 @@ public class PiTree extends JPanel {
 			DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(basicPath.getVC());
 			treeModel.insertNodeInto(vcNode, basicPathNode, basicPathNode.getChildCount());
 			addSteps(basicPath, basicPathNode);
+			if (!basicPath.isValid())
+				addCounterexample(basicPath.getCounterexample(), basicPathNode);
 		}		
 	}
 
@@ -123,10 +127,22 @@ public class PiTree extends JPanel {
 	 * Adds the steps inside a basic path to the tree as its children.
 	 */
 	private void addSteps(BasicPath basicPath, DefaultMutableTreeNode basicPathNode) {
+		DefaultMutableTreeNode parentStepNode = new DefaultMutableTreeNode("Steps");
+		treeModel.insertNodeInto(parentStepNode, basicPathNode, basicPathNode.getChildCount());
 		for (int i = 0; i < basicPath.getNumSteps(); i++) {
 			Step step = basicPath.getStep(i);
 			DefaultMutableTreeNode stepNode = new DefaultMutableTreeNode(step);
-			treeModel.insertNodeInto(stepNode, basicPathNode, basicPathNode.getChildCount());
+			treeModel.insertNodeInto(stepNode, parentStepNode, parentStepNode.getChildCount());
+		}		
+	}
+	
+	private void addCounterexample(Counterexample counterexample, DefaultMutableTreeNode basicPathNode) {
+		DefaultMutableTreeNode parentCounterexampleNode = new DefaultMutableTreeNode("Counterexample");
+		treeModel.insertNodeInto(parentCounterexampleNode, basicPathNode, basicPathNode.getChildCount());
+		for (int i = 0; i < counterexample.getNumVariables(); i++) {
+			String variable = counterexample.getVariable(i);
+			DefaultMutableTreeNode varNode = new DefaultMutableTreeNode(variable);
+			treeModel.insertNodeInto(varNode, parentCounterexampleNode, parentCounterexampleNode.getChildCount());
 		}		
 	}
 	
@@ -224,6 +240,9 @@ public class PiTree extends JPanel {
 				VerificationCondition vc = (VerificationCondition)obj;
 				setIcon(getProperIcon(vc.isValid()));
 				setText("VC: " + vc.getVerificationCondition());
+			} else if (obj instanceof String) {
+				setIcon(null);
+				setText((String)obj);
 			}
 			return this;
 		}
