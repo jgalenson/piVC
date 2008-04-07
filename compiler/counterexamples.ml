@@ -36,11 +36,13 @@ let parse_counterexamples str rev_var_names =
     
   let rec parse_counterexample scan =
     let first_token = get_replaced_token scan in
-    if (first_token != "(") then
+    if (first_token <> "(") then
       Var (first_token)
     else
       begin
-	let array_var = ArrayVar ((parse_counterexample scan), (get_replaced_token scan)) in
+	let var = parse_counterexample scan in
+	let rhs = get_replaced_token scan in
+	let array_var = ArrayVar (var, rhs) in
 	ignore (Scanner.next_token scan); (* Closing ")" *)
 	array_var
       end
