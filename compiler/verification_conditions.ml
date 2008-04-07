@@ -63,8 +63,11 @@ let get_vc path =
     else
       wp (single_wp formula (List.hd rev_instrs)) (List.tl rev_instrs)
   in
-  
-  Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs) ;;
+  let vc_to_return = Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs) in
+    vc_to_return ;;
+
+
+
 
 let string_of_vc vc = Ast.string_of_expr vc ;;
 

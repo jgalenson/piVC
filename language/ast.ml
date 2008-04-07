@@ -8,7 +8,8 @@ type location = {
   loc_end    : Lexing.position;
 }
 
-let get_dummy_location () = {
+let rec gdl () = (get_dummy_location ())
+and get_dummy_location () = {
   loc_start={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
   loc_end={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
 }

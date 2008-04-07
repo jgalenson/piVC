@@ -2,6 +2,60 @@ open Ast
 
 exception CantReplaceLValueWithExpr
 exception NotLValueExpr
+exception InvalidFormula
+
+
+
+let rec nnf expr = 
+  match expr with
+    | Assign (loc,l, e) -> raise InvalidFormula
+    | Constant (loc,c) -> expr
+    | LValue (loc,l) -> expr
+    | Call (loc,s, el) -> raise InvalidFormula
+    | Plus (loc,t1, t2) -> Plus(loc, nnf t1, nnf t2)
+    | Minus (loc,t1, t2) -> Minus(loc, nnf t1, nnf t2)
+    | Times (loc,t1, t2) -> Times(loc, nnf t1, nnf t2)
+    | Div (loc,t1, t2) -> Div(loc, nnf t1, nnf t2)
+    | IDiv (loc,t1, t2) -> IDiv(loc, nnf t1, nnf t2)
+    | Mod (loc,t1, t2) -> Mod(loc, nnf t1, nnf t2)
+    | UMinus (loc,t) -> UMinus(loc, nnf t)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,nnf e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,nnf e)
+    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc, nnf expr, nnf assign_to, nnf assign_val)
+    | LT (loc,t1, t2) -> LT(loc, nnf t1, nnf t2)
+    | LE (loc,t1, t2) -> LE(loc, nnf t1, nnf t2)
+    | GT (loc,t1, t2) -> GT(loc, nnf t1, nnf t2)
+    | GE (loc,t1, t2) -> GE(loc, nnf t1, nnf t2)
+    | EQ (loc,t1, t2) -> EQ(loc, nnf t1, nnf t2)
+    | NE (loc,t1, t2) -> NE(loc, nnf t1, nnf t2)
+    | And (loc,t1, t2) -> And(loc, nnf t1, nnf t2)
+    | Or (loc,t1, t2) -> Or(loc, nnf t1, nnf t2)
+    | Not (loc,t) ->
+        begin
+          let nnf_t = nnf t in
+            match nnf_t with
+                Not(loc2,t2) -> nnf t2
+              | Constant(loc2, con) ->
+                  begin
+                    match con with
+                        ConstBool(loc,b) -> Constant(loc2, (ConstBool(loc2,not b)))
+                      | _ -> raise InvalidFormula
+                  end
+              | And(loc2,t1,t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
+              | Or(loc2,t1,t2) -> And(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
+              | _ -> Not(loc, nnf_t)
+        end
+    | Implies (loc,t1, t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf t2)
+    | Iff (loc,t1, t2) ->
+        begin
+          let nnf_t1 = nnf t1 in
+          let nnf_t2 = nnf t2 in
+            And(loc,nnf (Implies(loc,nnf_t1, nnf_t2)),nnf (Implies(loc,nnf_t2, nnf_t1)))
+        end
+    | Length (loc, t) -> Length(loc, nnf t)
+    | EmptyExpr  -> expr
+
+
 
 (* CODE SECTION: SUBSTITUTING VARIABLE NAMES IN EXPRS *)
 

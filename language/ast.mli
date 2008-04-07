@@ -8,6 +8,7 @@ type location = {
   loc_start  : Lexing.position;
   loc_end    : Lexing.position;
 }
+val gdl : unit -> location
 val get_dummy_location : unit -> location
 val create_location : Lexing.position -> Lexing.position -> location
 val col_number_of_position : Lexing.position -> int
