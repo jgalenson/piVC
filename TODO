@@ -3,21 +3,21 @@ Short-term TODOs
 ----------------
 
 Jason
-        don't restrict array reads to identifiers
+	don't restrict array reads to identifiers
 	change all refs from node to step
 	config files (ports to bind to, IP/ports to connect to, saved files dir)
-        fix unknown yices return value
+	fix unknown yices return value
+	Generate basic path names somehow.
+	Loop assertions require parens now.
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
-        Bug: filename outdated in client title bar after save as operation
-        Don't lock up entire GUI while client is awaiting response from server
 
 -----------------------------
 Proposed High-level timetable
 -----------------------------
 
 Week 1-2
-	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)
+	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays, add locations to identifiers for shadowed stuff)
 
 Week 3
 	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).

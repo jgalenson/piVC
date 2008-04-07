@@ -146,6 +146,7 @@ public class PiGui extends JFrame {
         }
 		curFile = selectedFile;
 		setDirty(false);
+		setTitle(TITLE + " - " + curFile.getName());
 	}
 
 	/**
@@ -176,42 +177,61 @@ public class PiGui extends JFrame {
 	 * off to the server and handling the response.
 	 */
 	public void doCompile() {
-		String result = config.getValue("default_server_address");
-		if (result != null) {
-			piCode.removeAllHighlights();
-			String[] parts = result.split(":");
-			String name = parts[0].trim();
-			int port = Integer.parseInt(parts[1].trim());
-			try {
-				Socket toServer = new Socket(name, port);
-				DataOutputStream out = new DataOutputStream(toServer.getOutputStream());
-				String code = piCode.getText();
-				out.writeInt(code.length());
-				out.writeBytes(code);
-				out.flush();
-				DataInputStream in = new DataInputStream(toServer.getInputStream());
-				int len = in.readInt();
-				byte[] bytes = new byte[len];
-				in.readFully(bytes, 0, len);
-				String text = new String(bytes);
-				handleServerResponse(text);
-			} catch (java.net.ConnectException ex){
-				JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
-			} catch (Exception ex) {
-				ex.printStackTrace();
-			}
+		piCode.removeAllHighlights();
+		String code = piCode.getText();
+		(new Compiler(code)).start();
+	}
+	
+	private class Compiler extends Thread {
+		private String code;
+		public Compiler(String code) {
+			this.code = code;
+		}
+		@Override
+		public void run() {
+			String result = config.getValue("default_server_address");
+			if (result != null) {
+				String[] parts = result.split(":");
+				String name = parts[0].trim();
+				int port = Integer.parseInt(parts[1].trim());
+				try {
+					Socket toServer = new Socket(name, port);
+					DataOutputStream out = new DataOutputStream(toServer.getOutputStream());
+					out.writeInt(code.length());
+					out.writeBytes(code);
+					out.flush();
+					DataInputStream in = new DataInputStream(toServer.getInputStream());
+					int len = in.readInt();
+					byte[] bytes = new byte[len];
+					in.readFully(bytes, 0, len);
+					String text = new String(bytes);
+					handleServerResponse(text);
+				} catch (final java.net.ConnectException ex){
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
+						}
+					});
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+			}			
 		}
 	}
 
 	/**
 	 * Handles a response from the server by parsing it.
 	 */
-	private void handleServerResponse(String text) {
-		piTree.clear();
-		piErrorOutput.clear();
-		piCompilerOutput.setText(text);
-		serverResponseParser.parse(text, getFilename());
-		rightTabbedPane.repaint();
+	private void handleServerResponse(final String text) {
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				piTree.clear();
+				piErrorOutput.clear();
+				piCompilerOutput.setText(text);
+				serverResponseParser.parse(text, getFilename());
+				rightTabbedPane.repaint();
+			}
+		});
 	}
 	
 	/**

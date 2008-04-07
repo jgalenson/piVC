@@ -136,6 +136,10 @@ public class PiTree extends JPanel {
 		}		
 	}
 	
+	/**
+	 * Adds a counterexample (a list of variables and their values) inside
+	 * a basic path in the tree.
+	 */
 	private void addCounterexample(Counterexample counterexample, DefaultMutableTreeNode basicPathNode) {
 		DefaultMutableTreeNode parentCounterexampleNode = new DefaultMutableTreeNode("Counterexample");
 		treeModel.insertNodeInto(parentCounterexampleNode, basicPathNode, basicPathNode.getChildCount());
