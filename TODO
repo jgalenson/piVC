@@ -2,6 +2,9 @@
 Short-term TODOs
 ----------------
 
+Unassigned
+        Bug: Discuss what to do with assign not at root level of expr (e.g. x := y := 2). Currently the server dies on this.
+
 Jason
 	don't restrict array reads to identifiers
 	change all refs from node to step
@@ -21,6 +24,7 @@ Week 1-2
 
 Week 3
 	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).
+	Have the gui send its code to the server in xml and have the server parse that xml.
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 4
@@ -33,7 +37,7 @@ Week 5
 
 Week 6
 	At least one of hashtables, sets, multisets (see Aaron's email 12/6/07)
-	Have the gui send its code to the server in xml and have the server parse that xml.
+
 
 Week 7
 	Joel: Static analysis API
