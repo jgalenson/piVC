@@ -5,6 +5,8 @@ open Ast
 open Semantic_checking
 open Utils ;;
 
+type validity = Valid | Invalid | Unknown;;
+
 (* Verifies a VC. *)
 let verify_vc vc =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
@@ -19,29 +21,40 @@ let verify_vc vc =
   let response = Net_utils.get_input inchan in  
   Unix.close sock;
   (* A VC is valid iff its negation is unsatisfiable. *)
-  if (response = "unsat" or response = "unknown") then
-    (true, None)
+  if (response = "unsat") then
+    (Valid, None)
+  else if (response = "unknown") then
+    (Unknown, None)
   else if (String.sub response 0 3 = "sat") then
-    (false, Some (Counterexamples.parse_counterexamples response rev_var_names))
+    (Invalid, Some (Counterexamples.parse_counterexamples response rev_var_names))
   else
     assert false ;;
-  
-(* Returns (fn * bool * (Basic Path * VC * bool * example list option) list) list. *)
+
+
+let overall_validity_status list_of_things extraction_func = 
+  let is_validity extraction_func test actual = (test==(extraction_func actual)) in
+    if (List.for_all (is_validity extraction_func Valid) list_of_things) then Valid
+    else if (List.exists (is_validity extraction_func Invalid) list_of_things) then Invalid
+    else Unknown
+;;
+
+(* Returns (fn * bool * (Basic Path * VC * validity * example list option) list) list. *)
 let verify_program program_info = 
   let rec verify_function func = 
     let verified_basic_paths = List.map verify_basic_path (snd func) in
-    let path_is_pass (path, vc, pass, count) = pass in
-    let all_paths_passed = List.for_all path_is_pass verified_basic_paths in
-    (fst func, all_paths_passed, verified_basic_paths)
+    let validity_of_path (path, vc, validity, count) = validity in
+    (fst func, overall_validity_status verified_basic_paths validity_of_path, verified_basic_paths)
+
   and verify_basic_path path_info =
     let vc_result = verify_vc (snd path_info) in
     (* TODO: Rewrite so we make only one request to server. *)
     (fst path_info, snd path_info, fst vc_result, snd vc_result)
   in 
+
+
   let verified_functions = List.map verify_function program_info in
-  let func_is_pass (name,pass,info) = pass in
-  let all_funcs_passed = List.for_all func_is_pass verified_functions in
-    (all_funcs_passed, verified_functions)
+  let validity_of_function (name,validity,info) = validity in
+    (overall_validity_status verified_functions validity_of_function, verified_functions)
 
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list

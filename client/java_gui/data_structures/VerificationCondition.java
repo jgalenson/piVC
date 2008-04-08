@@ -3,19 +3,19 @@ package data_structures;
 public class VerificationCondition {
 	
 	private String vc;
-	private boolean isValid;
+	private int validity;
 	
-	public VerificationCondition(String vc, boolean isValid) {
+	public VerificationCondition(String vc, int validity) {
 		this.vc = vc;
-		this.isValid = isValid;
+		this.validity = validity;
 	}
 	
 	public String getVerificationCondition() {
 		return vc;
 	}
 	
-	public boolean isValid() {
-		return isValid;
+	public int getValidity() {
+		return validity;
 	}
 
 }

@@ -5,13 +5,13 @@ import java.util.ArrayList;
 public class Function {
 	
 	private String name;
-	private boolean isValid;
+	private int validity;
 	private ArrayList<BasicPath> basicPaths;
 	private Location location;
 	
-	public Function(String name, boolean isValid, ArrayList<BasicPath> basicPaths, Location location) {
+	public Function(String name, int validity, ArrayList<BasicPath> basicPaths, Location location) {
 		this.name = name;
-		this.isValid = isValid;
+		this.validity = validity;
 		this.basicPaths = basicPaths;
 		this.location = location;
 	}
@@ -20,8 +20,8 @@ public class Function {
 		return name;
 	}
 	
-	public boolean isValid() {
-		return isValid;
+	public int getValidity() {
+		return validity;
 	}
 	
 	public int getNumBasicPaths() {

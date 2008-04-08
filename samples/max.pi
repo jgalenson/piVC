@@ -1,0 +1,15 @@
+/* As we don't yet have an array length operator, I hard-coded a length of 10
+    into the annotations */
+
+@pre true
+@post forall ix. ((ix>=0 && ix<10) -> (rv >= arr[ix]))
+int max(int[] arr) {
+	int max := arr[0];
+	for @(forall j. ((j<i && j>=0) -> (max >= arr[j])))
+	(int i:=1; i<10;i=i+1){
+		if(arr[i]>=max){
+			max := arr[i];
+		}
+	}
+	return max;
+}

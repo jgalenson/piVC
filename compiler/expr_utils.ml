@@ -41,6 +41,8 @@ let rec nnf expr =
                         ConstBool(loc,b) -> Constant(loc2, (ConstBool(loc2,not b)))
                       | _ -> raise InvalidFormula
                   end
+              | ForAll(loc2,decls,e) -> Exists(loc2,decls,nnf (Not(loc2,nnf e)))
+              | Exists(loc2,decls,e) -> ForAll(loc2,decls,nnf (Not(loc2,nnf e)))
               | And(loc2,t1,t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
               | Or(loc2,t1,t2) -> And(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
               | _ -> Not(loc, nnf_t)

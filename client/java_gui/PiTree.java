@@ -118,7 +118,7 @@ public class PiTree extends JPanel {
 			DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(basicPath.getVC());
 			treeModel.insertNodeInto(vcNode, basicPathNode, basicPathNode.getChildCount());
 			addSteps(basicPath, basicPathNode);
-			if (!basicPath.isValid())
+			if (basicPath.getValidity()==VerificationResult.INVALID)
 				addCounterexample(basicPath.getCounterexample(), basicPathNode);
 		}		
 	}
@@ -200,18 +200,22 @@ public class PiTree extends JPanel {
 	 */
 	private class MyTreeCellRenderer extends DefaultTreeCellRenderer {
 		
-		private ImageIcon valid, invalid;
+		private ImageIcon valid, invalid, unknown;
 		
 		public MyTreeCellRenderer() {
 			valid = new ImageIcon("images/valid.jpg");
 			invalid = new ImageIcon("images/invalid.jpg");
+			unknown = new ImageIcon("images/unknown.jpg");
 		}
 		
-		private ImageIcon getProperIcon(boolean isValid) {
-			if (isValid)
+		private ImageIcon getProperIcon(int validity) {
+			if (validity==VerificationResult.VALID)
 				return valid;
-			else
+			else if (validity==VerificationResult.INVALID)
 				return invalid;
+			else if (validity==VerificationResult.UNKNOWN)
+				return unknown;
+			else throw new RuntimeException("Unrecognized validity");
 		}
 		
 		/**
@@ -225,16 +229,16 @@ public class PiTree extends JPanel {
 			Object obj = ((DefaultMutableTreeNode)value).getUserObject();
 			if (obj instanceof VerificationResult) {
 				VerificationResult verificationResult = (VerificationResult)obj;
-				setIcon(getProperIcon(verificationResult.isValid()));
+				setIcon(getProperIcon(verificationResult.getValidity()));
 				String name = verificationResult.getFilename() != null ? verificationResult.getFilename() : "Program";
 				setText(name);
 			} else if (obj instanceof Function) {
 				Function function = (Function)obj;
-				setIcon(getProperIcon(function.isValid()));
+				setIcon(getProperIcon(function.getValidity()));
 				setText(function.getName());
 			} else if (obj instanceof BasicPath) {
 				BasicPath basicPath = (BasicPath)obj;
-				setIcon(getProperIcon(basicPath.isValid()));
+				setIcon(getProperIcon(basicPath.getValidity()));
 				setText("Basic path identifier goes here");
 			} else if (obj instanceof Step) {
 				Step step = (Step)obj;
@@ -242,7 +246,7 @@ public class PiTree extends JPanel {
 				setText(step.getText());
 			} else if (obj instanceof VerificationCondition) {
 				VerificationCondition vc = (VerificationCondition)obj;
-				setIcon(getProperIcon(vc.isValid()));
+				setIcon(getProperIcon(vc.getValidity()));
 				setText("VC: " + vc.getVerificationCondition());
 			} else if (obj instanceof String) {
 				setIcon(null);

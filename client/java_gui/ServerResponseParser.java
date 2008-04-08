@@ -53,7 +53,7 @@ public class ServerResponseParser {
 		Node root = xml.getFirstChild();
 		Node result = root.getChildNodes().item(1);
 		String status = result.getAttributes().getNamedItem("status").getTextContent();
-		if (status.equals("valid") || status.equals("invalid"))
+		if (status.equals("valid") || status.equals("invalid") || status.equals("unknown"))
 			parseNormal(result, filename);
 		else if (status.equals("error"))
 			parseErrors(result);
@@ -66,7 +66,6 @@ public class ServerResponseParser {
 	 */
 	private void parseNormal(Node result, String filename) {
 		String valid = result.getAttributes().getNamedItem("status").getTextContent();
-		boolean isValid = valid.equals("valid") ? true : false;
 		ArrayList<Function> functions = new ArrayList<Function>();
 		NodeList children = result.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
@@ -74,17 +73,27 @@ public class ServerResponseParser {
 			if ("function".equals(child.getNodeName()))  // Element node
 				functions.add(parseFunction(child));
 		}
-		VerificationResult verificationResult = new VerificationResult(filename, isValid, functions);
+		VerificationResult verificationResult = new VerificationResult(filename, validityStringToInt(valid), functions);
 		piGui.handleVerificationResult(verificationResult);
 	}
 
+	private int validityStringToInt(String validity){
+		if(validity.equals("valid"))
+			return VerificationResult.VALID;
+		else if (validity.equals("invalid"))
+			return VerificationResult.INVALID;
+		else if (validity.equals("unknown"))
+			return VerificationResult.UNKNOWN;
+		else
+			throw new RuntimeException("Unrecognized validity type.");
+	}
+	
 	/**
 	 * Makes and returns a Function object from a <function> tag.
 	 */
 	private Function parseFunction(Node function) {
 		String name = function.getAttributes().getNamedItem("name").getTextContent();
 		String valid = function.getAttributes().getNamedItem("status").getTextContent();
-		boolean isValid = valid.equals("valid") ? true : false;
 		ArrayList<BasicPath> basicPaths = new ArrayList<BasicPath>();
 		Location location = null;
 		NodeList children = function.getChildNodes();
@@ -97,7 +106,7 @@ public class ServerResponseParser {
 		}
 		if (basicPaths.size() == 0)
 			throw new RuntimeException("Function has no basic paths");
-		return new Function(name, isValid, basicPaths, location);
+		return new Function(name, validityStringToInt(valid), basicPaths, location);
 	}
 
 	/**
@@ -105,7 +114,7 @@ public class ServerResponseParser {
 	 */
 	private BasicPath parseBasicPath(Node basicPath) {
 		String valid = basicPath.getAttributes().getNamedItem("status").getTextContent();
-		boolean isValid = valid.equals("valid") ? true : false;
+		int validity = validityStringToInt(valid);
 		ArrayList<Step> steps = null;
 		VerificationCondition vc = null;
 		Counterexample counterexample = null;
@@ -115,13 +124,13 @@ public class ServerResponseParser {
 			if ("path".equals(child.getNodeName()))
 				steps = parsePath(child);
 			if ("vc".equals(child.getNodeName()))
-				vc = new VerificationCondition(child.getTextContent(), isValid);
+				vc = new VerificationCondition(child.getTextContent(), validity);
 			if ("counterexample".equals(child.getNodeName()))
 				counterexample = new Counterexample(child.getTextContent());
 		}
-		if (steps == null || vc == null || (!vc.isValid() && counterexample == null))
+		if (steps == null || vc == null || (vc.getValidity()==VerificationResult.INVALID && counterexample == null))
 			throw new RuntimeException("Invalid basic_path tag");
-		return new BasicPath(steps, vc, isValid, counterexample);
+		return new BasicPath(steps, vc, validity, counterexample);
 	}
 
 	/**

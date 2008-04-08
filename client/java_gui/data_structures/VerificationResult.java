@@ -4,13 +4,17 @@ import java.util.ArrayList;
 
 public class VerificationResult {
 	
+	public static final int VALID = 0;
+	public static final int INVALID = 1;
+	public static final int UNKNOWN = 2;
+	
 	private String filename;
-	private boolean isValid;
+	private int validity;
 	private ArrayList<Function> functions;
 	
-	public VerificationResult(String filename, boolean isValid, ArrayList<Function> functions) {
+	public VerificationResult(String filename, int validity, ArrayList<Function> functions) {
 		this.filename = filename;
-		this.isValid = isValid;
+		this.validity = validity;
 		this.functions = functions;
 	}
 	
@@ -18,8 +22,8 @@ public class VerificationResult {
 		return filename;
 	}
 	
-	public boolean isValid() {
-		return isValid;
+	public int getValidity() {
+		return validity;
 	}
 	
 	public int getNumFunctions() {
