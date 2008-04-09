@@ -14,6 +14,7 @@ Jason
 	Loop assertions require parens now.
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
+	Only allow assigns as the root of an expr?  Check Aaron's stuff.
 
 -----------------------------
 Proposed High-level timetable
@@ -29,7 +30,9 @@ Week 3
 
 Week 4
 	Joel: VC caching
-	Jason: Break stmt, semantically check assertions
+	Joel: semantically check break stmts, only allow assigns as expr roots.
+	Jason: semantically check assertions
+	Jason: Run-time assertions
 
 Week 5
 	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
