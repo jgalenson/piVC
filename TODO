@@ -4,16 +4,20 @@ Short-term TODOs
 
 Jason
 	don't restrict array reads to identifiers
-	change all refs from node to step
-	config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
+	change all refs from node to step	
 	fix unknown yices return value
 	Generate basic path names somehow.
 	Loop assertions require parens now.
+        Don't run arrays DP on VCs not in the fragment
+        Remaining TODOs in arrays DP code
+        Fix arrays DP code to make it run much faster
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
 	Turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space))?
+
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
+        Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
 
 -----------------------------
 Proposed High-level timetable

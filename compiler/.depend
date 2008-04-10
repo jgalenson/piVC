@@ -22,6 +22,8 @@ verification_conditions.cmo: expr_utils.cmi basic_paths.cmi \
 verification_conditions.cmx: expr_utils.cmx basic_paths.cmx \
     verification_conditions.cmi 
 verify.cmo: verification_conditions.cmi transform_yices.cmi \
-    semantic_checking.cmi counterexamples.cmi basic_paths.cmi verify.cmi 
+    semantic_checking.cmi expr_utils.cmi counterexamples.cmi basic_paths.cmi \
+    verify.cmi 
 verify.cmx: verification_conditions.cmx transform_yices.cmx \
-    semantic_checking.cmx counterexamples.cmx basic_paths.cmx verify.cmi 
+    semantic_checking.cmx expr_utils.cmx counterexamples.cmx basic_paths.cmx \
+    verify.cmi 

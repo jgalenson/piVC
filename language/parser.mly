@@ -319,9 +319,14 @@ AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location 
            ;
 
 /*All quantified variables are deemed integers*/
-CommaSeperatedListOfVarDecls : Identifier T_Comma CommaSeperatedListOfVarDecls {(create_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
-                             | Identifier { [create_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
-  
+CommaSeperatedListOfUniversalVarDecls : Identifier T_Comma CommaSeperatedListOfUniversalVarDecls {(create_Universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
+                                      | Identifier { [create_Universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
+;
+/*All quantified variables are deemed integers*/
+CommaSeperatedListOfExistentialVarDecls : Identifier T_Comma CommaSeperatedListOfExistentialVarDecls {(create_Existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
+                                        | Identifier { [create_Existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
+;
+ 
 Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | Constant               { Constant (loc 1 1, $1) }
          | LValue                 { LValue (loc 1 1, $1) }
@@ -334,8 +339,8 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | Expr T_Div Expr        { IDiv(loc 1 3, $1, $3) }
          | Expr T_Mod Expr        { Mod (loc 1 3, $1, $3) }
          | T_Minus Expr %prec UnaryMinus { UMinus (loc 1 2, $2) }
-         | T_ForAll CommaSeperatedListOfVarDecls T_Period Expr %prec T_ForAll { ForAll(loc 1 4, $2,$4) }
-         | T_Exists CommaSeperatedListOfVarDecls T_Period Expr %prec T_Exists { Exists(loc 1 4, $2,$4) }             
+         | T_ForAll CommaSeperatedListOfUniversalVarDecls T_Period Expr %prec T_ForAll { ForAll(loc 1 4, $2,$4) }
+         | T_Exists CommaSeperatedListOfExistentialVarDecls T_Period Expr %prec T_Exists { Exists(loc 1 4, $2,$4) }             
          | Expr T_LCurlyBracket Expr T_LeftArrow Expr T_RCurlyBracket { ArrayUpdate(loc 1 5, $1, $3, $5) }
          | Expr T_Less Expr       { LT (loc 1 3, $1, $3) }
          | Expr T_LessEqual Expr  { LE (loc 1 3, $1, $3) }

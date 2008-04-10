@@ -53,8 +53,20 @@ let verify_vc vc (vc_cache, cache_lock) =
   else
     begin (* Otherwise, get answer from dp server. *)
     Mutex.unlock cache_lock;
-    let negated_vc = Not (get_dummy_location (), vc) in
-    let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc in
+    (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
+    (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
+    let negated_vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), vc)) in
+
+(*  
+  print_string ("*********************************\n");
+  print_string ("Negated VC is: \n" ^ string_of_expr negated_vc ^ "\n");
+  print_string ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf ^ "\n");
+  print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quant ^ "\n");
+  print_string ("And got a response of: " ^ response ^ "\n");
+  print_string ("*********************************\n");
+*)  
+
+    let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in
     let (sock, inchan, outchan) =
       let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
       let server_addr = Constants.dp_server_address in

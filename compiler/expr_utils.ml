@@ -5,67 +5,7 @@ exception NotLValueExpr
 exception InvalidFormula
 
 
-
-let rec nnf expr = 
-  match expr with
-    | Assign (loc,l, e) -> raise InvalidFormula
-    | Constant (loc,c) -> expr
-    | LValue (loc,l) -> expr
-    | Call (loc,s, el) -> raise InvalidFormula
-    | Plus (loc,t1, t2) -> Plus(loc, nnf t1, nnf t2)
-    | Minus (loc,t1, t2) -> Minus(loc, nnf t1, nnf t2)
-    | Times (loc,t1, t2) -> Times(loc, nnf t1, nnf t2)
-    | Div (loc,t1, t2) -> Div(loc, nnf t1, nnf t2)
-    | IDiv (loc,t1, t2) -> IDiv(loc, nnf t1, nnf t2)
-    | Mod (loc,t1, t2) -> Mod(loc, nnf t1, nnf t2)
-    | UMinus (loc,t) -> UMinus(loc, nnf t)
-    | ForAll (loc,decls,e) -> ForAll(loc,decls,nnf e)
-    | Exists (loc,decls,e) -> Exists(loc,decls,nnf e)
-    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc, nnf expr, nnf assign_to, nnf assign_val)
-    | LT (loc,t1, t2) -> LT(loc, nnf t1, nnf t2)
-    | LE (loc,t1, t2) -> LE(loc, nnf t1, nnf t2)
-    | GT (loc,t1, t2) -> GT(loc, nnf t1, nnf t2)
-    | GE (loc,t1, t2) -> GE(loc, nnf t1, nnf t2)
-    | EQ (loc,t1, t2) -> EQ(loc, nnf t1, nnf t2)
-    | NE (loc,t1, t2) -> NE(loc, nnf t1, nnf t2)
-    | And (loc,t1, t2) -> And(loc, nnf t1, nnf t2)
-    | Or (loc,t1, t2) -> Or(loc, nnf t1, nnf t2)
-    | Not (loc,t) ->
-        begin
-          let nnf_t = nnf t in
-            match nnf_t with
-                Not(loc2,t2) -> nnf t2
-              | Constant(loc2, con) ->
-                  begin
-                    match con with
-                        ConstBool(loc,b) -> Constant(loc2, (ConstBool(loc2,not b)))
-                      | _ -> raise InvalidFormula
-                  end
-              | ForAll(loc2,decls,e) -> Exists(loc2,decls,nnf (Not(loc2,nnf e)))
-              | Exists(loc2,decls,e) -> ForAll(loc2,decls,nnf (Not(loc2,nnf e)))
-              | And(loc2,t1,t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
-              | Or(loc2,t1,t2) -> And(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
-              | _ -> Not(loc, nnf_t)
-        end
-    | Implies (loc,t1, t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf t2)
-    | Iff (loc,t1, t2) ->
-        begin
-          let nnf_t1 = nnf t1 in
-          let nnf_t2 = nnf t2 in
-            And(loc,nnf (Implies(loc,nnf_t1, nnf_t2)),nnf (Implies(loc,nnf_t2, nnf_t1)))
-        end
-    | Length (loc, t) -> Length(loc, nnf t)
-    | EmptyExpr  -> expr
-
-
-
 (* CODE SECTION: SUBSTITUTING VARIABLE NAMES IN EXPRS *)
-
-(*
-let ident_name_of_lval lval = match lval with
-    NormLval(loc, id) -> id.name
-  | ArrayLval(loc, id, expr) -> id.name
-*)
 
 
 let rec array_name_from_lval lval = match lval with
@@ -126,39 +66,6 @@ let rec sub_idents_in_expr expr ident_subs =
         [] -> []
       | e::l -> sub_idents_in_expr e ident_subs :: sub_idents_in_expr_list l
   in
-(*
-  let replace_lval_ident lval new_ident = 
-    match lval with
-        NormLval(loc,s) -> NormLval(loc,new_ident)
-      | ArrayLval(loc,old_ident,index) -> (print_string (string_of_lval (ArrayLval(loc,new_ident,index)));ArrayLval(loc,new_ident,index))
-  in
-  let sub_idents_in_lval lval =
-    match get_match_sub lval ident_subs with
-      None -> lval
-    | Some(sub) -> (
-        match snd sub with
-            LValue(loc, l) -> replace_lval_ident lval (identifier_of_lval l)
-          | _ -> (raise (CantReplaceLValueWithExpr))
-      )
-  in
-  (*TODO-A: If we allow array reads on abritrary exprs, this function will
-    need to be updated *)
-  let sub_idents_in_lval_expr lval_expr =
-    match lval_expr with
-      LValue(loc, l) ->
-        begin
-          match get_match_sub l ident_subs with
-              None -> lval_expr
-            | Some(sub) ->
-                begin
-                  match snd sub with
-                      LValue(loc_sub,l_sub) -> LValue(loc, replace_lval_ident l (identifier_of_lval l_sub))
-                    | _ -> snd sub
-                end
-        end
-    | _ -> (raise NotLValueExpr)
-  in
-*)
   let rec sub expr = 
     match expr with
       | Assign (loc,l, e) ->
@@ -228,3 +135,265 @@ let get_idents_of_formals func =
       | e :: l -> e.varName.name :: build_ident_list l
   in 
     build_ident_list func.formals
+
+
+
+let change_quantifier old_decls old_expr new_quant =
+  let old_decl_to_new_decl decl = 
+    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; (*TODO-A: may need to re-number here*) quant = new_quant}
+  in
+  let new_decls = List.map old_decl_to_new_decl old_decls in
+  let new_decl_to_replacement_pair new_decl = 
+    (new_decl.varName.name,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl))})))
+  in
+  let replacement_pairs = List.map new_decl_to_replacement_pair new_decls in
+  let new_expr = sub_idents_in_expr old_expr replacement_pairs in
+    (new_decls,new_expr)
+    
+
+let rec nnf expr = 
+  match expr with
+    | Assign (loc,l, e) -> raise InvalidFormula
+    | Constant (loc,c) -> expr
+    | LValue (loc,l) -> expr
+    | Call (loc,s, el) -> raise InvalidFormula
+    | Plus (loc,t1, t2) -> Plus(loc, nnf t1, nnf t2)
+    | Minus (loc,t1, t2) -> Minus(loc, nnf t1, nnf t2)
+    | Times (loc,t1, t2) -> Times(loc, nnf t1, nnf t2)
+    | Div (loc,t1, t2) -> Div(loc, nnf t1, nnf t2)
+    | IDiv (loc,t1, t2) -> IDiv(loc, nnf t1, nnf t2)
+    | Mod (loc,t1, t2) -> Mod(loc, nnf t1, nnf t2)
+    | UMinus (loc,t) -> UMinus(loc, nnf t)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,e)
+    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc, nnf expr, nnf assign_to, nnf assign_val)
+    | LT (loc,t1, t2) -> LT(loc, nnf t1, nnf t2)
+    | LE (loc,t1, t2) -> LE(loc, nnf t1, nnf t2)
+    | GT (loc,t1, t2) -> GT(loc, nnf t1, nnf t2)
+    | GE (loc,t1, t2) -> GE(loc, nnf t1, nnf t2)
+    | EQ (loc,t1, t2) -> EQ(loc, nnf t1, nnf t2)
+    | NE (loc,t1, t2) -> NE(loc, nnf t1, nnf t2)
+    | And (loc,t1, t2) -> And(loc, nnf t1, nnf t2)
+    | Or (loc,t1, t2) -> Or(loc, nnf t1, nnf t2)
+    | Not (loc,t) ->
+        begin
+          let nnf_t = nnf t in
+            match nnf_t with
+                Not(loc2,t2) -> nnf t2
+              | Constant(loc2, con) ->
+                  begin
+                    match con with
+                        ConstBool(loc,b) -> Constant(loc2, (ConstBool(loc2,not b)))
+                      | _ -> raise InvalidFormula
+                  end
+              | ForAll(loc2,decls,e) ->
+                  begin
+                    let (new_decls,new_expr) = change_quantifier decls e Existential in
+                      Exists(loc2,new_decls,nnf (Not(loc2,nnf new_expr)))
+                  end
+              | Exists(loc2,decls,e) ->
+                  begin
+                    let (new_decls,new_expr) = change_quantifier decls e Universal in
+                      ForAll(loc2,new_decls,nnf (Not(loc2,nnf new_expr)))
+                  end
+              | And(loc2,t1,t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
+              | Or(loc2,t1,t2) -> And(loc,nnf (Not(loc, nnf t1)), nnf (Not(loc,nnf t2)))
+              | _ -> Not(loc, nnf_t)
+        end
+    | Implies (loc,t1, t2) -> Or(loc,nnf (Not(loc, nnf t1)), nnf t2)
+    | Iff (loc,t1, t2) ->
+        begin
+          let nnf_t1 = nnf t1 in
+          let nnf_t2 = nnf t2 in
+            And(loc,nnf (Implies(loc,nnf_t1, nnf_t2)),nnf (Implies(loc,nnf_t2, nnf_t1)))
+        end
+    | Length (loc, t) -> Length(loc, nnf t)
+    | EmptyExpr  -> expr
+
+
+let remove_quantification_from_vc_with_array_dp exp_orig = 
+  let nnf_exp_orig = nnf exp_orig in
+  let get_index_set exp = 
+    let contains_universal_quantification exp =
+      let rec cuq exp = 
+        match exp with
+          | Constant (loc,c) -> false
+          | LValue (loc,l) ->
+              begin
+                match l with
+                    NormLval(loc,id) -> ((varDecl_of_identifier id).quant == Universal)
+                  | ArrayLval(loc,arr,index) -> false
+              end
+          | Plus (loc,t1, t2) -> cuq t1 or cuq t2
+          | Minus (loc,t1, t2) -> cuq t1 or cuq t2
+          | Times (loc,t1, t2) -> cuq t1 or cuq t2
+          | Div (loc,t1, t2) -> cuq t1 or cuq t2
+          | IDiv (loc,t1, t2) -> cuq t1 or cuq t2
+          | Mod (loc,t1, t2) -> cuq t1 or cuq t2
+          | UMinus (loc,t) -> cuq t
+          | ForAll (loc,decls,e) -> cuq e
+          | Exists (loc,decls,e) ->  cuq e
+          | ArrayUpdate (loc, exp, assign_to, assign_val) -> cuq assign_to or cuq assign_val
+          | LT (loc,t1, t2) -> cuq t1 or cuq t2
+          | LE (loc,t1, t2) -> cuq t1 or cuq t2
+          | GT (loc,t1, t2) -> cuq t1 or cuq t2
+          | GE (loc,t1, t2) -> cuq t1 or cuq t2
+          | EQ (loc,t1, t2) -> cuq t1 or cuq t2
+          | NE (loc,t1, t2) -> cuq t1 or cuq t2
+          | And (loc,t1, t2) -> cuq t1 or cuq t2
+          | Or (loc,t1, t2) -> cuq t1 or cuq t2
+          | Not (loc,t) -> cuq t
+          | Iff (loc,t1, t2) -> cuq t1 or cuq t2
+          | Implies (loc,t1, t2) -> cuq t1 or cuq t2
+          | EmptyExpr -> false
+          | _ -> raise InvalidFormula
+      in
+        cuq exp
+    in
+    let get_array_indices exp = 
+      let rec gai exp = 
+        match exp with
+          | Constant (loc,c) -> []
+          | LValue (loc,l) ->
+              begin
+                match l with 
+                    ArrayLval(loc,arr,index) -> 
+                      begin
+                        let inside = gai arr in
+                          if (contains_universal_quantification index) then inside else inside @ [index]
+                      end
+                  | _ -> []
+              end
+          | Plus (loc,t1, t2) -> gai t1 @ gai t2
+          | Minus (loc,t1, t2) -> gai t1 @ gai t2
+          | Times (loc,t1, t2) -> gai t1 @ gai t2
+          | Div (loc,t1, t2) -> gai t1 @ gai t2
+          | IDiv (loc,t1, t2) -> gai t1 @ gai t2
+          | Mod (loc,t1, t2) -> gai t1 @ gai t2
+          | UMinus (loc,t) -> gai t
+          | ForAll (loc,decls,e) -> gai e
+          | Exists (loc,decls,e) -> gai e
+          | ArrayUpdate (loc, exp, assign_to, assign_val) -> if (contains_universal_quantification assign_to) then [] else [assign_to]
+          | LT (loc,t1, t2) -> gai t1 @ gai t2
+          | LE (loc,t1, t2) -> gai t1 @ gai t2
+          | GT (loc,t1, t2) -> gai t1 @ gai t2
+          | GE (loc,t1, t2) -> gai t1 @ gai t2
+          | EQ (loc,t1, t2) -> gai t1 @ gai t2
+          | NE (loc,t1, t2) -> gai t1 @ gai t2
+          | And (loc,t1, t2) -> gai t1 @ gai t2
+          | Or (loc,t1, t2) -> gai t1 @ gai t2
+          | Not (loc,t) -> gai t
+          | Iff (loc,t1, t2) -> gai t1 @ gai t2
+          | Implies (loc,t1, t2) -> gai t1 @ gai t2
+          | EmptyExpr -> []
+          | _ -> raise InvalidFormula
+      in gai exp
+    in
+    let get_guards exp  = 
+      (*Returns list with single element of exp if exp is not universally quantified.
+        Otherwise, returns an empty list.*)
+      let gl exp = 
+        if contains_universal_quantification exp then [] else [exp]
+      in
+      let rec gg exp = 
+        match exp with
+          | Constant (loc,c) -> []
+          | LValue (loc,l) -> []
+          | Plus (loc,t1, t2) -> []
+          | Minus (loc,t1, t2) -> []
+          | Times (loc,t1, t2) -> []
+          | Div (loc,t1, t2) -> []
+          | IDiv (loc,t1, t2) -> []
+          | Mod (loc,t1, t2) -> []
+          | UMinus (loc,t) -> []
+          | ForAll (loc,decls,e) -> gg e
+          | Exists (loc,decls,e) -> gg e
+          | ArrayUpdate (loc, exp, assign_to, assign_val) -> []
+          | LT (loc,t1, t2) -> gl t1 @ gl t2
+          | LE (loc,t1, t2) -> gl t1 @ gl t2
+          | GT (loc,t1, t2) -> gl t1 @ gl t2
+          | GE (loc,t1, t2) -> gl t1 @ gl t2
+          | EQ (loc,t1, t2) -> gl t1 @ gl t2
+          | NE (loc,t1, t2) -> gl t1 @ gl t2
+          | And (loc,t1, t2) -> gg t1 @ gg t2
+          | Or (loc,t1, t2) -> gg t1 @ gg t2
+          | Not (loc,t) -> gg t
+          | Iff (loc,t1, t2) -> gg t1 @ gg t2
+          | Implies (loc,t1, t2) -> gg t1 @ gg t2
+          | EmptyExpr -> []
+          | _ -> raise InvalidFormula
+      in
+        gg exp
+    in
+      get_array_indices exp @ get_guards exp @ [Constant(gdl(),ConstInt(gdl(),0))]
+      (*We always include 0 in the index set. Technically, 0 needs only be included if the index
+        set would be otherwise empty. However, because we don't always have the formula in the
+        simple implication form used by the DP, we use heuristics to decide what to put in the
+        index set. Our index will always be a superset of what it needs to be, so it's never
+        a problem. It is possible that the index set should only contain the 0 element, but
+        because our index set is over-sized, we do not realize it would be empty (apart from
+        the 0 element), and hence we might not include the 0 element. To prevent this from
+        happening, we always include the 0 element, regardless of whether or not it needs
+        to be there.*)
+  in
+  let index_set = get_index_set nnf_exp_orig in
+  let rec rq exp = match exp with
+    | Constant (loc,c) -> Constant(loc,c)
+    | LValue (loc,l) -> LValue(loc,l)
+    | Plus (loc,t1, t2) -> Plus(loc,rq t1, rq t2)
+    | Minus (loc,t1, t2) -> Minus(loc,rq t1, rq t2)
+    | Times (loc,t1, t2) -> Times(loc,rq t1, rq t2)
+    | Div (loc,t1, t2) -> Div(loc,rq t1, rq t2)
+    | IDiv (loc,t1, t2) -> IDiv(loc,rq t1, rq t2)
+    | Mod (loc,t1, t2) -> Mod(loc,rq t1, rq t2)
+    | UMinus (loc,t) -> UMinus(loc,rq t)
+    | ForAll (loc,decls,e) -> 
+        begin
+          let remove_one_decl decl exp =
+            let convert_elem_in_index_set_to_term elem = 
+              let sub = [(decl.varName.name, elem)] in
+                sub_idents_in_expr exp sub
+            in
+            let rec make_conjuncts index_set_terms_remaining expr_so_far = 
+              match index_set_terms_remaining with
+                  elem :: elems ->
+                    let new_term = convert_elem_in_index_set_to_term elem in
+                      begin
+                        match expr_so_far with
+                            EmptyExpr -> make_conjuncts elems new_term
+                          | _ -> make_conjuncts elems (And(gdl(), expr_so_far, new_term))
+                      end
+                | [] -> expr_so_far
+            in
+              make_conjuncts index_set EmptyExpr
+          in
+          let rec remove_all_decls decls_remaining exp = 
+            match decls_remaining with
+                decl :: decls -> remove_all_decls decls (remove_one_decl decl exp)
+              | [] -> exp
+          in
+            remove_all_decls decls e
+        end
+    | Exists (loc,decls,e) ->
+        begin
+          let changed_quant_decls_and_expr = change_quantifier decls e Unquantified in
+            snd changed_quant_decls_and_expr
+        end
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(loc,rq exp, rq assign_to, rq assign_val) 
+    | LT (loc,t1, t2) -> LT(loc,rq t1, rq t2)
+    | LE (loc,t1, t2) -> LE(loc,rq t1, rq t2)
+    | GT (loc,t1, t2) -> GT(loc,rq t1, rq t2)
+    | EQ (loc,t1, t2) -> EQ(loc,rq t1, rq t2)
+    | NE (loc,t1, t2) -> NE(loc,rq t1, rq t2)
+    | And (loc,t1, t2) -> And(loc,rq t1, rq t2)
+    | Or (loc,t1, t2) -> Or(loc,rq t1, rq t2)
+    | Not (loc,t) -> Not(loc,rq t)
+    | Iff (loc,t1, t2) -> Iff(loc,rq t1, rq t2)
+    | Implies (loc,t1, t2) -> Implies(loc, rq t1, rq t2)
+    | _ -> exp
+  in
+    rq (nnf_exp_orig)
+      
+      
+      
+

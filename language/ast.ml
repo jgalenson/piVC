@@ -3,6 +3,8 @@ open Lexing
 
 exception Error of string
 
+type quantification = Unquantified | Existential | Universal;;
+
 type location = {
   loc_start  : Lexing.position;
   loc_end    : Lexing.position;
@@ -52,8 +54,23 @@ and varDecl = {
   varName : identifier;
   location_vd : location;
   var_id: (int option) ref;
+  quant : quantification;
 }
-let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None;}
+let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified;}
+let create_Existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential;}
+let create_Universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal;}
+
+(*let set_quantification_on_varDecl_List vd_list quant = 
+  let set_quantification_on_varDecl vd = 
+    vd.quant := quant
+  in
+  (*List.iter set_quantification_on_varDecl vd_list*)ignore()
+*)
+
+let string_of_quantification quant = match quant with
+    Universal -> "universal"
+  | Existential -> "existential"
+  | Unquantified -> "unquantified"
 
 let varDecl_of_identifier ident = 
   match !(ident.decl) with
@@ -253,8 +270,13 @@ let string_of_location loc =
 
 
 
+let string_of_quantification_of_identifier_if_available ident = 
+  match !(ident.decl) with
+      Some(d) -> string_of_quantification(d.quant)
+    | None -> ""
+
 let string_of_identifier id =
-  id.name
+  id.name (*^ "<" ^ string_of_quantification_of_identifier_if_available id ^ ">"*)
 
 let rec string_of_identifier_with_extra_info id =
   match id.decl.contents with
@@ -279,7 +301,7 @@ and string_of_type typ =
 let get_delimited_list_of_decl_names decls delimiter = 
   let rec delimiter_after_all_elems decls = 
     match decls with
-        decl :: rest -> string_of_identifier decl.varName ^ delimiter ^ delimiter_after_all_elems rest
+        decl :: rest -> string_of_identifier decl.varName ^ (*(string_of_quantification (decl.quant)) ^*) delimiter ^ delimiter_after_all_elems rest
       | [] -> ""
   in
   let str_with_delimiter_at_end = delimiter_after_all_elems decls in
@@ -308,8 +330,8 @@ and string_of_expr e =
     | IDiv (loc,t1, t2) -> (soe t1) ^ " div " ^ (soe t2)					       
     | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
     | UMinus (loc,t) -> "-" ^ (soe t)
-    | ForAll (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
-    | Exists (loc,decls,e) -> "exists " ^ get_delimited_list_of_decl_names decls "," ^ ". " ^ soe e
+    | ForAll (loc,decls,e) -> "forall " ^ get_delimited_list_of_decl_names decls "," ^ ".(" ^ soe e ^ ")"
+    | Exists (loc,decls,e) -> "exists " ^ get_delimited_list_of_decl_names decls "," ^ ".(" ^ soe e ^ ")"
     | ArrayUpdate (loc,exp,assign_to,assign_val) -> soe exp ^ "{" ^ soe assign_to ^ " <- " ^ soe assign_val ^ "}"
     | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
     | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
@@ -317,11 +339,11 @@ and string_of_expr e =
     | GE (loc,t1, t2) -> (soe t1) ^ " >= " ^ (soe t2)
     | EQ (loc,t1, t2) -> (soe t1) ^ " = " ^ (soe t2)
     | NE (loc,t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
-    | And (loc,t1, t2) -> (soe t1) ^ " && " ^ (soe t2)
-    | Or (loc,t1, t2) -> (soe t1) ^ " || " ^ (soe t2)
-    | Not (loc,t) -> " !(" ^ (soe t) ^ ")"
-    | Iff (loc,t1, t2) -> (soe t1) ^ " <-> " ^ (soe t2)
-    | Implies (loc,t1, t2) -> (soe t1) ^ " -> " ^ (soe t2)
+    | And (loc,t1, t2) -> "(" ^ (soe t1) ^ ") && (" ^ (soe t2) ^ ")"
+    | Or (loc,t1, t2) -> "(" ^ (soe t1) ^ ") || (" ^ (soe t2) ^ ")"
+    | Not (loc,t) -> "!(" ^ (soe t) ^ ")"
+    | Iff (loc,t1, t2) -> "(" ^ (soe t1) ^ ") <-> (" ^ (soe t2) ^ ")"
+    | Implies (loc,t1, t2) -> "(" ^ (soe t1) ^ ") -> (" ^ (soe t2) ^ ")"
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"
     | EmptyExpr  -> ""
   in

@@ -82,7 +82,7 @@ let rec yices_string_of_expr e =
     | Div (loc, t1, t2) -> "(/ " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | IDiv (loc, t1, t2) -> "(div " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | Mod (loc, t1, t2) -> "(mod " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
-    | UMinus (loc, t) -> "(- " ^ (ysoe t) ^ ")"
+    | UMinus (loc, t) -> "(- 0 " ^ (ysoe t) ^ ")"
     | ForAll (loc, decls, e) -> "(forall (" ^ build_define_string_for_quantifier decls ^ ")" ^ ysoe e ^ ")"
     | Exists (loc, decls, e) -> "(exists (" ^ build_define_string_for_quantifier decls ^ ")" ^ ysoe e ^ ")"
     | ArrayUpdate (loc, exp, assign_to, assign_val) -> "(update " ^ ysoe exp ^ " (" ^ ysoe assign_to ^ ") " ^ ysoe assign_val ^ ")"

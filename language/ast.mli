@@ -4,6 +4,8 @@
  * the interface later.
  *)
 
+type quantification = Unquantified | Existential | Universal;;
+
 type location = {
   loc_start  : Lexing.position;
   loc_end    : Lexing.position;
@@ -33,9 +35,17 @@ and varDecl = {
   varType : varType;
   varName : identifier;
   location_vd : location;
-  var_id: (int option) ref;
+  var_id : (int option) ref;
+  quant: quantification;
 }
 val create_varDecl : varType -> identifier -> location -> varDecl
+val create_Existential_varDecl : varType -> identifier -> location -> varDecl
+val create_Universal_varDecl : varType -> identifier -> location -> varDecl
+
+(*val set_quantification_on_varDecl_List : varDecl list -> quantification -> unit*)
+
+val string_of_quantification : quantification -> string
+
 val create_identifier : string -> location -> identifier
 type lval =
   | NormLval of location * identifier
