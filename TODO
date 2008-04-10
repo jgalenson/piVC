@@ -5,7 +5,7 @@ Short-term TODOs
 Jason
 	don't restrict array reads to identifiers
 	change all refs from node to step
-	config files (ports to bind to, IP/ports to connect to, saved files dir)
+	config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
 	fix unknown yices return value
 	Generate basic path names somehow.
 	Loop assertions require parens now.
@@ -27,7 +27,7 @@ Week 3
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 4
-	Joel: VC caching
+	Joel: VC caching (test, put a cap on its size (prune older entries?))
 	Joel: semantically check break stmts, only allow assigns as expr roots (Aaron does this).
 	Jason: semantically check assertions
 	Jason: Run-time assertions

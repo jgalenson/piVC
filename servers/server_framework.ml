@@ -3,17 +3,16 @@ open Utils
 open Ast
 open Semantic_checking
 
-let max_connections = 10
+let max_connections = 10 ;;
 
-(* Taken from http://pleac.sourceforge.net/pleac_ocaml/sockets.html *)
-
-(* Close all children. *)
-let rec reaper signal =
-  try while true do ignore (Unix.waitpid [Unix.WNOHANG] (-1)) done
-  with Unix.Unix_error (Unix.ECHILD, _, _) -> ();
-  Sys.set_signal Sys.sigchld (Sys.Signal_handle reaper)
-
-(* The network code is stolen from http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora187.html *)
+(* Child/worker thread.  Handles one request. *)
+let compile_thread (sock, server_fun) =
+  let inchan = Unix.in_channel_of_descr sock
+  and outchan = Unix.out_channel_of_descr sock in
+  server_fun inchan outchan ;
+  (*close_in inchan;
+  close_out outchan;*)
+  Unix.close sock ;;
     
 let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
@@ -22,36 +21,18 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   Unix.listen sock max_connections;
   try
     while true do
-      let (s, caller) = Unix.accept sock in
-      print_endline "Accepted" ; 
-      match Unix.fork() with
-	0 ->
-	  Unix.close sock;
-          let inchan = Unix.in_channel_of_descr s 
-          and outchan = Unix.out_channel_of_descr s in
-          server_fun inchan outchan ;
-          (*close_in inchan;
-           close_out outchan;*)
-	   Unix.close s;
-           exit 0
-	| id -> Unix.close s; ignore(Unix.waitpid [] id)
+      let (s, _) = Unix.accept sock in
+      print_endline "Accepted" ;
+      ignore (Thread.create compile_thread (s, server_fun))
     done
   with
     Sys.Break -> (* Clean up on exit. *)
-      Unix.close sock;
-      reaper Sys.sigint
-
-let get_my_addr () =
-  (*(Unix.gethostbyname(Unix.gethostname())).Unix.h_addr_list.(0) ;;*)
-  Unix.inet_addr_any ;;
+      Unix.close sock
 
 let start_server serv_fun port =
-  let my_address = get_my_addr () in
+  let my_address = Unix.inet_addr_any in
   print_endline ("Starting server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
-
-let killed signal =
-  print_endline "Killed";;
 
 (* Runs a server using the specified callback function
    to act as the server. *)
