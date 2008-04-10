@@ -20,7 +20,7 @@ Proposed High-level timetable
 -----------------------------
 
 Week 1-2
-	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays (maybe, see above), add locations to identifiers for shadowed stuff)
+	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays (maybe, see above))
 
 Week 3
 	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).

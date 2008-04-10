@@ -47,8 +47,12 @@ Server no errors:
 					string goes here
 				</vc>
 				<counterexample>  // optional tag (only there if invalid)
-					var1 = val1
-					var2 = val2
+					<var text="var1 = val1">
+					     <location> ... </location>
+					</var>
+					<var text="var2 = val2">
+					     <location> ... </location>
+					</var>
 					// ...
 				</counterexample>
 			</basic_path>

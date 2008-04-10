@@ -4,22 +4,33 @@ open Scanner ;;
 exception StrangeCounterexample of string ;;
 
 type variable =
-  | Var of string
+  | Var of string * identifier
   | ArrayVar of variable * string ;;
 
 type example = variable * string ;;
 
 let rec variable_to_string v =
   match v with
-    | Var (s) -> s
+    | Var (s,_) -> s
     | ArrayVar (v, s) -> (variable_to_string v) ^ "[" ^ s  ^ "]";;
 
-let counterexample_to_string cx =
-  let example_to_string prev (lhs, rhs) =
-    let new_part = (variable_to_string lhs) ^ "=" ^ rhs in 
+let example_to_string (lhs, rhs) =
+  (variable_to_string lhs) ^ "=" ^ rhs ;;
+
+let counterexamples_to_string cx =
+  let example_to_string prev ex =
+    let new_part = example_to_string ex in
     if prev = "" then new_part else prev ^ "\n" ^ new_part
   in
   List.fold_left example_to_string "" cx ;;
+
+let location_of_example (var,_) =
+  let rec location_of_variable v = 
+    match v with
+      | Var (_, id) -> (Utils.elem_from_opt !(id.decl)).location_vd
+      | ArrayVar (var, _) -> location_of_variable var
+  in
+    location_of_variable var
 
 let parse_counterexamples str rev_var_names =
   
@@ -35,9 +46,10 @@ let parse_counterexamples str rev_var_names =
   in
     
   let rec parse_counterexample scan =
-    let first_token = get_replaced_token scan in
+    let orig_first_token = Scanner.next_token scan in
+    let first_token = replace_name orig_first_token in
     if (first_token <> "(") then
-      Var (first_token)
+      Var (first_token, Hashtbl.find rev_var_names orig_first_token)
     else
       begin
 	let var = parse_counterexample scan in

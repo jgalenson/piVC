@@ -94,9 +94,7 @@ and xml_of_verified_program (all_valid, functions) =
           add_child vc_node basic_path_node;
 	  if (Utils.is_some counterexample) then
 	    begin
-	      let counterexample_node = Xml_generator.create "counterexample" in
-	      set_text (Counterexamples.counterexample_to_string (Utils.elem_from_opt counterexample)) counterexample_node;
-	      add_child counterexample_node basic_path_node;
+	      add_child (xml_of_counterexample (Utils.elem_from_opt counterexample)) basic_path_node
 	    end;
           let process_step step = 
             add_child (xml_of_step step) path_node in
@@ -110,6 +108,17 @@ and xml_of_verified_program (all_valid, functions) =
         set_text (Basic_paths.string_of_path_node step) text_node;
         add_child text_node step_node;
         step_node
+  and xml_of_counterexample counterexample =
+    let counterexample_node = Xml_generator.create "counterexample" in
+    let process_var ex =
+      let var_node = Xml_generator.create "var" in
+      add_attribute ("text", Counterexamples.example_to_string ex) var_node;
+      add_child (xml_of_location (Counterexamples.location_of_example ex)) var_node;
+      add_child var_node counterexample_node;
+      ()
+    in
+      List.iter process_var counterexample;
+      counterexample_node
   (* Now we put together the root node *)
   and transmission_node = Xml_generator.create "piVC_transmission" in
     add_attribute ("type", "program_submission_response") transmission_node;
