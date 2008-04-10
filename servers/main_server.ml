@@ -14,7 +14,7 @@ let num_cached_vcs = 50;;
  * (or a compile error).
  *)
 
-let rec compile vc_cache ic oc =
+let rec compile vc_cache_and_lock ic oc =
 
   (* Convert queue of errors into a string. *)
   (*let get_error_string errors =
@@ -33,7 +33,7 @@ let rec compile vc_cache ic oc =
     match errors with
         [] -> (
           let program_info = Verify.get_all_info (Utils.elem_from_opt program) in
-          let verified_program_info = Verify.verify_program program_info vc_cache in
+          let verified_program_info = Verify.verify_program program_info vc_cache_and_lock in
             Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
               )
       | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
@@ -135,4 +135,5 @@ and xml_of_verified_program (all_valid, functions) =
    cache of VCs. *)
 let get_main_server_func () =
   let vc_cache = Hashtbl.create num_cached_vcs in
-  compile vc_cache
+  let cache_lock = Mutex.create () in
+  compile (vc_cache, cache_lock)
