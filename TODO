@@ -2,9 +2,6 @@
 Short-term TODOs
 ----------------
 
-Unassigned
-        Bug: Discuss what to do with assign not at root level of expr (e.g. x := y := 2). Currently the server dies on this.
-
 Jason
 	don't restrict array reads to identifiers
 	change all refs from node to step
@@ -14,14 +11,15 @@ Jason
 	Loop assertions require parens now.
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
-	Only allow assigns as the root of an expr?  Check Aaron's stuff.
+Both
+	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
 
 -----------------------------
 Proposed High-level timetable
 -----------------------------
 
 Week 1-2
-	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays, add locations to identifiers for shadowed stuff)
+	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays (maybe, see above), add locations to identifiers for shadowed stuff)
 
 Week 3
 	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).
@@ -30,7 +28,7 @@ Week 3
 
 Week 4
 	Joel: VC caching
-	Joel: semantically check break stmts, only allow assigns as expr roots.
+	Joel: semantically check break stmts, only allow assigns as expr roots (Aaron does this).
 	Jason: semantically check assertions
 	Jason: Run-time assertions
 
