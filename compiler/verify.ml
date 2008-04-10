@@ -7,6 +7,36 @@ open Utils ;;
 
 type validity = Valid | Invalid | Unknown;;
 
+let string_of_validity v = match v with
+  | Valid -> "valid"
+  | Invalid -> "invalid"
+  | Unknown -> "unknown" ;;
+
+(* Evicts the oldest element in the cache.
+   You must already hold the cache lock when calling this. *)
+let evict_oldest_member vc_cache =
+  let get_oldest_member k (_,t) (prev_k, prev_t) =
+    if (prev_k = "" || t <= prev_t) then
+      (k, t)
+    else
+      (prev_k, prev_t)
+  in
+  let (oldest_member,_) = Hashtbl.fold get_oldest_member vc_cache ("", Unix.time ()) in
+  print_endline ("VC cache is evicting " ^ oldest_member);
+  Hashtbl.remove vc_cache oldest_member ;;
+
+(* Adds this vc to the cache.  If the cache is full,
+   we first evict the oldest element.
+   You must already hold the cache lock when calling this. *)   
+let add_to_cache cache key result =
+  if (Hashtbl.length cache) = Constants.num_cached_vcs then
+    begin
+      evict_oldest_member cache
+    end;
+  (* We use replace since someone might have added it in the meantime
+     when we didn't hold the lock. *)
+  Hashtbl.replace cache key (result, Unix.time ()) ;;
+
 (* Verifies a VC. *)
 let verify_vc vc (vc_cache, cache_lock) =
   (* Use cached version if we can. *)
@@ -14,9 +44,10 @@ let verify_vc vc (vc_cache, cache_lock) =
   Mutex.lock cache_lock;
   if (Hashtbl.mem vc_cache vc_str) then
     begin
-      print_endline "Loaded from cache!";
-      let result = Hashtbl.find vc_cache vc_str in
+      let (result,_) = Hashtbl.find vc_cache vc_str in
+      Hashtbl.replace vc_cache vc_str (result, Unix.time ()); (* Update timestamp. *)
       Mutex.unlock cache_lock;
+      print_endline ("Loaded from cache: " ^ vc_str ^ " is " ^ (string_of_validity (fst result)));
       result
     end
   else
@@ -48,7 +79,7 @@ let verify_vc vc (vc_cache, cache_lock) =
 	assert false
     in
       Mutex.lock cache_lock;
-      Hashtbl.add vc_cache vc_str result; (* Add to the cache. *)
+      add_to_cache vc_cache vc_str result;
       Mutex.unlock cache_lock;
       result
   end ;;
@@ -105,4 +136,3 @@ let get_all_info program =
   in
   let paths = get_basic_paths program in
   List.map get_vcs paths ;;
-

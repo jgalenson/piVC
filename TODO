@@ -27,7 +27,7 @@ Week 3
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 4
-	Joel: VC caching (test, put a cap on its size (prune older entries?))
+	Joel: VC caching (test)
 	Joel: semantically check break stmts, only allow assigns as expr roots (Aaron does this).
 	Jason: semantically check assertions
 	Jason: Run-time assertions

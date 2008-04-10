@@ -5,8 +5,6 @@ open Semantic_checking
 open Server_framework
 open Net_utils
 
-let num_cached_vcs = 50;;
-
 (*
  * Code for the main server.
  * Gets input from a client, builds bps and vcs,
@@ -78,17 +76,11 @@ and xml_of_errors errors =
 
 
 and xml_of_verified_program (all_valid, functions) = 
-  (* We begin with a few utility functions *)
-  let rec string_of_validity v = match v with
-      Verify.Valid -> "valid"
-    | Verify.Invalid -> "invalid"
-    | Verify.Unknown -> "unknown"
-     
   (*Now we have the xml generation functions for the various levels*)
-  and xml_of_function (fn, all_valid, basic_paths) = 
+  let rec xml_of_function (fn, all_valid, basic_paths) = 
     let function_node = Xml_generator.create "function" in
       add_attribute ("name", fn.fnName.name) function_node;
-      add_attribute ("status", string_of_validity all_valid) function_node;
+      add_attribute ("status", Verify.string_of_validity all_valid) function_node;
       add_child (xml_of_location fn.location_fd) function_node;
       let process_basic_path basic_path = 
         add_child (xml_of_basic_path basic_path) function_node in
@@ -96,7 +88,7 @@ and xml_of_verified_program (all_valid, functions) =
         function_node
   and xml_of_basic_path (nodes, vc, valid, counterexample) =
     let basic_path_node = Xml_generator.create "basic_path" in
-      add_attribute ("status", string_of_validity valid) basic_path_node;
+      add_attribute ("status", Verify.string_of_validity valid) basic_path_node;
       let path_node = Xml_generator.create "path" in
         add_child path_node basic_path_node;
         let vc_node = Xml_generator.create "vc" in
@@ -124,7 +116,7 @@ and xml_of_verified_program (all_valid, functions) =
   and transmission_node = Xml_generator.create "piVC_transmission" in
     add_attribute ("type", "program_submission_response") transmission_node;
     let result_node = Xml_generator.create "result" in
-      add_attribute ("status", string_of_validity all_valid) result_node;
+      add_attribute ("status", Verify.string_of_validity all_valid) result_node;
       add_child result_node transmission_node;
       let process_function func = 
         add_child (xml_of_function func) result_node in
@@ -134,6 +126,6 @@ and xml_of_verified_program (all_valid, functions) =
 (* Wrapper for compile function that passes it the
    cache of VCs. *)
 let get_main_server_func () =
-  let vc_cache = Hashtbl.create num_cached_vcs in
+  let vc_cache = Hashtbl.create Constants.num_cached_vcs in
   let cache_lock = Mutex.create () in
   compile (vc_cache, cache_lock)
