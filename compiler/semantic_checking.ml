@@ -471,7 +471,6 @@ let check_function func s errors =
   Scope_stack.exit_scope s
 
 let check_program program errors =
-  print_string("Checking...\n");
   let s = Scope_stack.create () in
   Scope_stack.enter_scope s;
   insert_decls s errors program.decls;

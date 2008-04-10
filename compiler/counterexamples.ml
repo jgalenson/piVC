@@ -50,7 +50,6 @@ let parse_counterexamples str rev_var_names =
       
   let parts = List.tl (Str.split (Str.regexp "\n") str) in (* Ignore first part ("sat"). *)
   let map_fn s =
-    print_endline ("Scanning: " ^ s);
     let scan = Scanner.create s in
     assert (Scanner.next_token scan = "(");
     assert (Scanner.next_token scan = "=");
@@ -63,5 +62,5 @@ let parse_counterexamples str rev_var_names =
     String.compare (variable_to_string lhs1) (variable_to_string lhs2)
   in
   let sorted_data = List.sort sort_fn data in (* Do we need this? *)
-  print_endline ("Counterexample: " ^ (counterexample_to_string sorted_data));
+  (*print_endline ("Counterexample: " ^ (counterexample_to_string sorted_data));*)
   sorted_data ;;

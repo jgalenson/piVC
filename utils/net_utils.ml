@@ -8,7 +8,7 @@ let convert_line_endings str =
    and then a string of that many chars. *)
 let get_input ic = 
   let in_len = input_binary_int ic in
-  print_endline ("Got input of length " ^ (string_of_int in_len));
+  (*print_endline ("Got input of length " ^ (string_of_int in_len));*)
   let in_buf = Buffer.create in_len in
   Buffer.add_channel in_buf ic in_len;
   convert_line_endings (Buffer.contents in_buf) ;;

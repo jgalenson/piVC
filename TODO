@@ -11,6 +11,7 @@ Jason
 	Loop assertions require parens now.
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
+	Turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space))?
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
 

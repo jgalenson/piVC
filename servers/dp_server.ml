@@ -5,25 +5,28 @@ open Net_utils ;;
  * annoying messages.
  *)
 let rec getresponse id =
+  (* Check to make sure we don't put \n at end of returned string. *)
+  let append a b =
+    if b = "" then a else (a ^ "\n" ^ b)
+  in
   try
     let recv = Ci_yices.recv id in
       match recv with
-	| "sat" -> "sat\n" ^ (getresponse id)
+	| "sat" -> append "sat" (getresponse id)
         | "unknown" -> "unknown"
 	| "unsat" -> "unsat"
 	| "Logical context is inconsistent. Use (pop) to restore the previous state." 
 	  -> getresponse id
 	| "ok" -> getresponse id
 	| "" -> ""
-	| x ->
-	    x ^ "\n" ^ (getresponse id)
+	| x -> append x (getresponse id)
   with
     | End_of_file ->
 	assert false ;;
 
 let verify ic oc =
   let input = get_input ic in
-  print_endline ("dp got input: " ^ input);
+  print_string ("dp got input: " ^ input); (* input contains its own endline. *)
   Ci_yices.init ();
   let id = Ci_yices.new_context () in
   Ci_yices.send id input;

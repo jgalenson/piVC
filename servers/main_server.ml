@@ -21,7 +21,6 @@ let rec compile vc_cache_and_lock ic oc =
     Buffer.contents buf
   in*)
 
-  print_endline "Beginning compile.";
   let code = get_input ic in
   (* print_endline code; *)
   let (program, errors) = Parse_utils.parse_string code in
@@ -39,7 +38,6 @@ let rec compile vc_cache_and_lock ic oc =
   in
     send_output oc get_output_to_return_to_client;
   flush oc;
-  print_endline "End compile.";
 
 
 and xml_of_location location = 
