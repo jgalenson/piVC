@@ -126,7 +126,7 @@ public class ServerResponseParser {
 			if ("vc".equals(child.getNodeName()))
 				vc = new VerificationCondition(child.getTextContent(), validity);
 			if ("counterexample".equals(child.getNodeName()))
-				counterexample = new Counterexample(child.getTextContent());
+				counterexample = parseCounterexample(child);
 		}
 		if (steps == null || vc == null || (vc.getValidity()==VerificationResult.INVALID && counterexample == null))
 			throw new RuntimeException("Invalid basic_path tag");
@@ -165,6 +165,31 @@ public class ServerResponseParser {
 		if (type == null || text == null || location == null)
 			throw new RuntimeException("Invalid step tag");
 		return new Step(type, text, location);
+	}
+	
+	private Counterexample parseCounterexample(Node counterexample) {
+		ArrayList<Counterexample.Variable> variables = new ArrayList<Counterexample.Variable>();
+		NodeList children = counterexample.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("var".equals(child.getNodeName()))
+				variables.add(parseVariable(child));
+		}
+		return new Counterexample(variables);
+	}
+	
+	private Counterexample.Variable parseVariable(Node var) {
+		String text = var.getAttributes().getNamedItem("text").getTextContent();;
+		Location location = null;
+		NodeList children = var.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("location".equals(child.getNodeName()))
+				location = parseLocation(child);
+		}
+		if (text == null || location == null)
+			throw new RuntimeException("Invalid var tag");
+		return new Counterexample.Variable(text, location);
 	}
 
 	/**

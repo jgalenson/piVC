@@ -144,7 +144,7 @@ public class PiTree extends JPanel {
 		DefaultMutableTreeNode parentCounterexampleNode = new DefaultMutableTreeNode("Counterexample");
 		treeModel.insertNodeInto(parentCounterexampleNode, basicPathNode, basicPathNode.getChildCount());
 		for (int i = 0; i < counterexample.getNumVariables(); i++) {
-			String variable = counterexample.getVariable(i);
+			Counterexample.Variable variable = counterexample.getVariable(i);
 			DefaultMutableTreeNode varNode = new DefaultMutableTreeNode(variable);
 			treeModel.insertNodeInto(varNode, parentCounterexampleNode, parentCounterexampleNode.getChildCount());
 		}		
@@ -164,6 +164,9 @@ public class PiTree extends JPanel {
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
 			piCode.highlight(function.getLocation(), PiCode.yellowHP);
+		} else if (obj instanceof Counterexample.Variable) {
+			Counterexample.Variable variable = (Counterexample.Variable)obj;
+			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
 		} else
 			piCode.removeAllHighlights();
 	}
@@ -248,6 +251,10 @@ public class PiTree extends JPanel {
 				VerificationCondition vc = (VerificationCondition)obj;
 				setIcon(getProperIcon(vc.getValidity()));
 				setText("VC: " + vc.getVerificationCondition());
+			} else if (obj instanceof Counterexample.Variable) {
+				Counterexample.Variable variable = (Counterexample.Variable)obj;
+				setIcon(null);
+				setText(variable.getText());
 			} else if (obj instanceof String) {
 				setIcon(null);
 				setText((String)obj);
