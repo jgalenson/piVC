@@ -1,17 +1,17 @@
 PROJ_DIR = .
 
-OCFLAGS = -dtypes
+OCFLAGS = -dtypes -thread
 
 INCDIR = $(PROJ_DIR:%=-I %)
 
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-NET_UTILS_OBJS = net_utils.cmo constants.cmo scanner.cmo utils.cmo
+UTILS_OBJS = net_utils.cmo constants.cmo scanner.cmo utils.cmo background.cmo
 
 default : depend netutils
 
-netutils : $(NET_UTILS_OBJS)
+netutils : $(UTILS_OBJS)
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 

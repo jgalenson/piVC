@@ -3,6 +3,7 @@
 open Parser
 open Ast
 open Semantic_checking
+open Background
 open Utils ;;
 
 type validity = Valid | Invalid | Unknown;;
@@ -38,7 +39,7 @@ let add_to_cache cache key result =
   Hashtbl.replace cache key (result, Unix.time ()) ;;
 
 (* Verifies a VC. *)
-let verify_vc vc (vc_cache, cache_lock) =
+let verify_vc (vc, (vc_cache, cache_lock)) =
   (* Use cached version if we can. *)
   let vc_str = string_of_expr vc in
   Mutex.lock cache_lock;
@@ -104,20 +105,32 @@ let overall_validity_status list_of_things extraction_func =
 ;;
 
 (* Returns (fn * bool * (Basic Path * VC * validity * example list option) list) list. *)
-let verify_program program_info vc_cache_and_lock = 
+let verify_program program_info vc_cache_and_lock =
+
+  let intermediate_basic_path (path, vc) =
+    let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock) in
+    (path, vc, vc_thread)
+  in
+  let intermediate_fn (fn, bp) =
+    let path = List.map intermediate_basic_path bp in
+    (fn, path)
+  in
+  let intermediate_info =
+    List.map intermediate_fn program_info
+  in
+  
   let rec verify_function func = 
     let verified_basic_paths = List.map verify_basic_path (snd func) in
     let validity_of_path (path, vc, validity, count) = validity in
     (fst func, overall_validity_status verified_basic_paths validity_of_path, verified_basic_paths)
 
-  and verify_basic_path path_info =
-    let vc_result = verify_vc (snd path_info) vc_cache_and_lock in
-    (* TODO: Rewrite so we make only one request to server. *)
-    (fst path_info, snd path_info, fst vc_result, snd vc_result)
+  and verify_basic_path (path, vc, vc_thread) =
+    let vc_result = Background.get_result vc_thread in
+    (path, vc, fst vc_result, snd vc_result)
   in 
 
 
-  let verified_functions = List.map verify_function program_info in
+  let verified_functions = List.map verify_function intermediate_info in
   let validity_of_function (name,validity,info) = validity in
     (overall_validity_status verified_functions validity_of_function, verified_functions)
 

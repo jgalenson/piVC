@@ -16,7 +16,7 @@ let rec getresponse id =
         | "unknown" -> "unknown"
 	| "unsat" -> "unsat"
 	| "Logical context is inconsistent. Use (pop) to restore the previous state." 
-	  -> assert false (*getresponse id*) (*: note from Jason: I changed this - it's not right to ignore that error message*)
+	  -> assert false
 	| "ok" -> getresponse id
 	| "" -> ""
 	| x -> append x (getresponse id)
@@ -32,6 +32,7 @@ let verify ic oc =
   Ci_yices.send id input;
   Ci_yices.wait id;
   let is_sat = getresponse id in
+  Ci_yices.delete_context id;
   print_endline ("Got response: " ^ is_sat);
   send_output oc is_sat;
   flush oc;
