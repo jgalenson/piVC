@@ -107,15 +107,18 @@ let overall_validity_status list_of_things extraction_func =
 (* Returns (fn * bool * (Basic Path * VC * validity * example list option) list) list. *)
 let verify_program program_info vc_cache_and_lock =
 
-  let intermediate_basic_path (path, vc) =
-    let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock) in
-    (path, vc, vc_thread)
-  in
-  let intermediate_fn (fn, bp) =
-    let path = List.map intermediate_basic_path bp in
-    (fn, path)
-  in
+  (* First, build an intermediate structure that
+     contains a Background process for each VC.
+     That is, we start all the VC requests. *)
   let intermediate_info =
+    let intermediate_basic_path (path, vc) =
+      let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock) in
+      (path, vc, vc_thread)
+    in
+    let intermediate_fn (fn, bp) =
+      let path = List.map intermediate_basic_path bp in
+      (fn, path)
+    in
     List.map intermediate_fn program_info
   in
   
@@ -128,7 +131,6 @@ let verify_program program_info vc_cache_and_lock =
     let vc_result = Background.get_result vc_thread in
     (path, vc, fst vc_result, snd vc_result)
   in 
-
 
   let verified_functions = List.map verify_function intermediate_info in
   let validity_of_function (name,validity,info) = validity in
