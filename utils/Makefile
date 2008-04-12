@@ -7,9 +7,13 @@ INCDIR = $(PROJ_DIR:%=-I %)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-UTILS_OBJS = net_utils.cmo constants.cmo scanner.cmo utils.cmo background.cmo
+include ../Makefile_includes
 
-default : depend netutils
+default :
+	cd .. ;\
+	make backend; \
+
+all : depend netutils
 
 netutils : $(UTILS_OBJS)
 

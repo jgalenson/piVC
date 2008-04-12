@@ -7,9 +7,13 @@ INCDIR = $(PROJ_DIR:%=-I %) -I ../utils
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 OCAMLDEP = ocamldep
 
-LANGUAGE_OBJS = ast.cmo scope_stack.cmo
+include ../Makefile_includes
 
-default : depend parser lexer language language_post
+default :
+	cd .. ;\
+	make backend; \
+
+all : depend parser lexer language language_post
 
 parser :
 	ocamlyacc parser.mly;
@@ -32,6 +36,14 @@ language_post :
 
 %.cmi : %.mli
 	$(OC) -c $<
+
+#%.cmo : %.mll
+#	ocamllex $<
+#	$(OC) -c $(*F).ml
+#
+#%.cmo : %.mly
+#	ocamlyacc $<
+#	$(OC) -c $(*F).ml
 
 clean :
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)

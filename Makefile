@@ -15,16 +15,16 @@ default : backend frontend
 
 backend :
 	cd utils ;\
-	make; \
+	make all; \
 
 	cd language; \
-	make; \
+	make all; \
 
 	cd compiler; \
-	make; \
+	make all; \
 
 	cd servers; \
-	make; \
+	make all; \
 
 
 frontend:
