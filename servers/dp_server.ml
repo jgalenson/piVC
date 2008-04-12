@@ -26,7 +26,7 @@ let rec getresponse id =
 
 let verify ic oc =
   let input = get_input ic in
-  print_string ("dp got input: " ^ input); (* input contains its own endline. *)
+  print_endline ("dp got input: " ^ Utils.truncate_for_printing input); (* input contains its own endline. *)
   Ci_yices.init ();
   let id = Ci_yices.new_context () in
   Ci_yices.send id input;

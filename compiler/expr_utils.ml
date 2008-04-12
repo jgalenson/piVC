@@ -211,131 +211,202 @@ let rec nnf expr =
     | EmptyExpr  -> expr
 
 
+
+
+let string_of_expr_list exprs delimiter = 
+  let rec delimiter_after_all_elems exprs = 
+    match exprs with
+        expr :: rest -> string_of_expr expr ^ delimiter ^ delimiter_after_all_elems rest
+      | [] -> ""
+  in
+  let str_with_delimiter_at_end = delimiter_after_all_elems exprs in
+    String.sub str_with_delimiter_at_end 0 ((String.length str_with_delimiter_at_end)-(String.length delimiter))
+
+(*The strings (guaranteed_unique_string_of_expr a) and (guaranteed_unique_string_of_expr b) will
+  be equal iff exprs a and b are equal.
+  This differs from the standard string_of_expr, which will return identical strings
+  for overloaded variables.
+*)
+let guaranteed_unique_string_of_expr e =
+  let rec unique_string_of_lval lval = match lval with
+    | NormLval (loc, s) -> string_of_int (id_of_identifier s)
+    | ArrayLval (loc, t1, t2) -> (soe t1) ^ "[" ^ (soe t2) ^ "]"
+  and unique_representation_of_decl_names decls = 
+    let rec construct_str decls = 
+      match decls with
+          decl :: rest -> string_of_int (var_id_of_varDecl decl) ^ "," ^ construct_str rest
+        | [] -> ""
+    in construct_str decls
+  and soe = function
+    | Assign (loc,l, e) -> (unique_string_of_lval l) ^ " := " ^ (soe e)
+    | Constant (loc,c) -> (string_of_constant c)
+    | LValue (loc,l) -> (unique_string_of_lval l)
+    | Call (loc,s, el) -> string_of_identifier s ^ "(" ^ (String.concat ", " (List.map soe el)) ^ ")"
+    | Plus (loc,t1, t2) -> (soe t1) ^ " + " ^ (soe t2)
+    | Minus (loc,t1, t2) -> (soe t1) ^ " - " ^ (soe t2)
+    | Times (loc,t1, t2) -> (soe t1) ^ " * " ^ (soe t2)
+    | Div (loc,t1, t2) -> (soe t1) ^ " / " ^ (soe t2)
+    | IDiv (loc,t1, t2) -> (soe t1) ^ " div " ^ (soe t2)					       
+    | Mod (loc,t1, t2) -> (soe t1) ^ " % " ^ (soe t2)
+    | UMinus (loc,t) -> "-" ^ (soe t)
+    | ForAll (loc,decls,e) -> "forall " ^ unique_representation_of_decl_names decls ^ ".(" ^ soe e ^ ")"
+    | Exists (loc,decls,e) -> "exists " ^ unique_representation_of_decl_names decls ^ ".(" ^ soe e ^ ")"
+    | ArrayUpdate (loc,exp,assign_to,assign_val) -> soe exp ^ "{" ^ soe assign_to ^ " <- " ^ soe assign_val ^ "}"
+    | LT (loc,t1, t2) -> (soe t1) ^ " < " ^ (soe t2)
+    | LE (loc,t1, t2) -> (soe t1) ^ " <= " ^ (soe t2)
+    | GT (loc,t1, t2) -> (soe t1) ^ " > " ^ (soe t2)
+    | GE (loc,t1, t2) -> (soe t1) ^ " >= " ^ (soe t2)
+    | EQ (loc,t1, t2) -> (soe t1) ^ " = " ^ (soe t2)
+    | NE (loc,t1, t2) -> (soe t1) ^ " != " ^ (soe t2)
+    | And (loc,t1, t2) -> "(" ^ (soe t1) ^ ") && (" ^ (soe t2) ^ ")"
+    | Or (loc,t1, t2) -> "(" ^ (soe t1) ^ ") || (" ^ (soe t2) ^ ")"
+    | Not (loc,t) -> "!(" ^ (soe t) ^ ")"
+    | Iff (loc,t1, t2) -> "(" ^ (soe t1) ^ ") <-> (" ^ (soe t2) ^ ")"
+    | Implies (loc,t1, t2) -> "(" ^ (soe t1) ^ ") -> (" ^ (soe t2) ^ ")"
+    | Length (loc, t) -> "|" ^ (soe t) ^ "|"
+    | EmptyExpr  -> ""
+  in
+  soe e
+
+module Expr_set = Set.Make (struct
+                              type t = expr
+                              let compare exp1 exp2 = String.compare (guaranteed_unique_string_of_expr exp1) (guaranteed_unique_string_of_expr exp2)
+                            end)
+let remove_duplicates_from_list exprs = 
+  let rec build_set so_far remaining_exprs = 
+    match remaining_exprs with 
+        [] -> so_far
+      | exp :: exps -> build_set (Expr_set.add exp so_far) exps
+  in 
+  let s = build_set Expr_set.empty exprs in
+  let new_list = Expr_set.elements s in    
+    new_list
+
+let get_index_set exp = 
+  let contains_universal_quantification exp =
+    let rec cuq exp = 
+      match exp with
+        | Constant (loc,c) -> false
+        | LValue (loc,l) ->
+            begin
+              match l with
+                  NormLval(loc,id) -> ((varDecl_of_identifier id).quant == Universal)
+                | ArrayLval(loc,arr,index) -> false
+            end
+        | Plus (loc,t1, t2) -> cuq t1 or cuq t2
+        | Minus (loc,t1, t2) -> cuq t1 or cuq t2
+        | Times (loc,t1, t2) -> cuq t1 or cuq t2
+        | Div (loc,t1, t2) -> cuq t1 or cuq t2
+        | IDiv (loc,t1, t2) -> cuq t1 or cuq t2
+        | Mod (loc,t1, t2) -> cuq t1 or cuq t2
+        | UMinus (loc,t) -> cuq t
+        | ForAll (loc,decls,e) -> cuq e
+        | Exists (loc,decls,e) ->  cuq e
+        | ArrayUpdate (loc, exp, assign_to, assign_val) -> cuq assign_to or cuq assign_val
+        | LT (loc,t1, t2) -> cuq t1 or cuq t2
+        | LE (loc,t1, t2) -> cuq t1 or cuq t2
+        | GT (loc,t1, t2) -> cuq t1 or cuq t2
+        | GE (loc,t1, t2) -> cuq t1 or cuq t2
+        | EQ (loc,t1, t2) -> cuq t1 or cuq t2
+        | NE (loc,t1, t2) -> cuq t1 or cuq t2
+        | And (loc,t1, t2) -> cuq t1 or cuq t2
+        | Or (loc,t1, t2) -> cuq t1 or cuq t2
+        | Not (loc,t) -> cuq t
+        | Iff (loc,t1, t2) -> cuq t1 or cuq t2
+        | Implies (loc,t1, t2) -> cuq t1 or cuq t2
+        | EmptyExpr -> false
+        | _ -> raise InvalidFormula
+    in
+      cuq exp
+  in
+  let get_array_indices exp = 
+    let rec gai exp = 
+      match exp with
+        | Constant (loc,c) -> []
+        | LValue (loc,l) ->
+            begin
+              match l with 
+                  ArrayLval(loc,arr,index) -> 
+                    begin
+                      let inside = gai arr in
+                        if (contains_universal_quantification index) then inside else inside @ [index]
+                    end
+                | _ -> []
+            end
+        | Plus (loc,t1, t2) -> gai t1 @ gai t2
+        | Minus (loc,t1, t2) -> gai t1 @ gai t2
+        | Times (loc,t1, t2) -> gai t1 @ gai t2
+        | Div (loc,t1, t2) -> gai t1 @ gai t2
+        | IDiv (loc,t1, t2) -> gai t1 @ gai t2
+        | Mod (loc,t1, t2) -> gai t1 @ gai t2
+        | UMinus (loc,t) -> gai t
+        | ForAll (loc,decls,e) -> gai e
+        | Exists (loc,decls,e) -> gai e
+        | ArrayUpdate (loc, exp, assign_to, assign_val) -> if (contains_universal_quantification assign_to) then [] else [assign_to]
+        | LT (loc,t1, t2) -> gai t1 @ gai t2
+        | LE (loc,t1, t2) -> gai t1 @ gai t2
+        | GT (loc,t1, t2) -> gai t1 @ gai t2
+        | GE (loc,t1, t2) -> gai t1 @ gai t2
+        | EQ (loc,t1, t2) -> gai t1 @ gai t2
+        | NE (loc,t1, t2) -> gai t1 @ gai t2
+        | And (loc,t1, t2) -> gai t1 @ gai t2
+        | Or (loc,t1, t2) -> gai t1 @ gai t2
+        | Not (loc,t) -> gai t
+        | Iff (loc,t1, t2) -> gai t1 @ gai t2
+        | Implies (loc,t1, t2) -> gai t1 @ gai t2
+        | EmptyExpr -> []
+        | _ -> raise InvalidFormula
+    in gai exp
+  in
+  let get_guards exp  = 
+    (*Returns list with single element of exp if exp is not universally quantified.
+      Otherwise, returns an empty list.*)
+    let gl exp = 
+      if contains_universal_quantification exp then [] else [exp]
+    in
+    let rec gg exp = 
+      match exp with
+        | Constant (loc,c) -> []
+        | LValue (loc,l) -> []
+        | Plus (loc,t1, t2) -> []
+        | Minus (loc,t1, t2) -> []
+        | Times (loc,t1, t2) -> []
+        | Div (loc,t1, t2) -> []
+        | IDiv (loc,t1, t2) -> []
+        | Mod (loc,t1, t2) -> []
+        | UMinus (loc,t) -> []
+        | ForAll (loc,decls,e) -> gg e
+        | Exists (loc,decls,e) -> gg e
+        | ArrayUpdate (loc, exp, assign_to, assign_val) -> []
+        | LT (loc,t1, t2) -> gl t1 @ gl t2
+        | LE (loc,t1, t2) -> gl t1 @ gl t2
+        | GT (loc,t1, t2) -> gl t1 @ gl t2
+        | GE (loc,t1, t2) -> gl t1 @ gl t2
+        | EQ (loc,t1, t2) -> gl t1 @ gl t2
+        | NE (loc,t1, t2) -> gl t1 @ gl t2
+        | And (loc,t1, t2) -> gg t1 @ gg t2
+        | Or (loc,t1, t2) -> gg t1 @ gg t2
+        | Not (loc,t) -> gg t
+        | Iff (loc,t1, t2) -> gg t1 @ gg t2
+        | Implies (loc,t1, t2) -> gg t1 @ gg t2
+        | EmptyExpr -> []
+        | _ -> raise InvalidFormula
+    in
+      gg exp
+  in
+    remove_duplicates_from_list (get_array_indices exp @ get_guards exp @ [Constant(gdl(),ConstInt(gdl(),0))])
+    (*We always include 0 in the index set. Technically, 0 needs only be included if the index
+      set would be otherwise empty. However, because we don't always have the formula in the
+      simple implication form used by the DP, we use heuristics to decide what to put in the
+      index set. Our index will always be a superset of what it needs to be, so it's never
+      a problem. It is possible that the index set should only contain the 0 element, but
+      because our index set is over-sized, we do not realize it would be empty (apart from
+      the 0 element), and hence we might not include the 0 element. To prevent this from
+      happening, we always include the 0 element, regardless of whether or not it needs
+      to be there.*)
+      
 let remove_quantification_from_vc_with_array_dp exp_orig = 
   let nnf_exp_orig = nnf exp_orig in
-  let get_index_set exp = 
-    let contains_universal_quantification exp =
-      let rec cuq exp = 
-        match exp with
-          | Constant (loc,c) -> false
-          | LValue (loc,l) ->
-              begin
-                match l with
-                    NormLval(loc,id) -> ((varDecl_of_identifier id).quant == Universal)
-                  | ArrayLval(loc,arr,index) -> false
-              end
-          | Plus (loc,t1, t2) -> cuq t1 or cuq t2
-          | Minus (loc,t1, t2) -> cuq t1 or cuq t2
-          | Times (loc,t1, t2) -> cuq t1 or cuq t2
-          | Div (loc,t1, t2) -> cuq t1 or cuq t2
-          | IDiv (loc,t1, t2) -> cuq t1 or cuq t2
-          | Mod (loc,t1, t2) -> cuq t1 or cuq t2
-          | UMinus (loc,t) -> cuq t
-          | ForAll (loc,decls,e) -> cuq e
-          | Exists (loc,decls,e) ->  cuq e
-          | ArrayUpdate (loc, exp, assign_to, assign_val) -> cuq assign_to or cuq assign_val
-          | LT (loc,t1, t2) -> cuq t1 or cuq t2
-          | LE (loc,t1, t2) -> cuq t1 or cuq t2
-          | GT (loc,t1, t2) -> cuq t1 or cuq t2
-          | GE (loc,t1, t2) -> cuq t1 or cuq t2
-          | EQ (loc,t1, t2) -> cuq t1 or cuq t2
-          | NE (loc,t1, t2) -> cuq t1 or cuq t2
-          | And (loc,t1, t2) -> cuq t1 or cuq t2
-          | Or (loc,t1, t2) -> cuq t1 or cuq t2
-          | Not (loc,t) -> cuq t
-          | Iff (loc,t1, t2) -> cuq t1 or cuq t2
-          | Implies (loc,t1, t2) -> cuq t1 or cuq t2
-          | EmptyExpr -> false
-          | _ -> raise InvalidFormula
-      in
-        cuq exp
-    in
-    let get_array_indices exp = 
-      let rec gai exp = 
-        match exp with
-          | Constant (loc,c) -> []
-          | LValue (loc,l) ->
-              begin
-                match l with 
-                    ArrayLval(loc,arr,index) -> 
-                      begin
-                        let inside = gai arr in
-                          if (contains_universal_quantification index) then inside else inside @ [index]
-                      end
-                  | _ -> []
-              end
-          | Plus (loc,t1, t2) -> gai t1 @ gai t2
-          | Minus (loc,t1, t2) -> gai t1 @ gai t2
-          | Times (loc,t1, t2) -> gai t1 @ gai t2
-          | Div (loc,t1, t2) -> gai t1 @ gai t2
-          | IDiv (loc,t1, t2) -> gai t1 @ gai t2
-          | Mod (loc,t1, t2) -> gai t1 @ gai t2
-          | UMinus (loc,t) -> gai t
-          | ForAll (loc,decls,e) -> gai e
-          | Exists (loc,decls,e) -> gai e
-          | ArrayUpdate (loc, exp, assign_to, assign_val) -> if (contains_universal_quantification assign_to) then [] else [assign_to]
-          | LT (loc,t1, t2) -> gai t1 @ gai t2
-          | LE (loc,t1, t2) -> gai t1 @ gai t2
-          | GT (loc,t1, t2) -> gai t1 @ gai t2
-          | GE (loc,t1, t2) -> gai t1 @ gai t2
-          | EQ (loc,t1, t2) -> gai t1 @ gai t2
-          | NE (loc,t1, t2) -> gai t1 @ gai t2
-          | And (loc,t1, t2) -> gai t1 @ gai t2
-          | Or (loc,t1, t2) -> gai t1 @ gai t2
-          | Not (loc,t) -> gai t
-          | Iff (loc,t1, t2) -> gai t1 @ gai t2
-          | Implies (loc,t1, t2) -> gai t1 @ gai t2
-          | EmptyExpr -> []
-          | _ -> raise InvalidFormula
-      in gai exp
-    in
-    let get_guards exp  = 
-      (*Returns list with single element of exp if exp is not universally quantified.
-        Otherwise, returns an empty list.*)
-      let gl exp = 
-        if contains_universal_quantification exp then [] else [exp]
-      in
-      let rec gg exp = 
-        match exp with
-          | Constant (loc,c) -> []
-          | LValue (loc,l) -> []
-          | Plus (loc,t1, t2) -> []
-          | Minus (loc,t1, t2) -> []
-          | Times (loc,t1, t2) -> []
-          | Div (loc,t1, t2) -> []
-          | IDiv (loc,t1, t2) -> []
-          | Mod (loc,t1, t2) -> []
-          | UMinus (loc,t) -> []
-          | ForAll (loc,decls,e) -> gg e
-          | Exists (loc,decls,e) -> gg e
-          | ArrayUpdate (loc, exp, assign_to, assign_val) -> []
-          | LT (loc,t1, t2) -> gl t1 @ gl t2
-          | LE (loc,t1, t2) -> gl t1 @ gl t2
-          | GT (loc,t1, t2) -> gl t1 @ gl t2
-          | GE (loc,t1, t2) -> gl t1 @ gl t2
-          | EQ (loc,t1, t2) -> gl t1 @ gl t2
-          | NE (loc,t1, t2) -> gl t1 @ gl t2
-          | And (loc,t1, t2) -> gg t1 @ gg t2
-          | Or (loc,t1, t2) -> gg t1 @ gg t2
-          | Not (loc,t) -> gg t
-          | Iff (loc,t1, t2) -> gg t1 @ gg t2
-          | Implies (loc,t1, t2) -> gg t1 @ gg t2
-          | EmptyExpr -> []
-          | _ -> raise InvalidFormula
-      in
-        gg exp
-    in
-      get_array_indices exp @ get_guards exp @ [Constant(gdl(),ConstInt(gdl(),0))]
-      (*We always include 0 in the index set. Technically, 0 needs only be included if the index
-        set would be otherwise empty. However, because we don't always have the formula in the
-        simple implication form used by the DP, we use heuristics to decide what to put in the
-        index set. Our index will always be a superset of what it needs to be, so it's never
-        a problem. It is possible that the index set should only contain the 0 element, but
-        because our index set is over-sized, we do not realize it would be empty (apart from
-        the 0 element), and hence we might not include the 0 element. To prevent this from
-        happening, we always include the 0 element, regardless of whether or not it needs
-        to be there.*)
-  in
   let index_set = get_index_set nnf_exp_orig in
   let rec rq exp = match exp with
     | Constant (loc,c) -> Constant(loc,c)

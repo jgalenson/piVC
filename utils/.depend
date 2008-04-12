@@ -6,5 +6,5 @@ net_utils.cmo: net_utils.cmi
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 
 scanner.cmx: scanner.cmi 
-utils.cmo: utils.cmi 
-utils.cmx: utils.cmi 
+utils.cmo: constants.cmi utils.cmi 
+utils.cmx: constants.cmx utils.cmi 

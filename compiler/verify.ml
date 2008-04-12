@@ -23,7 +23,7 @@ let evict_oldest_member vc_cache =
       (prev_k, prev_t)
   in
   let (oldest_member,_) = Hashtbl.fold get_oldest_member vc_cache ("", Unix.time ()) in
-  print_endline ("VC cache is evicting " ^ oldest_member);
+  print_endline ("VC cache is evicting " ^ Utils.truncate_for_printing oldest_member);
   Hashtbl.remove vc_cache oldest_member ;;
 
 (* Adds this vc to the cache.  If the cache is full,
@@ -48,23 +48,26 @@ let verify_vc (vc, (vc_cache, cache_lock)) =
       let (result,_) = Hashtbl.find vc_cache vc_str in
       Hashtbl.replace vc_cache vc_str (result, Unix.time ()); (* Update timestamp. *)
       Mutex.unlock cache_lock;
-      print_endline ("Loaded from cache: " ^ vc_str ^ " is " ^ (string_of_validity (fst result)));
+      print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing vc_str ^ " is " ^ (string_of_validity (fst result)));
       result
     end
   else
     begin (* Otherwise, get answer from dp server. *)
     Mutex.unlock cache_lock;
+    (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
     (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
     (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
     let negated_vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), vc)) in
 
 (*  
-  print_string ("*********************************\n");
-  print_string ("Negated VC is: \n" ^ string_of_expr negated_vc ^ "\n");
-  print_string ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf ^ "\n");
-  print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quant ^ "\n");
-  print_string ("And got a response of: " ^ response ^ "\n");
-  print_string ("*********************************\n");
+  print_endline ("*********************************");
+  print_endline ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf);
+  print_endline ("Index set is as follows:");
+  let print_expr exp = print_endline (string_of_expr exp) in
+    List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
+  (*print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quant ^ "\n");*)
+  (*print_string ("And got a response of: " ^ response ^ "\n");*)
+  print_endline ("*********************************");
 *)  
 
     let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in

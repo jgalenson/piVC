@@ -11,9 +11,15 @@ Jason
         Don't run arrays DP on VCs not in the fragment
         Remaining TODOs in arrays DP code
         Fix arrays DP code to make it run much faster
+        Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
 	Turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space))?
+        Bug: after make clean, ocamllex doesn't run in a make (although ocamlyacc seems to run)
+        Quasi-bug: no way to turn of caching completely. If num_cached_vcs is set to 0, it caches everything.
+        Grey out compile button/menu option while compilation is occuring. Put loading bar somewhere. (Just one of those bounce left/right ones, I'm assuming.)
+                Jason suggests that below the file editing pane, we have a status area. Normally, it'll say "Status: editing file.pi", and during compilation, it'll say "Status: compiling file.pi", and have a loading bar.
+        Don't reset GUI tree every recompile.
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
         Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
