@@ -1,29 +1,49 @@
-parse_utils.cmi: semantic_checking.cmi 
-verification_conditions.cmi: basic_paths.cmi 
-verify.cmi: semantic_checking.cmi counterexamples.cmi basic_paths.cmi 
-basic_paths.cmo: expr_utils.cmi basic_paths.cmi 
-basic_paths.cmx: expr_utils.cmx basic_paths.cmi 
-counterexamples.cmo: counterexamples.cmi 
-counterexamples.cmx: counterexamples.cmi 
-expr_utils.cmo: expr_utils.cmi 
-expr_utils.cmx: expr_utils.cmi 
-parse_utils.cmo: semantic_checking.cmi parse_utils.cmi 
-parse_utils.cmx: semantic_checking.cmx parse_utils.cmi 
-semantic_checking.cmo: semantic_checking.cmi 
-semantic_checking.cmx: semantic_checking.cmi 
+basic_paths.cmi: ../language/ast.cmi 
+counterexamples.cmi: ../language/ast.cmi 
+expr_utils.cmi: ../language/ast.cmi 
+parse_utils.cmi: semantic_checking.cmi ../language/ast.cmi 
+semantic_checking.cmi: ../language/scope_stack.cmi ../language/ast.cmi 
+transform_yices.cmi: ../language/ast.cmi 
+verification_conditions.cmi: basic_paths.cmi ../language/ast.cmi 
+verify.cmi: semantic_checking.cmi counterexamples.cmi basic_paths.cmi \
+    ../language/ast.cmi 
+basic_paths.cmo: ../utils/utils.cmi expr_utils.cmi ../language/ast.cmi \
+    basic_paths.cmi 
+basic_paths.cmx: ../utils/utils.cmx expr_utils.cmx ../language/ast.cmx \
+    basic_paths.cmi 
+counterexamples.cmo: ../utils/utils.cmi ../utils/scanner.cmi \
+    ../language/ast.cmi counterexamples.cmi 
+counterexamples.cmx: ../utils/utils.cmx ../utils/scanner.cmx \
+    ../language/ast.cmx counterexamples.cmi 
+expr_utils.cmo: ../language/ast.cmi expr_utils.cmi 
+expr_utils.cmx: ../language/ast.cmx expr_utils.cmi 
+parse_utils.cmo: ../utils/utils.cmi semantic_checking.cmi \
+    ../language/parser.cmi ../language/lexer.cmi ../language/ast.cmi \
+    parse_utils.cmi 
+parse_utils.cmx: ../utils/utils.cmx semantic_checking.cmx \
+    ../language/parser.cmx ../language/lexer.cmx ../language/ast.cmx \
+    parse_utils.cmi 
+semantic_checking.cmo: ../language/scope_stack.cmi ../language/ast.cmi \
+    semantic_checking.cmi 
+semantic_checking.cmx: ../language/scope_stack.cmx ../language/ast.cmx \
+    semantic_checking.cmi 
 test_parser.cmo: verify.cmi verification_conditions.cmi semantic_checking.cmi \
-    parse_utils.cmi basic_paths.cmi test_parser.cmi 
+    parse_utils.cmi basic_paths.cmi ../language/ast.cmi test_parser.cmi 
 test_parser.cmx: verify.cmx verification_conditions.cmx semantic_checking.cmx \
-    parse_utils.cmx basic_paths.cmx test_parser.cmi 
-transform_yices.cmo: transform_yices.cmi 
-transform_yices.cmx: transform_yices.cmi 
+    parse_utils.cmx basic_paths.cmx ../language/ast.cmx test_parser.cmi 
+transform_yices.cmo: ../language/ast.cmi transform_yices.cmi 
+transform_yices.cmx: ../language/ast.cmx transform_yices.cmi 
 verification_conditions.cmo: expr_utils.cmi basic_paths.cmi \
-    verification_conditions.cmi 
+    ../language/ast.cmi verification_conditions.cmi 
 verification_conditions.cmx: expr_utils.cmx basic_paths.cmx \
-    verification_conditions.cmi 
-verify.cmo: verification_conditions.cmi transform_yices.cmi \
-    semantic_checking.cmi expr_utils.cmi counterexamples.cmi basic_paths.cmi \
-    verify.cmi 
-verify.cmx: verification_conditions.cmx transform_yices.cmx \
-    semantic_checking.cmx expr_utils.cmx counterexamples.cmx basic_paths.cmx \
-    verify.cmi 
+    ../language/ast.cmx verification_conditions.cmi 
+verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
+    transform_yices.cmi semantic_checking.cmi ../language/parser.cmi \
+    ../utils/net_utils.cmi expr_utils.cmi counterexamples.cmi \
+    ../utils/constants.cmi basic_paths.cmi ../utils/background.cmi \
+    ../language/ast.cmi verify.cmi 
+verify.cmx: verification_conditions.cmx ../utils/utils.cmx \
+    transform_yices.cmx semantic_checking.cmx ../language/parser.cmx \
+    ../utils/net_utils.cmx expr_utils.cmx counterexamples.cmx \
+    ../utils/constants.cmx basic_paths.cmx ../utils/background.cmx \
+    ../language/ast.cmx verify.cmi 

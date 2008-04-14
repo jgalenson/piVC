@@ -2,9 +2,9 @@ PROJ_DIR = .
 
 OCFLAGS = -dtypes -thread
 
-INCDIR = $(PROJ_DIR:%=-I %)
+INCLUDES = $(PROJ_DIR:%=-I %)
 
-OC = ocamlc $(OCFLAGS) $(INCDIR)
+OC = ocamlc $(OCFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
 
 include ../Makefile_includes

@@ -30,13 +30,18 @@ let evict_oldest_member vc_cache =
    we first evict the oldest element.
    You must already hold the cache lock when calling this. *)   
 let add_to_cache cache key result =
-  if (Hashtbl.length cache) = Constants.num_cached_vcs then
+  if Constants.num_cached_vcs = 0 then
+    ()
+  else
     begin
-      evict_oldest_member cache
-    end;
-  (* We use replace since someone might have added it in the meantime
-     when we didn't hold the lock. *)
-  Hashtbl.replace cache key (result, Unix.time ()) ;;
+      if (Hashtbl.length cache) = Constants.num_cached_vcs then
+	begin
+	  evict_oldest_member cache
+	end;
+      (* We use replace since someone might have added it in the meantime
+	 when we didn't hold the lock. *)
+      Hashtbl.replace cache key (result, Unix.time ())
+    end ;;
 
 (* Verifies a VC. *)
 let verify_vc (vc, (vc_cache, cache_lock)) =

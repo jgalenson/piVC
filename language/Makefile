@@ -2,10 +2,12 @@ PROJ_DIR = .
 
 OCFLAGS = -dtypes
 
-INCDIR = $(PROJ_DIR:%=-I %) -I ../utils
+INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils
 
-OC = ocamlc $(OCFLAGS) $(INCDIR)
+OC = ocamlc $(OCFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
+OCAMLYACC = ocamlyacc
+OCAMLLEX = ocamllex
 
 include ../Makefile_includes
 
@@ -13,39 +15,30 @@ default :
 	cd .. ;\
 	make backend; \
 
-all : depend parser lexer language language_post
+all : depend language
 
-parser :
-	ocamlyacc parser.mly;
+language : $(LANGUAGE_COMPILE_OBJS)
 
-lexer :
-	ocamllex lexer.mll
+.SUFFIXES: .mli .ml .cmi .cmo .mll .mly 
 
-language : $(LANGUAGE_OBJS)
-
-language_post :
-	$(OC) -c parser.mli;
-	$(OC) -c parser.ml;
-	$(OC) -c lexer.ml;
-	rm lexer.ml;
-	rm parser.mli;
-	rm parser.ml;
-
-%.cmo : %.ml %.cmi
+.ml.cmo:
 	$(OC) -c $<
 
-%.cmi : %.mli
+.mli.cmi:
 	$(OC) -c $<
 
-#%.cmo : %.mll
-#	ocamllex $<
-#	$(OC) -c $(*F).ml
-#
-#%.cmo : %.mly
-#	ocamlyacc $<
-#	$(OC) -c $(*F).ml
+.mll.ml:
+	$(OCAMLLEX) $<
+
+.mly.ml:
+	$(OCAMLYACC) -v $<
+
+.mly.mli:
+	$(OCAMLYACC) -v $<
 
 clean :
+	rm lexer.ml
+	rm parser.ml
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
 
 depend:

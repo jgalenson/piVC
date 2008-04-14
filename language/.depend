@@ -1,3 +1,5 @@
+lexer.cmi: parser.cmi 
+parser.cmi: ast.cmi 
 scope_stack.cmi: ast.cmi 
 ast.cmo: ast.cmi 
 ast.cmx: ast.cmi 
