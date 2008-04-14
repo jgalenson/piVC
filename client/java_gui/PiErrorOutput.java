@@ -55,6 +55,9 @@ public class PiErrorOutput extends JPanel {
 		});
 	}
 	
+	/**
+	 * Handle selecting/unselecting an error.
+	 */
 	private void errorClicked(Object obj) {
 		if (obj == null)  // unselecting
 			piCode.removeAllHighlights();

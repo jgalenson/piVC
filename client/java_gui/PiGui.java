@@ -43,6 +43,10 @@ public class PiGui extends JFrame {
 	private File curFile;
 	private boolean dirty;
 	private ArrayList<DirtyChangedListener> dirtyChangedListeners;
+	private JButton compileButton;
+	private JLabel statusBarLabel;
+	private JProgressBar statusProgressBar;
+	private boolean isCompiling;
 
 	public PiGui() {
 		super(TITLE);
@@ -53,6 +57,7 @@ public class PiGui extends JFrame {
 		installMain();
 		installMenu();
 		installTop();
+		installStatusBar();
 		initDataPost();
 		setupWindow();
 	}
@@ -79,8 +84,7 @@ public class PiGui extends JFrame {
 		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             curFile = fileChooser.getSelectedFile();
 			loadFile(curFile);
-            setDirty(false);
-            setTitle(TITLE + " - " + curFile.getName());
+			filenameChanged();
 		}
 	}
 
@@ -145,8 +149,17 @@ public class PiGui extends JFrame {
         	return;
         }
 		curFile = selectedFile;
+		filenameChanged();
+	}
+	
+	/**
+	 * Called whenever the name of the currently-opened
+	 * file changes.  We reset anything that relies on it.
+	 */
+	private void filenameChanged() {
 		setDirty(false);
 		setTitle(TITLE + " - " + curFile.getName());
+		setStatusBarLabel();
 	}
 
 	/**
@@ -177,16 +190,51 @@ public class PiGui extends JFrame {
 	 * off to the server and handling the response.
 	 */
 	public void doCompile() {
-		piCode.removeAllHighlights();
+		compileStarted();
 		String code = piCode.getText();
 		(new Compiler(code)).start();
 	}
 	
+	/**
+	 * Sets up the GUI when we start a compile.
+	 */
+	private void compileStarted() {
+		isCompiling = true;
+		piCode.removeAllHighlights();
+		compileButton.setEnabled(false);
+		piMenu.setCompileMenuItemEnabled(false);
+		setStatusBarLabel();
+		statusProgressBar.setIndeterminate(true);
+		statusProgressBar.setVisible(true);
+	}
+	
+	/**
+	 * Sets the label on the status bar.
+	 * We need to track whether or not we're in a compile
+	 * in case you change the filename (which changes the
+	 * status bar label) when we're compiling.
+	 */
+	private void setStatusBarLabel() {
+		String filenameStr = (curFile == null ? "" : " " + curFile.getName()) ;
+		if (isCompiling)
+			statusBarLabel.setText("Compiling" + filenameStr);
+		else
+			statusBarLabel.setText("Editing" + filenameStr);
+	}
+	
+	/**
+	 * A class that fires off a compile and waits for the response.
+	 * We subclass thread so we can do this in the background and not
+	 * on the Swing thread.
+	 */
 	private class Compiler extends Thread {
-		private String code;
+		
+		private String code;  // Store the code since we can't get it from piCode.
+		
 		public Compiler(String code) {
 			this.code = code;
 		}
+		
 		@Override
 		public void run() {
 			String result = config.getValue("default_server_address");
@@ -221,6 +269,9 @@ public class PiGui extends JFrame {
 
 	/**
 	 * Handles a response from the server by parsing it.
+	 * This is called from the Compiler thread which is not
+	 * on the Swing thread, so we run its contents on the
+	 * Swing thread.
 	 */
 	private void handleServerResponse(final String text) {
 		SwingUtilities.invokeLater(new Runnable() {
@@ -230,8 +281,21 @@ public class PiGui extends JFrame {
 				piCompilerOutput.setText(text);
 				serverResponseParser.parse(text, getFilename());
 				rightTabbedPane.repaint();
+				compileEnded();
 			}
 		});
+	}
+	
+	/**
+	 * Sets up the GUI for when a compile finishes.
+	 */
+	private void compileEnded() {
+		isCompiling = false;
+		compileButton.setEnabled(true);
+		piMenu.setCompileMenuItemEnabled(true);
+		setStatusBarLabel();
+		statusProgressBar.setIndeterminate(false);
+		statusProgressBar.setVisible(false);
 	}
 	
 	/**
@@ -316,6 +380,7 @@ public class PiGui extends JFrame {
 		initFileChooser();
 		curFile = null;
 		dirtyChangedListeners = new ArrayList<DirtyChangedListener>();
+		isCompiling = false;
 	}
 	
 	/**
@@ -393,15 +458,36 @@ public class PiGui extends JFrame {
 	private void installTop() {
 		Box box = Box.createHorizontalBox();
 		
-		JButton compile = new JButton("Compile");
-		compile.addActionListener(new ActionListener() {
+		compileButton = new JButton("Compile");
+		compileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				doCompile();
 			}
 		});
-		box.add(compile);
+		box.add(compileButton);
 		
 		add(box, BorderLayout.NORTH);
+	}
+	
+	private void installStatusBar() {
+		Box box = Box.createHorizontalBox();
+		box.setPreferredSize(new Dimension(100, 20));
+		
+		box.add(Box.createHorizontalStrut(10));
+		
+		statusBarLabel = new JLabel("Editing");
+		box.add(statusBarLabel);
+		
+		box.add(Box.createHorizontalGlue());
+		box.add(Box.createHorizontalStrut(600));
+		
+		statusProgressBar = new JProgressBar();
+		statusProgressBar.setVisible(false);
+		box.add(statusProgressBar);
+		
+		box.add(Box.createHorizontalStrut(10));
+		
+		add(box, BorderLayout.SOUTH);
 	}
 	
 	/**

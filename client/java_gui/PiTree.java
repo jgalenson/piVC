@@ -191,6 +191,9 @@ public class PiTree extends JPanel {
 			return selectedNode.getUserObject();
 	}
 	
+	/**
+	 * Empties out the tree.
+	 */
 	public void clear() {
 		root = null;
 		treeModel.setRoot(root);

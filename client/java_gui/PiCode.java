@@ -52,6 +52,9 @@ public class PiCode extends JTextArea implements DocumentListener, DirtyChangedL
 		justLoaded = true;
 	}
 	
+	/**
+	 * Listen for edits for undo.
+	 */
 	private void addUndoableEditListener() {
 		getDocument().addUndoableEditListener(new UndoableEditListener() {
 		    public void undoableEditHappened(UndoableEditEvent e) {

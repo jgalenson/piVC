@@ -16,6 +16,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem save;
 	private JMenuItem undo, redo;
 	private JMenuItem displayPath;
+	private JMenuItem compileMenuItem;
 	
 	public PiMenu(PiGui piGui, Config config) {
 		super();
@@ -113,15 +114,15 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		JMenu compileMenu = new JMenu("Compile");
 		compileMenu.setMnemonic(KeyEvent.VK_O);
 		
-		JMenuItem compile = new JMenuItem("Compile");
-		compile.setMnemonic(KeyEvent.VK_C);
-		compile.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, ActionEvent.CTRL_MASK));
-		compile.addActionListener(new ActionListener() {
+		compileMenuItem = new JMenuItem("Compile");
+		compileMenuItem.setMnemonic(KeyEvent.VK_C);
+		compileMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, ActionEvent.CTRL_MASK));
+		compileMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				piGui.doCompile();
 			}
 		});
-		compileMenu.add(compile);
+		compileMenu.add(compileMenuItem);
 		
 		add(compileMenu);
 	}
@@ -194,6 +195,13 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	 */
 	public void dirtyChanged(boolean dirty) {
 		save.setEnabled(dirty);
+	}
+	
+	/**
+	 * Enables or disables the compile menu item.
+	 */
+	public void setCompileMenuItemEnabled(boolean flag) {
+		compileMenuItem.setEnabled(flag);
 	}
 	
 }

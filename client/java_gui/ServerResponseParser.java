@@ -167,6 +167,9 @@ public class ServerResponseParser {
 		return new Step(type, text, location);
 	}
 	
+	/**
+	 * Makes and returns a Counterexample object from a <counterexample> tag.
+	 */
 	private Counterexample parseCounterexample(Node counterexample) {
 		ArrayList<Counterexample.Variable> variables = new ArrayList<Counterexample.Variable>();
 		NodeList children = counterexample.getChildNodes();
@@ -178,6 +181,9 @@ public class ServerResponseParser {
 		return new Counterexample(variables);
 	}
 	
+	/**
+	 * Makes and returns a Counterexample.Variable object from a <var> tag.
+	 */
 	private Counterexample.Variable parseVariable(Node var) {
 		String text = var.getAttributes().getNamedItem("text").getTextContent();;
 		Location location = null;
@@ -216,6 +222,10 @@ public class ServerResponseParser {
 		return new Location(startByte, endByte, startRow, startCol, endRow, endCol);
 	}
 
+	/**
+	 * Parses errors from a <result> tag
+	 * and passes them onto the main GUI.
+	 */
 	private void parseErrors(Node result) {
 		ArrayList<PiError> errors = new ArrayList<PiError>();
 		NodeList children = result.getChildNodes();
@@ -227,6 +237,9 @@ public class ServerResponseParser {
 		piGui.handleError(errors);
 	}
 	
+	/**
+	 * Makes and returns a PiError object from an <error> tag.
+	 */
 	private PiError parseError(Node error) {
 		String type = error.getAttributes().getNamedItem("type").getTextContent();
 		String msg = null;
