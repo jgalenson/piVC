@@ -15,8 +15,6 @@ Jason
 Joel
 	Typedef stuff like path (in bp, vc, etc) to make types more readable
 	Turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space))?
-        Grey out compile button/menu option while compilation is occuring. Put loading bar somewhere. (Just one of those bounce left/right ones, I'm assuming.)
-                Jason suggests that below the file editing pane, we have a status area. Normally, it'll say "Status: editing file.pi", and during compilation, it'll say "Status: compiling file.pi", and have a loading bar.
         Don't reset GUI tree every recompile.
 		Hmm?
 Both
