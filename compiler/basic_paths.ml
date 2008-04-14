@@ -50,15 +50,9 @@ let get_statement_list stmts =
     | _ -> [stmts]
 
 let create_rv_decl t ident =
-  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some(-1)); quant = Unquantified;}
+  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified;}
 
-let create_rv_expression expr t loc = 
 
-  let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
-    rv_ident.decl := Some(create_rv_decl t rv_ident);
-    let rv_lval = Ast.NormLval(Ast.get_dummy_location (), rv_ident) in
-    let rv_assignment = Ast.Assign(loc, rv_lval, expr) in
-      rv_assignment
 
 
 let gen_func_precondition_with_args_substitution func args =
@@ -100,7 +94,7 @@ let generate_paths_for_func func program =
                       let ident = create_identifier ident_name (get_dummy_location ()) in
                       let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
                       let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
-                        decl.var_id := Some(-temp_var_number.contents - 2); (*rv is -1, so _v0 is -2, _v1 is -3, and so on*)
+                        decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
                         Queue.add (List.append curr_path [Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]) all_paths;
@@ -137,7 +131,14 @@ let generate_paths_for_func func program =
      (new_expr, !new_nodes)
 
   in 
-
+  let generate_nodes_for_rv_expression expr t curr_path loc = 
+    let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
+      rv_ident.decl := Some(create_rv_decl t rv_ident);
+      let rv_lval = Ast.NormLval(Ast.get_dummy_location (), rv_ident) in
+      let rv_assignment = Ast.Assign(loc, rv_lval, expr) in
+      let (new_exp, new_nodes) = generate_nodes_for_expr curr_path rv_assignment in
+        new_nodes @ [Expr(new_exp)]
+  in
   let rec generate_path (curr_path:path_node list) stmts (closing_scope_actions:closing_scope_action list) = 
 
     match List.length stmts with
@@ -184,7 +185,7 @@ let generate_paths_for_func func program =
         | Ast.ReturnStmt(loc, exp) -> (
             match func.returnType with
                 Void(loc) -> Queue.add (List.append curr_path [func_post_condition]) all_paths
-              | _ -> Queue.add (List.append curr_path [Expr (create_rv_expression exp func.returnType loc); func_post_condition]) all_paths
+              | _ -> Queue.add (List.append curr_path ((generate_nodes_for_rv_expression exp func.returnType curr_path loc) @ [func_post_condition])) all_paths
           )
         | Ast.AssertStmt(loc, exp) -> 
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;

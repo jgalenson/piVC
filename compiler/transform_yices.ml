@@ -14,7 +14,7 @@ let rename_and_replace_id ident var_names rev_var_names =
     if (Hashtbl.mem var_names id) then
       fst (Hashtbl.find var_names id)
     else
-      let new_var_name = yices_name id ident.name in
+      let new_var_name = id in (*yices_name id ident.name in* TODO-A: delete this commented out line after checking it works*)
 	Hashtbl.add var_names id (new_var_name, type_of_identifier ident);
 	Hashtbl.add rev_var_names new_var_name ident;
 	new_var_name
@@ -120,7 +120,8 @@ and build_define_string id (name, t) cur_string =
 and build_define_string_for_quantifier decls = 
   let rec space_after_all_elems decls = 
     match decls with
-        decl :: rest -> (yices_name (Ast.var_id_of_varDecl decl) (string_of_identifier decl.varName))  ^ "::" ^ yices_string_of_type decl.varType ^ " " ^ space_after_all_elems rest
+(*TODO-A: delete this comment once working        decl :: rest -> (yices_name (Ast.var_id_of_varDecl decl) (string_of_identifier decl.varName))  ^ "::" ^ yices_string_of_type decl.varType ^ " " ^ space_after_all_elems rest*)
+        decl :: rest -> id_of_varDecl decl ^ "::" ^ yices_string_of_type decl.varType ^ " " ^ space_after_all_elems rest
       | [] -> ""
   in
   let str_with_space_at_end = space_after_all_elems decls in

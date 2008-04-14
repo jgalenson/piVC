@@ -35,7 +35,7 @@ and varDecl = {
   varType : varType;
   varName : identifier;
   location_vd : location;
-  var_id : (int option) ref;
+  var_id : (string option) ref;
   quant: quantification;
 }
 val create_varDecl : varType -> identifier -> location -> varDecl
@@ -132,15 +132,17 @@ val location_of_stmt : stmt -> location
 
 val location_of_expr : expr -> location
 
-val var_id_of_varDecl : varDecl -> int
+val id_of_varDecl : varDecl -> string
 
 val varDecl_of_identifier : identifier -> varDecl
 
 val type_of_identifier : identifier -> varType
 
-val id_of_identifier : identifier -> int
+val id_of_identifier : identifier -> string
 
 val varDecl_of_decl : decl -> varDecl
+
+val identifier_of_array_expr : expr -> identifier   
 
 (******************
 Printing functions

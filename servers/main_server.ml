@@ -20,24 +20,36 @@ let rec compile vc_cache_and_lock ic oc =
     List.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
     Buffer.contents buf
   in*)
-
-  let code = get_input ic in
-  (* print_endline code; *)
-  let (program, errors) = Parse_utils.parse_string code in
-
-
-  let get_output_to_return_to_client = 
-    match errors with
-        [] -> (
-          let program_info = Verify.get_all_info (Utils.elem_from_opt program) in
-          let verified_program_info = Verify.verify_program program_info vc_cache_and_lock in
-            Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
-              )
-      | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
-
-  in
-    send_output oc get_output_to_return_to_client;
-  flush oc;
+  begin
+    try    
+      let code = get_input ic in
+        (* print_endline code; *)
+      let (program, errors) = Parse_utils.parse_string code in
+        
+        
+      let get_output_to_return_to_client = 
+        match errors with
+            [] -> (
+              let program_info = Verify.get_all_info (Utils.elem_from_opt program) in
+              let verified_program_info = Verify.verify_program program_info vc_cache_and_lock in
+                Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
+            )
+          | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
+              
+      in
+        send_output oc get_output_to_return_to_client;
+        print_endline "Compliation completed. Response sent back to cient.";
+    with
+        ex -> 
+          begin
+            send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
+            print_endline (Printexc.to_string ex)
+          end
+  end;
+  flush stdout;
+  flush stderr;
+  flush oc
+    
 
 
 and xml_of_location location = 
@@ -54,6 +66,18 @@ and xml_of_location location =
       add_child end_node location_node;
       location_node
 
+and xml_of_compiler_exception ex = 
+  let transmission_node = Xml_generator.create "piVC_transmission" in
+    add_attribute ("type", "program_submission_response") transmission_node;
+  let result_node = Xml_generator.create "result" in  
+    add_attribute ("status", "compiler_error") result_node;
+  let error_node = Xml_generator.create "error" in
+    add_attribute ("type", "compiler") error_node;
+  set_text (Printexc.to_string ex) error_node;
+  add_child error_node result_node;
+  add_child result_node transmission_node;
+  transmission_node
+      
 and xml_of_errors errors =
 
   let transmission_node = Xml_generator.create "piVC_transmission" in

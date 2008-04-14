@@ -53,7 +53,7 @@ and varDecl = {
   varType : varType;
   varName : identifier;
   location_vd : location;
-  var_id: (int option) ref;
+  var_id: (string option) ref;
   quant : quantification;
 }
 let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified;}
@@ -77,7 +77,7 @@ let varDecl_of_identifier ident =
       Some(d) -> (d)
     | None -> raise (Error "Variable decl not set")
 
-let var_id_of_varDecl decl = 
+let id_of_varDecl decl = 
   match !(decl.var_id) with
       Some(num) -> num
     | None -> raise (Error "Variable id not set")
@@ -97,14 +97,13 @@ let id_of_identifier_if_available ident =
         begin
           match !(d.var_id) with
               Some(id) -> id
-            | None -> -1
+            | None -> ""
         end
-    | None -> -1
+    | None -> ""
 
 let create_identifier name location =
   {name = name; location_id = location; decl = ref None}
-
-
+     
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
@@ -155,6 +154,8 @@ and stmt =
   | AssertStmt of location * expr
   | StmtBlock of location * stmt list
   | EmptyStmt
+
+
 
 	
 type fnDecl = {
@@ -283,7 +284,7 @@ let rec string_of_identifier_with_extra_info id =
       None -> id.name
     | Some(vd) ->
         begin
-          id.name ^ "{" ^ string_of_int (var_id_of_varDecl(vd)) ^ ", " ^ (string_of_type vd.varType) ^ "}"
+          id.name ^ "{" ^ (id_of_varDecl(vd)) ^ ", " ^ (string_of_type vd.varType) ^ "}"
         end
 
 and string_of_type typ =
@@ -410,3 +411,16 @@ let string_of_program p =
     (tabbed_string_of_decl d 0) ^ "\n"
   in
   String.concat "\n" (List.map map_fn p.decls)
+
+
+let rec identifier_of_array_expr exp = 
+  match exp with
+      LValue(loc,lval) ->
+        begin
+          match lval with
+              NormLval(loc,id) -> id
+            | _ -> raise (Error ("expr more than just an array ident: " ^ string_of_expr exp))
+        end
+    | ArrayUpdate(loc,expr,assign_to,assign_val) -> identifier_of_array_expr expr
+    | _ -> raise (Error ("expr more than just an array ident: " ^ string_of_expr exp))
+   

@@ -2,11 +2,11 @@
     into the annotations */
 
 @pre true
-@post forall ix. ((ix>=0 && ix<10) -> (rv >= arr[ix]))
+@post forall ix. ((ix>=0 && ix<|arr|) -> (rv >= arr[ix]))
 int max(int[] arr) {
 	int max := arr[0];
 	for @(forall j. ((j<i && j>=0) -> (max >= arr[j])))
-	(int i:=1; i<10;i=i+1){
+	(int i:=1; i<|arr|;i=i+1){
 		if(arr[i]>=max){
 			max := arr[i];
 		}

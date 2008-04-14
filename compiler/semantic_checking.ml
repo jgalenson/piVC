@@ -456,7 +456,7 @@ let check_function func s errors =
   Scope_stack.enter_scope s;
   begin
     let vd = Ast.create_varDecl func.returnType (Ast.create_identifier "rv" (Ast.get_dummy_location ()) ) (Ast.get_dummy_location ()) in
-      vd.var_id := Some(-1);
+      vd.var_id := Some("rv");
       Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
   end;
   (*add rv to scope*)

@@ -9,7 +9,18 @@ Client:
 	<code> code </code>
 </piVC_transmission>
 
-Server errors:
+
+Server exceptions:
+<piVC_transmission type="program_submission_response" >
+	<result status="compiler_error">
+		<error type="compiler">
+                       Error!
+		</error>
+		// possibly more errors as siblings
+	</result>
+</piVC_transmission>
+
+Server errors with user program:
 <piVC_transmission type="program_submission_response" >
 	<result status="error">
 		<error type="semantic_error/syntax_error">

@@ -68,12 +68,12 @@ let verify_vc (vc, (vc_cache, cache_lock)) =
   print_endline ("*********************************");
   print_endline ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf);
   print_endline ("Index set is as follows:");
-  let print_expr exp = print_endline (string_of_expr exp) in
+  let print_expr exp = print_endline (Expr_utils.guaranteed_unique_string_of_expr exp) in
     List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
-  (*print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quant ^ "\n");*)
+  print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quants ^ "\n");
   (*print_string ("And got a response of: " ^ response ^ "\n");*)
   print_endline ("*********************************");
-*)  
+*) 
 
     let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in
     let (sock, inchan, outchan) =

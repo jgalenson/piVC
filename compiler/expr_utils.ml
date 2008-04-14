@@ -153,10 +153,10 @@ let change_quantifier old_decls old_expr new_quant =
 
 let rec nnf expr = 
   match expr with
-    | Assign (loc,l, e) -> raise InvalidFormula
+    | Assign (loc,l, e) -> assert(false)
     | Constant (loc,c) -> expr
     | LValue (loc,l) -> expr
-    | Call (loc,s, el) -> raise InvalidFormula
+    | Call (loc,s, el) -> assert(false)
     | Plus (loc,t1, t2) -> Plus(loc, nnf t1, nnf t2)
     | Minus (loc,t1, t2) -> Minus(loc, nnf t1, nnf t2)
     | Times (loc,t1, t2) -> Times(loc, nnf t1, nnf t2)
@@ -229,12 +229,12 @@ let string_of_expr_list exprs delimiter =
 *)
 let guaranteed_unique_string_of_expr e =
   let rec unique_string_of_lval lval = match lval with
-    | NormLval (loc, s) -> string_of_int (id_of_identifier s)
+    | NormLval (loc, s) -> id_of_identifier s
     | ArrayLval (loc, t1, t2) -> (soe t1) ^ "[" ^ (soe t2) ^ "]"
   and unique_representation_of_decl_names decls = 
     let rec construct_str decls = 
       match decls with
-          decl :: rest -> string_of_int (var_id_of_varDecl decl) ^ "," ^ construct_str rest
+          decl :: rest -> (id_of_varDecl decl) ^ "," ^ construct_str rest
         | [] -> ""
     in construct_str decls
   and soe = function
@@ -394,7 +394,7 @@ let get_index_set exp =
     in
       gg exp
   in
-    remove_duplicates_from_list (get_array_indices exp @ get_guards exp @ [Constant(gdl(),ConstInt(gdl(),0))])
+    remove_duplicates_from_list (get_array_indices exp (*@ get_guards exp*) @ [Constant(gdl(),ConstInt(gdl(),0))])
     (*We always include 0 in the index set. Technically, 0 needs only be included if the index
       set would be otherwise empty. However, because we don't always have the formula in the
       simple implication form used by the DP, we use heuristics to decide what to put in the

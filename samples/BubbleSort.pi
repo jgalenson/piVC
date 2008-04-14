@@ -1,21 +1,18 @@
-/* As we don't yet have an array length operator, I hard-coded a length of 10
-    into the annotations */
-
-@pre true
-@post (forall a,b. ((0 <= a && a <= b && b <= 9) -> rv[a]<=rv[b]))
+@pre |arr|>=0
+@post (forall a,b. ((0 <= a && a <= b && b < |rv|) -> rv[a]<=rv[b]))
 int[] BubbleSort(int[] arr) {
 	for
 	@ (
-             (forall c,d. ((i <= c && c <= d && d <= 9) -> arr[c]<=arr[d])) &&
-	       ((-1) <=i) && (i < 10) &&
- 		 (forall c,d. ((0 <= c && c <= i && i+1 <= d && d <= 9)-> arr[c]<=arr[d]))
+             (forall c,d. ((i <= c && c <= d && d < |arr|) -> arr[c]<=arr[d])) &&
+	       ((-1) <=i) && (i < |arr|) &&
+ 		 (forall c,d. ((0 <= c && c <= i && i+1 <= d && d < |arr|)-> arr[c]<=arr[d]))
            )
-	(int i := 9; i>0; i := i - 1){
+	(int i := |arr|-1; i>0; i := i - 1){
 		for
 		@ (	
-			(1 <= i && i < 10 && 0 <=j && j<=i) &&
-	             (forall c,d. ((i <= c && c <= d && d <= 9) -> arr[c]<=arr[d])) &&
- 	     	      (forall c,d. ((0 <= c && c <= i && i+1 <= d && d <= 9)-> arr[c]<=arr[d])) 	&&
+			(1 <= i && i < |arr| && 0 <=j && j<=i) &&
+	             (forall c,d. ((i <= c && c <= d && d < |arr|) -> arr[c]<=arr[d])) &&
+ 	     	      (forall c,d. ((0 <= c && c <= i && i+1 <= d && d < |arr|)-> arr[c]<=arr[d])) &&
  		      (forall c,d. ((0 <= c && c <= j-1 && j <= d && d <= j)-> arr[c]<=arr[d]))					
 		    )
 		(int j:=0; j<i; j := j + 1){

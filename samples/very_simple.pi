@@ -1,20 +1,14 @@
-
-
 @pre true
-@post true
-int jason(){
-  int i;
-  int test;
-  int test2;
-  i := 1;
-  @ test = test2;
-  i := phil(test, test2);
+@post rv > 5
+int jason(int[] arr){
+	int[] test;
+	test := jason2(arr);
+	int test_length := |test|;
+	return |test|;
 }
 
-@pre i=7 && j=i
-@post rv=3
-int phil(int i, int j){
-  int i;
-  i := 2;
-  i := 3;
+@pre true
+@post |rv| > 5
+int[] jason2(int[] arr){
+	return arr;
 }
