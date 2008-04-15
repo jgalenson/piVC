@@ -8,22 +8,20 @@ Jason
 	fix unknown yices return value
 	Generate basic path names somehow.
 	Bug: Loop assertions require parens now.
-        Don't run arrays DP on VCs not in the fragment
-        Remaining TODOs in arrays DP code
-        Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
-        Bug: func call in condition doesn't work
-        Bug: arrays should know that length >= 0 in VCs
-        Bug: fix index set construction for arrays DP
+	Don't run arrays DP on VCs not in the fragment
+	Remaining TODOs in arrays DP code
+	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
+	Bug: func call in condition doesn't work
+	Bug: arrays should know that length >= 0 in VCs
+	Bug: fix index set construction for arrays DP
+	Bug: Lots of consecutive array updates kills yices, but old PiVC handles them just fine (see samples/array_updates.pi).
 
 Joel
-	Typedef stuff like path (in bp, vc, etc) to make types more readable
-	Turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space))?
+	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
+	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
 	Add some basic support for communicating server exceptions to the client. I've added it to the server-side - see the xml spec file for an example of what is returned.
 	If an exception is thrown in a forked process, is it possible to throw it back up to the main exception catcher in main_server.ml? That way it gets reported to the client.
-	Bug: user can't recompile if he tries to connect to a server that doesn't exist
-	Add a cancel compilation button to gui
-	Automatically cancel compilation and reset tree state if new file is loaded
 
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).

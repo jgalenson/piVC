@@ -16,7 +16,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem save;
 	private JMenuItem undo, redo;
 	private JMenuItem displayPath;
-	private JMenuItem compileMenuItem;
+	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	
 	public PiMenu(PiGui piGui, Config config) {
 		super();
@@ -124,6 +124,14 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		});
 		compileMenu.add(compileMenuItem);
 		
+		cancelCompileMenuItem = new JMenuItem("Cancel compile");
+		cancelCompileMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.cancelCompile();
+			}
+		});
+		compileMenu.add(cancelCompileMenuItem);
+		
 		add(compileMenu);
 	}
 	
@@ -200,8 +208,9 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	/**
 	 * Enables or disables the compile menu item.
 	 */
-	public void setCompileMenuItemEnabled(boolean flag) {
-		compileMenuItem.setEnabled(flag);
+	public void isCompiling(boolean isCompiling) {
+		compileMenuItem.setEnabled(!isCompiling);
+		cancelCompileMenuItem.setEnabled(isCompiling);
 	}
 	
 }

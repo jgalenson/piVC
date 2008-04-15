@@ -46,7 +46,7 @@ public class PiGui extends JFrame {
 	private JButton compileButton;
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
-	private boolean isCompiling;
+	private Compiler curCompilation;
 
 	public PiGui() {
 		super(TITLE);
@@ -128,6 +128,10 @@ public class PiGui extends JFrame {
             BufferedReader in = new BufferedReader(new FileReader(selectedFile));
             piCode.read(in, null);
             piCode.openedNewFile();
+			piTree.clear();
+			piErrorOutput.clear();
+            if (curCompilation != null)
+            	cancelCompile();
         }
         catch (IOException e) {
             e.printStackTrace();
@@ -190,19 +194,20 @@ public class PiGui extends JFrame {
 	 * off to the server and handling the response.
 	 */
 	public void doCompile() {
-		compileStarted();
 		String code = piCode.getText();
-		(new Compiler(code)).start();
+		curCompilation = new Compiler(code);
+		compileStarted();
+		curCompilation.start();
 	}
 	
 	/**
 	 * Sets up the GUI when we start a compile.
 	 */
 	private void compileStarted() {
-		isCompiling = true;
+		assert(curCompilation != null);
 		piCode.removeAllHighlights();
 		compileButton.setEnabled(false);
-		piMenu.setCompileMenuItemEnabled(false);
+		piMenu.isCompiling(true);
 		setStatusBarLabel();
 		statusProgressBar.setIndeterminate(true);
 		statusProgressBar.setVisible(true);
@@ -216,7 +221,7 @@ public class PiGui extends JFrame {
 	 */
 	private void setStatusBarLabel() {
 		String filenameStr = (curFile == null ? "" : " " + curFile.getName()) ;
-		if (isCompiling)
+		if (curCompilation != null)
 			statusBarLabel.setText("Compiling" + filenameStr);
 		else
 			statusBarLabel.setText("Editing" + filenameStr);
@@ -257,6 +262,7 @@ public class PiGui extends JFrame {
 				} catch (final java.net.ConnectException ex){
 					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
+							compileEnded();
 							JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
 						}
 					});
@@ -278,7 +284,7 @@ public class PiGui extends JFrame {
 			public void run() {
 				piTree.clear();
 				piErrorOutput.clear();
-				piCompilerOutput.setText(text);
+				//piCompilerOutput.setText(text);
 				serverResponseParser.parse(text, getFilename());
 				rightTabbedPane.repaint();
 				compileEnded();
@@ -288,14 +294,21 @@ public class PiGui extends JFrame {
 	
 	/**
 	 * Sets up the GUI for when a compile finishes.
+	 * This must be called on the Swing thread.
 	 */
 	private void compileEnded() {
-		isCompiling = false;
+		curCompilation = null;
 		compileButton.setEnabled(true);
-		piMenu.setCompileMenuItemEnabled(true);
+		piMenu.isCompiling(false);
 		setStatusBarLabel();
 		statusProgressBar.setIndeterminate(false);
 		statusProgressBar.setVisible(false);
+	}
+	
+	public void cancelCompile() {
+		if (curCompilation != null)
+			curCompilation.interrupt();
+		compileEnded();
 	}
 	
 	/**
@@ -380,7 +393,7 @@ public class PiGui extends JFrame {
 		initFileChooser();
 		curFile = null;
 		dirtyChangedListeners = new ArrayList<DirtyChangedListener>();
-		isCompiling = false;
+		curCompilation = null;
 	}
 	
 	/**
@@ -428,16 +441,16 @@ public class PiGui extends JFrame {
 		piErrorOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Errors"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		piCompilerOutput = new PiCompilerOutput();
+		/*piCompilerOutput = new PiCompilerOutput();
 		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Compiler output"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));*/
 		rightTabbedPane.addTab("Tree", piTree.getTreeInScrollPane());
 		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_D);
 		rightTabbedPane.addTab("Errors", piErrorOutput.getErrorOutputInScrollPane());
 		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
-		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
+		/*rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
+		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);*/
 		
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);
