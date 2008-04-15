@@ -46,14 +46,14 @@ let add_to_cache cache key result =
 (* Verifies a VC. *)
 let verify_vc (vc, (vc_cache, cache_lock)) =
   (* Use cached version if we can. *)
-  let vc_str = string_of_expr vc in
+  let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
   Mutex.lock cache_lock;
-  if (Hashtbl.mem vc_cache vc_str) then
+  if (Hashtbl.mem vc_cache unique_vc_str) then
     begin
-      let (result,_) = Hashtbl.find vc_cache vc_str in
-      Hashtbl.replace vc_cache vc_str (result, Unix.time ()); (* Update timestamp. *)
+      let (result,_) = Hashtbl.find vc_cache unique_vc_str in
+      Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
       Mutex.unlock cache_lock;
-      print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing vc_str ^ " is " ^ (string_of_validity (fst result)));
+      print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
       result
     end
   else
@@ -100,7 +100,7 @@ let verify_vc (vc, (vc_cache, cache_lock)) =
 	assert false
     in
       Mutex.lock cache_lock;
-      add_to_cache vc_cache vc_str result;
+      add_to_cache vc_cache unique_vc_str result;
       Mutex.unlock cache_lock;
       result
   end ;;
