@@ -57,7 +57,8 @@ public class ServerResponseParser {
 			parseNormal(result, filename);
 		else if (status.equals("error"))
 			parseErrors(result);
-		//System.out.println("Finished parsing");
+		else if (status.equals("compiler_error"))
+			parseCompilerError(result);
 	}
 
 	/**
@@ -252,9 +253,26 @@ public class ServerResponseParser {
 			if ("message".equals(child.getNodeName()))
 				msg = child.getTextContent();
 		}
-		if (type == null || msg == null || location == null)
+		if (type == null || msg == null || (!type.equals("compiler_error") && location == null))
 			throw new RuntimeException("Invalid error tag");
 		return PiError.makeError(type, msg, location);
+	}
+	
+	/**
+	 * Parses a compiler error from a <result> tag
+	 * and passes it onto the main GUI.
+	 */
+	private void parseCompilerError(Node result) {
+		PiError error = null;
+		NodeList children = result.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("error".equals(child.getNodeName()))  // Element node
+				error = parseError(child);
+		}
+		if (error == null)
+			throw new RuntimeException("Invalid compiler_error tag");
+		piGui.handleCompilerError(error);
 	}
 
 }

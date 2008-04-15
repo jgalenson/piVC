@@ -284,7 +284,7 @@ public class PiGui extends JFrame {
 			public void run() {
 				piTree.clear();
 				piErrorOutput.clear();
-				//piCompilerOutput.setText(text);
+				piCompilerOutput.setText(text);
 				serverResponseParser.parse(text, getFilename());
 				rightTabbedPane.repaint();
 				compileEnded();
@@ -326,6 +326,11 @@ public class PiGui extends JFrame {
 	 */
 	public void handleError(ArrayList<PiError> errors) {
 		piErrorOutput.setErrors(errors);
+		rightTabbedPane.setSelectedIndex(1);
+	}
+	
+	public void handleCompilerError(PiError compilerError) {
+		piErrorOutput.setCompilerError(compilerError);
 		rightTabbedPane.setSelectedIndex(1);
 	}
 	
@@ -441,16 +446,16 @@ public class PiGui extends JFrame {
 		piErrorOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Errors"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		/*piCompilerOutput = new PiCompilerOutput();
+		piCompilerOutput = new PiCompilerOutput();
 		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Compiler output"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));*/
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		rightTabbedPane.addTab("Tree", piTree.getTreeInScrollPane());
 		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_D);
 		rightTabbedPane.addTab("Errors", piErrorOutput.getErrorOutputInScrollPane());
 		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
-		/*rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);*/
+		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
+		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
 		
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);

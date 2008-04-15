@@ -26,7 +26,6 @@ let rec compile vc_cache_and_lock ic oc =
         (* print_endline code; *)
       let (program, errors) = Parse_utils.parse_string code in
         
-        
       let get_output_to_return_to_client = 
         match errors with
             [] -> (
@@ -72,8 +71,10 @@ and xml_of_compiler_exception ex =
   let result_node = Xml_generator.create "result" in  
     add_attribute ("status", "compiler_error") result_node;
   let error_node = Xml_generator.create "error" in
-    add_attribute ("type", "compiler") error_node;
-  set_text (Printexc.to_string ex) error_node;
+    add_attribute ("type", "compiler_error") error_node;
+  let message_node = Xml_generator.create "message" in
+    Xml_generator.set_text (Printexc.to_string ex) message_node;
+  add_child message_node error_node;
   add_child error_node result_node;
   add_child result_node transmission_node;
   transmission_node

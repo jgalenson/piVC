@@ -13,10 +13,9 @@ Client:
 Server exceptions:
 <piVC_transmission type="program_submission_response" >
 	<result status="compiler_error">
-		<error type="compiler">
-                       Error!
+		<error type="compiler_error">
+			Error!
 		</error>
-		// possibly more errors as siblings
 	</result>
 </piVC_transmission>
 

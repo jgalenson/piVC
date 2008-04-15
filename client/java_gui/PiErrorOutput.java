@@ -63,9 +63,11 @@ public class PiErrorOutput extends JPanel {
 			piCode.removeAllHighlights();
 		else {
 			Location loc = ((PiError)obj).getLocation();
-			piCode.highlight(loc, PiCode.redHP);
-			piCode.setCaretPosition(loc.getStartByte());
-			piCode.requestFocusInWindow();
+			if (loc != null) {  // Compiler errors don't have locations.
+				piCode.highlight(loc, PiCode.redHP);
+				piCode.setCaretPosition(loc.getStartByte());
+				piCode.requestFocusInWindow();
+			}
 		}	
 	}
 	
@@ -84,6 +86,11 @@ public class PiErrorOutput extends JPanel {
 		clear();
 		for (PiError error: errors)
 			model.addElement(error);
+	}
+	
+	public void setCompilerError(PiError compilerError) {
+		clear();
+		model.addElement(compilerError);
 	}
 	
 	/**

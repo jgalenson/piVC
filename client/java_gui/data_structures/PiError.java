@@ -5,7 +5,7 @@ package data_structures;
  */
 public class PiError {
 	
-	private enum errorTypeT {Syntax, Semantic};
+	private enum errorTypeT {Syntax, Semantic, Compiler};
 	
 	private errorTypeT errorType;
 	private String msg;
@@ -25,6 +25,8 @@ public class PiError {
 			return new PiError(errorTypeT.Syntax, msg, location);
 		else if ("semantic_error".equals(type))
 			return new PiError(errorTypeT.Semantic, msg, location);
+		else if ("compiler_error".equals(type) && location == null)
+			return new PiError(errorTypeT.Compiler, msg, null);
 		else
 			throw new IllegalArgumentException("Illegal type passed to PiError: " + type);
 	}
@@ -36,8 +38,10 @@ public class PiError {
 	private String getTypeString() {
 		if (errorType == errorTypeT.Syntax)
 			return "Syntax error:";
-		else
+		else if (errorType == errorTypeT.Semantic)
 			return "Semantic error:";
+		else// if (errorType == errorTypeT.Compiler)
+			return "Compiler error:";			
 	}
 	
 	public Location getLocation() {
