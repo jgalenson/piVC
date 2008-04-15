@@ -42,7 +42,7 @@ let rec compile vc_cache_and_lock ic oc =
         ex -> 
           begin
             send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
-            print_endline (Printexc.to_string ex)
+            print_endline ("Caught compiler exception: " ^ (Printexc.to_string ex))
           end
   end;
   flush stdout;

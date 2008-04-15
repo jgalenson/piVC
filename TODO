@@ -20,13 +20,13 @@ Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
 	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
+	Figure out how to deal with exceptions thrown in dp server
 
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
 	Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
 	Figure out how to display VCs in the GUI.
 		One idea: pretty-print the VC (using http://caml.inria.fr/resources/doc/guides/format.html perhaps?) and put in the GUI tree on multiple lines (e.g. by conjuncts).
-	Figure out how to deal with exceptions thrown in child processes.
 
 Unassigned
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).

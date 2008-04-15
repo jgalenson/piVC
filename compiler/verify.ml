@@ -13,6 +13,13 @@ let string_of_validity v = match v with
   | Invalid -> "invalid"
   | Unknown -> "unknown" ;;
 
+(* The return type of verify_vc.
+   Used so that the child thread can either return
+   something we care about or an exception. *)
+type vc_thread_response =
+  | Normal of validity * Counterexamples.example list option
+  | Exceptional of exn ;;
+
 (* Evicts the oldest element in the cache.
    You must already hold the cache lock when calling this. *)
 let evict_oldest_member vc_cache =
@@ -43,26 +50,29 @@ let add_to_cache cache key result =
       Hashtbl.replace cache key (result, Unix.time ())
     end ;;
 
-(* Verifies a VC. *)
+(* Verifies a VC.
+   Either returns the validity and a counterexample option
+   or returns whatever exception was thrown. *)
 let verify_vc (vc, (vc_cache, cache_lock)) =
-  (* Use cached version if we can. *)
-  let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
-  Mutex.lock cache_lock;
-  if (Hashtbl.mem vc_cache unique_vc_str) then
-    begin
-      let (result,_) = Hashtbl.find vc_cache unique_vc_str in
-      Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
+  try
+    (* Use cached version if we can. *)
+    let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
+    Mutex.lock cache_lock;
+    if (Hashtbl.mem vc_cache unique_vc_str) then
+      begin
+        let (result,_) = Hashtbl.find vc_cache unique_vc_str in
+        Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
+        Mutex.unlock cache_lock;
+        print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
+        Normal (fst result, snd result)
+      end
+    else
+      begin (* Otherwise, get answer from dp server. *)
       Mutex.unlock cache_lock;
-      print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
-      result
-    end
-  else
-    begin (* Otherwise, get answer from dp server. *)
-    Mutex.unlock cache_lock;
-    (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
-    (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
-    (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
-    let negated_vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), vc)) in
+      (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
+      (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
+      (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
+      let negated_vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), vc)) in
 
 (*  
   print_endline ("*********************************");
@@ -75,35 +85,36 @@ let verify_vc (vc, (vc_cache, cache_lock)) =
   print_endline ("*********************************");
 *) 
 
-    let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in
-    let (sock, inchan, outchan) =
-      let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-      let server_addr = Constants.dp_server_address in
-      Unix.connect sock (Unix.ADDR_INET(server_addr, Constants.dp_server_port));
-      let inchan = Unix.in_channel_of_descr sock in
-      let outchan = Unix.out_channel_of_descr sock in
-      (sock, inchan, outchan)
-    in
-    Net_utils.send_output outchan vc;
-    flush outchan;
-    let response = Net_utils.get_input inchan in  
-    Unix.close sock;
-    (* A VC is valid iff its negation is unsatisfiable. *)
-    let result =
-      if (response = "unsat") then
-	(Valid, None)
-      else if (response = "unknown") then
-	(Unknown, None)
-      else if (String.sub response 0 3 = "sat") then
-	(Invalid, Some (Counterexamples.parse_counterexamples response rev_var_names))
-      else
-	assert false
-    in
-      Mutex.lock cache_lock;
-      add_to_cache vc_cache unique_vc_str result;
-      Mutex.unlock cache_lock;
-      result
-  end ;;
+      let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in
+      let (sock, inchan, outchan) =
+        let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+        let server_addr = Constants.dp_server_address in
+        Unix.connect sock (Unix.ADDR_INET(server_addr, Constants.dp_server_port));
+        let inchan = Unix.in_channel_of_descr sock in
+        let outchan = Unix.out_channel_of_descr sock in
+        (sock, inchan, outchan)
+      in
+      Net_utils.send_output outchan vc;
+      flush outchan;
+      let response = Net_utils.get_input inchan in  
+      Unix.close sock;
+      (* A VC is valid iff its negation is unsatisfiable. *)
+      let result =
+        if (response = "unsat") then
+	  (Valid, None)
+        else if (response = "unknown") then
+	  (Unknown, None)
+        else if (String.sub response 0 3 = "sat") then
+	  (Invalid, Some (Counterexamples.parse_counterexamples response rev_var_names))
+        else
+	  assert false
+      in
+        Mutex.lock cache_lock;
+        add_to_cache vc_cache unique_vc_str result;
+        Mutex.unlock cache_lock;
+        Normal (fst result, snd result)
+      end
+  with ex -> Exceptional (ex) ;;
 
 let overall_validity_status list_of_things extraction_func = 
   let is_validity extraction_func test actual = (test==(extraction_func actual)) in
@@ -137,7 +148,9 @@ let verify_program program_info vc_cache_and_lock =
 
   and verify_basic_path (path, vc, vc_thread) =
     let vc_result = Background.get_result vc_thread in
-    (path, vc, fst vc_result, snd vc_result)
+    match vc_result with
+      | Normal (v, c) -> (path, vc, v, c)
+      | Exceptional (e) -> raise e
   in 
 
   let verified_functions = List.map verify_function intermediate_info in
