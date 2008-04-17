@@ -21,7 +21,8 @@ Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
 	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
-	Figure out how to deal with exceptions thrown in dp server
+	Kill zombie yices processes.
+	Timeouts.
 
 Both
 	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
@@ -46,7 +47,6 @@ Week 3
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 4
-	Joel: semantically check break stmts, only allow assigns as expr roots (Aaron does this).
 	Jason: semantically check assertions
 	Jason: Run-time assertions
 
@@ -56,7 +56,6 @@ Week 5
 
 Week 6
 	At least one of hashtables, sets, multisets (see Aaron's email 12/6/07)
-
 
 Week 7
 	Joel: Static analysis API

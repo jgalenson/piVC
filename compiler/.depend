@@ -18,7 +18,7 @@ counterexamples.cmx: ../utils/utils.cmx ../utils/scanner.cmx \
 expr_utils.cmo: ../language/ast.cmi expr_utils.cmi 
 expr_utils.cmx: ../language/ast.cmx expr_utils.cmi 
 parse_utils.cmo: ../utils/utils.cmi semantic_checking.cmi \
-    ../language/parser.cmi ../language/lexer.cmi ../utils/constants.cmi \
+    ../language/parser.cmo ../language/lexer.cmi ../utils/constants.cmi \
     ../language/ast.cmi parse_utils.cmi 
 parse_utils.cmx: ../utils/utils.cmx semantic_checking.cmx \
     ../language/parser.cmx ../language/lexer.cmx ../utils/constants.cmx \
@@ -38,7 +38,7 @@ verification_conditions.cmo: expr_utils.cmi basic_paths.cmi \
 verification_conditions.cmx: expr_utils.cmx basic_paths.cmx \
     ../language/ast.cmx verification_conditions.cmi 
 verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
-    transform_yices.cmi semantic_checking.cmi ../language/parser.cmi \
+    transform_yices.cmi semantic_checking.cmi ../language/parser.cmo \
     ../utils/net_utils.cmi expr_utils.cmi counterexamples.cmi \
     ../utils/constants.cmi basic_paths.cmi ../utils/background.cmi \
     ../language/ast.cmi verify.cmi 
