@@ -1,8 +1,10 @@
-/* As we don't yet have an array length operator, I hard-coded a length of 10
-    into the annotations */
+predicate FORALL(int ix, int low, int high, bool exp) := 
+forall ix. ((ix>=low && ix<=high) -> exp);
+
+int ix;
 
 @pre true
-@post forall ix. ((ix>=0 && ix<|arr|) -> (rv >= arr[ix]))
+@post FORALL(ix,0,|arr|-1,rv>=arr[ix])
 int max(int[] arr) {
 	int max := arr[0];
 	for @(forall j. ((j<i && j>=0) -> (max >= arr[j])))

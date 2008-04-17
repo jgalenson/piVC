@@ -89,6 +89,7 @@ let generate_paths_for_func func program =
             | Some(callee_prob) -> (
                 match callee_prob with
                     VarDecl(loc, vd) -> raise (BadDeclException)
+                  | Predicate(loc, p) -> raise (BadDeclException)
                   | FnDecl(loc, callee) -> (
                       let ident_name = "_v" ^ string_of_int !temp_var_number in
                       let ident = create_identifier ident_name (get_dummy_location ()) in

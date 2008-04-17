@@ -44,7 +44,7 @@ let insert_decl s errors decl =
     match curr with
 	None -> Scope_stack.insert_decl decl s
       | Some (d) ->
-	  let error_msg = "'" ^ string_of_decl d ^ "' is already defined" in
+	  let error_msg = "A declaration '" ^ name_of_decl d ^ "' is already defined" in
 	  add_error SemanticError error_msg (location_of_decl decl) errors
 
 let insert_var_decl s errors decl = 
@@ -205,19 +205,6 @@ and check_and_get_return_type is_annotation scope_stack e errors =
     else
       rightType
 
-  and check_and_get_return_type_predicate e =
-    begin
-        match e with
-          | Call(loc, ident, ac) ->
-              begin
-                match ident.name with
-                    _ -> (add_error SemanticError "Unrecognized predicate name in annotation" ident.location_id errors)
-              end
-          | _ -> (raise (SemanticCheckingError "Predicate is not a call"))
-      end;
-    Bool(get_dummy_location ()) 
-
-
   and check_and_get_return_type_quantifier loc decls expr = 
     begin
       match is_annotation with
@@ -250,52 +237,56 @@ and check_and_get_return_type is_annotation scope_stack e errors =
     | LValue (loc,l) -> check_and_get_return_type_lval is_annotation scope_stack l errors
     | Call (loc, ident, ac) -> (* TODO: Check this more? *)
         begin
-        match is_annotation with
-            true ->
-              begin
-                check_and_get_return_type_predicate e
-              end
-          | false ->
-              begin   
-	        let map_fn e = ignore (cagrt e) in
-	        let check_actuals = List.iter (map_fn) ac
-	        and lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
-	          (* Check if there is a function with that name *)
-	        let isfndecl =
-	          begin
-	            match lookup_result with
-	              | None ->
-		          let error_msg = "Function name '" ^ (string_of_identifier ident) ^ "' not defined" in
-		            add_error SemanticError error_msg loc errors; check_actuals; None
-	              | Some (d) -> match d with
-		          | VarDecl (l, vd) ->
-		              let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a function" in
-		                add_error SemanticError error_msg loc errors; check_actuals; None
-		          | FnDecl (loc, fd) -> Some (fd)
-	          end
-	        in
-	          begin
-	            match isfndecl with
-	              | None -> ErrorType
-	              | Some (fndecl) ->
-		          (* Check a call to a valid function *)
-		          if List.length ac != List.length fndecl.formals then
-		            begin
-		              let error_msg = "Incorrect number of arguments: expected " ^ (string_of_int (List.length fndecl.formals)) ^ ", given: " ^ (string_of_int (List.length ac)) in
-		                add_error SemanticError error_msg loc errors;
-		                check_actuals;
-		                ErrorType
-		            end
-		          else
-		            let check_formal given expected =
-		              let given_type = cagrt given
-		              and expected_type = expected.varType in
-		                ignore (check_for_same_type given_type expected_type loc errors)
-		            in
-		              List.iter2 check_formal ac fndecl.formals;
-		              fndecl.returnType
-	          end
-              end
+          let word = match is_annotation with
+              true -> "predicate"
+            | false -> "function"
+          in
+          let check_formals formals = 
+	    if List.length ac != List.length formals then
+	      begin
+		let error_msg = "Incorrect number of arguments: expected " ^ (string_of_int (List.length formals)) ^ ", given: " ^ (string_of_int (List.length ac)) in
+		  add_error SemanticError error_msg loc errors
+	      end
+	    else
+	      let check_formal given expected =
+		let given_type = cagrt given
+		and expected_type = expected.varType in
+                  match types_equal given_type expected_type with
+                      true -> ignore ()
+                    | false ->
+		        let error_msg = "Incorrect type of argument. Given " ^ string_of_type given_type ^ ", expected " ^ string_of_type expected_type in
+		          add_error SemanticError error_msg (location_of_expr given) errors
+	      in
+		List.iter2 check_formal ac formals
+          in
+	  let map_fn e = ignore (cagrt e) in
+	    List.iter (map_fn) ac;
+	  let lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
+	    match lookup_result with
+	      | None ->
+		  let error_msg = "Undefined " ^ word ^ " '" ^ (string_of_identifier ident) ^ "'" in
+		    add_error SemanticError error_msg loc errors; ErrorType
+	      | Some (d) ->
+                  begin
+                    match d with
+		      | VarDecl (l, vd) ->
+		          let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a " ^ word in
+		            add_error SemanticError error_msg loc errors; ErrorType
+		      | Predicate (l, p) ->
+                          begin
+                            match is_annotation with
+                                true -> check_formals p.formals_p; Bool(gdl())
+		              | false -> let error_msg = "'" ^ (string_of_identifier p.predName) ^ "' is not a function" in
+		                  add_error SemanticError error_msg loc errors; ErrorType
+                          end
+		      | FnDecl (loc, fd) -> 
+                          begin
+                            match is_annotation with
+                                true -> let error_msg = "'" ^ (string_of_identifier fd.fnName) ^ "' is not a predicate" in
+		                  add_error SemanticError error_msg loc errors; ErrorType
+		              | false -> check_formals fd.formals; fd.returnType
+                          end
+	          end          
         end
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
@@ -470,14 +461,27 @@ let check_function func s errors =
     add_error SemanticError error_msg func.location_fd errors;
   Scope_stack.exit_scope s
 
+let check_predicate pred s errors =
+  Scope_stack.enter_scope s;
+  insert_var_decls s errors pred.formals_p;
+  let pred_type = check_and_get_return_type true s pred.expr errors in
+    begin
+      match pred_type with
+          Bool(loc) -> ignore ()
+        | _ -> let error_msg = "Predicate " ^ (string_of_identifier pred.predName) ^ " does not evaluate to a boolean." in
+            add_error SemanticError error_msg (location_of_expr pred.expr) errors
+    end;
+  Scope_stack.exit_scope s
+
 let check_program program errors =
   let s = Scope_stack.create () in
   Scope_stack.enter_scope s;
   insert_decls s errors program.decls;
   let check_decl_if_necessary decl = 
     match decl with
-	FnDecl(l, d) -> (check_function d s errors)
-        | _ -> print_string("")
+	FnDecl(l, d) -> check_function d s errors
+      | Predicate(l,p) -> check_predicate p s errors
+      | VarDecl(l,v) -> print_string("")
   in
   List.iter (check_decl_if_necessary) program.decls;
   Scope_stack.exit_scope s

@@ -108,9 +108,18 @@ type fnDecl = {
 }
 val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> location -> fnDecl
 
+
+type predicate = {
+  predName   : identifier;
+  formals_p  : varDecl list;
+  expr       : expr;
+  location_p : location;
+}
+
 type decl = 
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
+  | Predicate of location * predicate
 
 val name_of_decl : decl -> string
 

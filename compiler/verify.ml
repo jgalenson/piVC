@@ -13,12 +13,68 @@ let string_of_validity v = match v with
   | Invalid -> "invalid"
   | Unknown -> "unknown" ;;
 
+
+let instantiate_predicates expr program = 
+  let get_predicate pred_ident = 
+    let is_match decl = 
+      match decl with
+          Predicate(loc,p) -> p.predName.name=pred_ident.name
+        | _ -> false
+    in
+    let pred = List.find is_match program.decls in
+      match pred with
+          Predicate(loc,p) -> p
+        | _ -> assert(false)
+  in
+  let rec ip expr = 
+    match expr with
+        Assign(loc,f,t) -> Assign(loc,f,ip t)
+      | Constant (loc,c) -> expr
+      | LValue (loc,l) -> expr
+      | Call (loc,s, el) ->
+          begin
+            let new_el = List.map ip el in
+            let pred_decl = get_predicate s in
+            let get_replacement_pair decl arg = 
+              (decl.varName.name,arg) in
+            let replacement_pairs = List.map2 get_replacement_pair pred_decl.formals_p new_el in
+              Expr_utils.sub_idents_in_expr pred_decl.expr replacement_pairs
+          end
+      | Plus (loc,t1, t2) -> Plus(loc,ip t1, ip t2)
+      | Minus (loc,t1, t2) -> Minus(loc,ip t1, ip t2)
+      | Times (loc,t1, t2) -> Times(loc,ip t1, ip t2)
+      | Div (loc,t1, t2) -> Div(loc,ip t1, ip t2)
+      | IDiv (loc,t1, t2) -> IDiv(loc,ip t1, ip t2)
+      | Mod (loc,t1, t2) -> Mod(loc,ip t1, ip t2)
+      | UMinus (loc,t) -> UMinus(loc,ip t)
+      | ForAll (loc,decls,e) -> ForAll(loc,decls,ip e)
+      | Exists (loc,decls,e) -> Exists(loc,decls,ip e)
+      | ArrayUpdate (loc,exp,assign_to,assign_val) -> ArrayUpdate(loc,ip exp, ip assign_to, ip assign_val)
+      | LT (loc,t1, t2) -> LT(loc,ip t1, ip t2)
+      | LE (loc,t1, t2) -> LE(loc,ip t1, ip t2)
+      | GT (loc,t1, t2) -> GT(loc,ip t1, ip t2)
+      | GE (loc,t1, t2) -> GE(loc,ip t1, ip t2)
+      | EQ (loc,t1, t2) -> EQ(loc,ip t1, ip t2)
+      | NE (loc,t1, t2) -> NE(loc,ip t1, ip t2)
+      | And (loc,t1, t2) -> And(loc,ip t1, ip t2)
+      | Or (loc,t1, t2) -> Or(loc,ip t1, ip t2)
+      | Not (loc,t) -> Not(loc,ip t)
+      | Iff (loc,t1, t2) -> Iff(loc,ip t1, ip t2)
+      | Implies (loc,t1, t2) -> Implies(loc,ip t1, ip t2)
+      | Length (loc, t) -> assert(false);
+      | EmptyExpr  -> expr        
+  in
+    ip expr
+
+
+
 (* The return type of verify_vc.
    Used so that the child thread can either return
    something we care about or an exception. *)
 type vc_thread_response =
   | Normal of validity * Counterexamples.example list option
   | Exceptional of exn ;;
+
 
 (* Evicts the oldest element in the cache.
    You must already hold the cache lock when calling this. *)
@@ -53,7 +109,8 @@ let add_to_cache cache key result =
 (* Verifies a VC.
    Either returns the validity and a counterexample option
    or returns whatever exception was thrown. *)
-let verify_vc (vc, (vc_cache, cache_lock)) =
+let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
+  let vc = instantiate_predicates vc_with_preds program in
   try
     (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
@@ -123,15 +180,18 @@ let overall_validity_status list_of_things extraction_func =
     else Unknown
 ;;
 
+
+
+
 (* Returns (fn * bool * (Basic Path * VC * validity * example list option) list) list. *)
-let verify_program program_info vc_cache_and_lock =
+let verify_program program_info program_ast vc_cache_and_lock =
 
   (* First, build an intermediate structure that
      contains a Background process for each VC.
      That is, we start all the VC requests. *)
   let intermediate_info =
     let intermediate_basic_path (path, vc) =
-      let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock) in
+      let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock, program_ast) in
       (path, vc, vc_thread)
     in
     let intermediate_fn (fn, bp) =
@@ -167,6 +227,7 @@ let get_all_info program =
     let get_decl_paths_if_appropriate decl = 
       match decl with
           VarDecl (loc, vd) -> None
+        | Predicate (loc, p) -> None
 	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program))
     in
     (* Concatenate together functions ignoring vardecls. *)

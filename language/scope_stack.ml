@@ -21,6 +21,7 @@ let rec insert_decl decl s =
             (snd s) := !(snd s) + 1;
           end
       | FnDecl(loc, fd) -> ignore()
+      | Predicate(loc, pd) -> ignore()
   end;
   insert_decl_without_setting_id decl s
 

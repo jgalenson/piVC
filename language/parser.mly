@@ -157,7 +157,7 @@ and expr_from_temp_expr has_condition = function
 %token T_Declare
 %token T_Pre T_Post
 %token T_Pre T_Post
-%token T_Bool T_Void T_Int T_Float T_String
+%token T_Bool T_Void T_Int T_Float T_String T_Predicate
 %token <int> T_IntConstant
 %token <float> T_FloatConstant
 %token <bool> T_BoolConstant
@@ -207,7 +207,7 @@ and expr_from_temp_expr has_condition = function
 
 
 
-main      :    DeclList T_EOF 
+main      :    DeclList T_EOF
                {
 		 Ast.create_program $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1));
                }
@@ -217,8 +217,9 @@ DeclList  :    DeclList Decl        { $1 @ [$2] }
           |    Decl                 { [$1] }
           ;
 
-Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1)  } 
-          |    FnDecl               { Ast.FnDecl ($1.location_fd, $1) }
+Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1) } 
+          |    FnDecl               { Ast.FnDecl ($1.location_fd, $1)  }
+          |    Predicate            { Ast.Predicate ($1.location_p, $1)}
           ;
 
 Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
@@ -234,6 +235,9 @@ Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.
 
 FnDecl    : T_Pre Annotation T_Post Annotation Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $6 $8 $5 $10 (expr_from_temp_expr false $2) (expr_from_temp_expr false $4) (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 10)) }
           | T_Pre Annotation T_Post Annotation T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $6 $8 (Ast.Void (create_location (Parsing.rhs_start_pos 5) (Parsing.rhs_end_pos 5))) $10 (expr_from_temp_expr false $2) (expr_from_temp_expr false $4) (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 10)) }
+          ;
+
+Predicate : T_Predicate Identifier T_LParen FormalsOrEmpty T_RParen T_Assign Expr T_Semicolon { {predName=$2;formals_p=$4;expr=(expr_from_temp_expr false $7);location_p=(loc 1 7)} }
           ;
 
 FormalsOrEmpty : Formals { $1 }

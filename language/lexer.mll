@@ -6,14 +6,14 @@
   open Lexing
   exception Eof
 
+let files = ref [];;
+let actual_cnum = ref 0;;
 
-let countNewLines str  = 
-  let numNewLines = ref 0 in
-  let countFunction c = match c with
-      '\n'  -> incr numNewLines
-    | _     -> print_string("")
-  in String.iter countFunction str; !numNewLines
-
+let count_character_occurences str char = 
+  let num_occurences = ref 0 in
+  let count c = if c = char then incr num_occurences in
+    String.iter count str; !num_occurences
+;;
 (*
   Multi-line comments can contain newline characters, so we need to iterate
   over the entire token and look for all the newline characters.
@@ -22,23 +22,45 @@ let updateLocation lexbuf =
   let tokenStr = Lexing.lexeme lexbuf in
   let tokenLength = String.length tokenStr in
   let currPos = lexbuf.Lexing.lex_curr_p in
-  let numNewLines = countNewLines tokenStr in
-  match numNewLines with
-      0 -> print_string("")
-     |_ -> print_string("");
-           lexbuf.Lexing.lex_curr_p <- {	   
-	     Lexing.pos_lnum = currPos.Lexing.pos_lnum + 1;           
-	     Lexing.pos_bol = currPos.Lexing.pos_cnum - ((tokenLength-1) - (String.rindex tokenStr '\n'));
-             Lexing.pos_fname = currPos.Lexing.pos_fname;
-             Lexing.pos_cnum = currPos.Lexing.pos_cnum;
-           }
+  let numNewLines = count_character_occurences tokenStr '\n' in
+    actual_cnum := !actual_cnum + tokenLength;
+    if ((lexbuf.lex_curr_p.pos_cnum = snd (List.hd !files)) && ((List.length !files) > 1)) then
+     begin 
+       actual_cnum := 0;
+       files := List.tl !files;
+       lexbuf.Lexing.lex_curr_p <- {	   
+         Lexing.pos_lnum = 0;           
+         Lexing.pos_bol = 0;
+         Lexing.pos_fname = fst (List.hd !files);
+         Lexing.pos_cnum = !actual_cnum;
+       }
+     end
+    else if numNewLines > 0 then
+      begin
+        lexbuf.Lexing.lex_curr_p <- {	   
+	  Lexing.pos_lnum = currPos.Lexing.pos_lnum + numNewLines;           
+	  Lexing.pos_bol = currPos.Lexing.pos_cnum - ((tokenLength-1) - (String.rindex tokenStr '\n'));
+          Lexing.pos_fname = fst (List.hd !files);
+          Lexing.pos_cnum = !actual_cnum;
+        }
+      end
+    else
+      begin
+        lexbuf.Lexing.lex_curr_p <- {	   
+	  Lexing.pos_lnum = currPos.Lexing.pos_lnum;
+	  Lexing.pos_bol = currPos.Lexing.pos_bol;
+          Lexing.pos_fname = fst (List.hd !files);
+          Lexing.pos_cnum = !actual_cnum
+        }
+      end
+        
 }
 
 let digit  = ['0'-'9']
 let alpha = ['a'-'z''A'-'Z']
 
 
-rule lang = parse
+rule lang =  parse
     digit+ as num			 {updateLocation(lexbuf); T_IntConstant(int_of_string num)}
   | digit+ '.' digit+ as num             {updateLocation(lexbuf); T_FloatConstant(float_of_string num)}
   | "/*" ([^'*']*('*'+ [^'/''*'])?)* '*'* "*/" {updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
@@ -85,6 +107,7 @@ rule lang = parse
   | "typedef"                            {updateLocation(lexbuf); T_Typedef}
   | "length"                             {updateLocation(lexbuf); T_Length}
   | "struct"                             {updateLocation(lexbuf); T_Struct}
+  | "predicate"                          {updateLocation(lexbuf); T_Predicate}
   | alpha(alpha|digit|'_')* as ident 	 {updateLocation(lexbuf); T_Identifier(ident)}
   | '+'					 {updateLocation(lexbuf); T_Plus}
   | '-'					 {updateLocation(lexbuf); T_Minus}

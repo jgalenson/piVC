@@ -14,7 +14,7 @@ let get_expr_from_path_node n = match n with
 (* Converts all length() nodes to specially named idents.
    Adds a length assignment step to complement each array assignment step.
 *)
-let go_length_operations path = 
+let convert_basic_path_to_acceptable_form path = 
   let get_new_length_identifier expr = 
     match expr with 
         Length(loc,exp) -> 
@@ -33,9 +33,14 @@ let go_length_operations path =
   in
   let replace_length_with_var expr = 
     let rec rlwv expr = match expr with
-        Constant (loc,c) -> expr
+        Assign(loc,f,t) -> Assign(loc,f,rlwv t)
+      | Constant (loc,c) -> expr
       | LValue (loc,l) -> expr
-      | Call (loc,s, el) -> assert(false);
+      | Call (loc,s, el) ->
+          begin
+            let new_args = List.map rlwv el in
+              Call(loc,s,new_args)
+          end
       | Plus (loc,t1, t2) -> Plus(loc,rlwv t1, rlwv t2)
       | Minus (loc,t1, t2) -> Minus(loc,rlwv t1, rlwv t2)
       | Times (loc,t1, t2) -> Times(loc,rlwv t1, rlwv t2)
@@ -59,7 +64,6 @@ let go_length_operations path =
       | Implies (loc,t1, t2) -> Implies(loc,rlwv t1, rlwv t2)
       | Length (loc, t) -> get_new_length_expr expr
       | EmptyExpr  -> expr
-      | Assign(loc,f,t) -> Assign(loc,f,rlwv t)
     in
       rlwv expr
   in
@@ -108,7 +112,7 @@ let go_length_operations path =
    Returns the VC as an Ast.Expr. *)
 let get_vc path_with_length_nodes =
 
-  let path = go_length_operations path_with_length_nodes in
+  let path = convert_basic_path_to_acceptable_form path_with_length_nodes in
   let dummy_loc = Ast.get_dummy_location () in
   let start_ann = get_expr_from_path_node (List.hd path) in
   let rev_list = List.rev (List.tl path) in

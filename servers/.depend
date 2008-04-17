@@ -3,8 +3,8 @@ both_servers.cmo: server_framework.cmi main_server.cmi dp_server.cmi \
     ../utils/constants.cmi both_servers.cmi 
 both_servers.cmx: server_framework.cmx main_server.cmx dp_server.cmx \
     ../utils/constants.cmx both_servers.cmi 
-ci_yices.cmo: ci_yices.cmi 
-ci_yices.cmx: ci_yices.cmi 
+ci_yices.cmo: ../utils/utils.cmi ../utils/constants.cmi ci_yices.cmi 
+ci_yices.cmx: ../utils/utils.cmx ../utils/constants.cmx ci_yices.cmi 
 dp_server.cmo: ../utils/utils.cmi server_framework.cmi ../utils/net_utils.cmi \
     ci_yices.cmi dp_server.cmi 
 dp_server.cmx: ../utils/utils.cmx server_framework.cmx ../utils/net_utils.cmx \

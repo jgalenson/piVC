@@ -1,5 +1,10 @@
 exception Option_Is_None ;;
 
+
+let get_absolute_path path_relative_to_dir_containing_executable = 
+  let path_of_executable = Sys.argv.(0) in
+    (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1))   ^ path_relative_to_dir_containing_executable ;;
+
 let is_some opt =
   match opt with
     | Some (_) -> true

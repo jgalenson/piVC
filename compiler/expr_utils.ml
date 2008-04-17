@@ -357,7 +357,7 @@ let get_index_set exp =
         | EmptyExpr -> []
         | _ -> raise InvalidFormula
     in gai exp
-  in
+  in(*
   let get_guards exp  = 
     (*Returns list with single element of exp if exp is not universally quantified.
       Otherwise, returns an empty list.*)
@@ -393,7 +393,7 @@ let get_index_set exp =
         | _ -> raise InvalidFormula
     in
       gg exp
-  in
+  in*)
     remove_duplicates_from_list (get_array_indices exp (*@ get_guards exp*) @ [Constant(gdl(),ConstInt(gdl(),0))])
     (*We always include 0 in the index set. Technically, 0 needs only be included if the index
       set would be otherwise empty. However, because we don't always have the formula in the

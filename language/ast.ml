@@ -169,22 +169,32 @@ type fnDecl = {
 }
 let create_fnDecl name formals returnType stmtBlock preCondition postCondition location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; location_fd = location;}
 
+type predicate = {
+  predName   : identifier;
+  formals_p  : varDecl list;
+  expr       : expr;
+  location_p : location;
+}
+
 type decl = 
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
+  | Predicate of location * predicate
 
 let varDecl_of_decl decl = match decl with
     VarDecl(loc, vd) -> vd
-  | FnDecl(loc, fd) -> raise (Error "Not a varDecl")
+  | _ -> raise (Error "Not a varDecl")
 
 let name_of_decl decl =
   match decl with
       VarDecl(l, d) -> d.varName.name
     | FnDecl(l, d) -> d.fnName.name
+    | Predicate(l,d) -> d.predName.name
 
 let type_of_decl = function
   | VarDecl (loc, d) -> d.varType
   | FnDecl (loc, d) -> d.returnType
+  | Predicate (loc, p) -> Bool(gdl())
 
 type program = {
   decls : decl list;
@@ -217,6 +227,7 @@ let location_of_decl decl =
   match decl with
       VarDecl(l,d) -> l
     | FnDecl(l,d) -> l
+    | Predicate(l,d) -> l
 
 let location_of_stmt = function
   | Expr (loc, e) -> loc
@@ -403,6 +414,10 @@ let tabbed_string_of_decl d num_tabs = match d with
       ^ (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
       ^ (string_of_stmt d.stmtBlock num_tabs)
+  | Predicate  (loc, d) ->
+      "predicate " ^ string_of_identifier d.predName ^ "("
+      ^ (String.concat ", " (List.map string_of_var_decl d.formals_p)) ^ ") = "
+      ^ (string_of_expr d.expr)
 
 let string_of_decl d = tabbed_string_of_decl d 0 ;;
 	

@@ -1,19 +1,19 @@
 @pre |arr|>=0
-@post (forall a,b. ((0 <= a && a <= b && b < |rv|) -> rv[a]<=rv[b]))
+@post sorted(0,|arr|-1, arr)
 int[] BubbleSort(int[] arr) {
 	for
 	@ (
-             (forall c,d. ((i <= c && c <= d && d < |arr|) -> arr[c]<=arr[d])) &&
+		sorted(i,|arr|-1,arr) &&
 	       ((-1) <=i) && (i < |arr|) &&
- 		 (forall c,d. ((0 <= c && c <= i && i+1 <= d && d < |arr|)-> arr[c]<=arr[d]))
+ 		partitioned(0,i,i+1,|arr|-1,arr)
            )
 	(int i := |arr|-1; i>0; i := i - 1){
 		for
 		@ (	
 			(1 <= i && i < |arr| && 0 <=j && j<=i) &&
-	             (forall c,d. ((i <= c && c <= d && d < |arr|) -> arr[c]<=arr[d])) &&
- 	     	      (forall c,d. ((0 <= c && c <= i && i+1 <= d && d < |arr|)-> arr[c]<=arr[d])) &&
- 		      (forall c,d. ((0 <= c && c <= j-1 && j <= d && d <= j)-> arr[c]<=arr[d]))					
+	              sorted(i,|arr|-1,arr) &&
+ 			partitioned(0,i,i+1,|arr|-1,arr) &&
+ 			partitioned(0,j-1,j,j,arr)
 		    )
 		(int j:=0; j<i; j := j + 1){
 			if (arr[j] > arr[j+1]){
