@@ -9,6 +9,7 @@ type manager =
     { ic : in_channel;
       oc : out_channel;
       fd : Unix.file_descr * Unix.file_descr;
+      pid : int;
     }
 
 let max_man = 32
@@ -31,6 +32,7 @@ let create () =
       { ic = Unix.in_channel_of_descr im;
 	oc = Unix.out_channel_of_descr op;
 	fd = (im, op);
+	pid = pid;
       }
 
 let new_context () =
@@ -76,6 +78,7 @@ let recv i =
 let destroy i m =
   try 
     send i "(exit)";
+    ignore (Unix.waitpid [] m.pid);
     let i, o = m.fd in
       Unix.close i;
       Unix.close o

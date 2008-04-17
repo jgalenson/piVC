@@ -21,7 +21,6 @@ Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
 	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
-	Kill zombie yices processes.
 	Timeouts.
 
 Both
