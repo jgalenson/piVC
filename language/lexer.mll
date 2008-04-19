@@ -127,6 +127,7 @@ rule lang =  parse
   | '}'					 {updateLocation(lexbuf); T_RCurlyBracket}
   | '?'					 {updateLocation(lexbuf); T_QuestionMark}
   | '@'					 {updateLocation(lexbuf); T_Assert}
+  | '#'					 {updateLocation(lexbuf); T_Termination}
   | '|'					 {updateLocation(lexbuf); T_Bar}
   | '%'					 {updateLocation(lexbuf); T_Mod}
   | eof					 {updateLocation(lexbuf); T_EOF}
