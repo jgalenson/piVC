@@ -1,0 +1,18 @@
+@pre x >= 0
+@post x >= 1
+int foo(int x) {
+	x := x + 1;
+	return x;
+}
+
+@pre true
+@post x = 10
+void bar(int x) {
+	int x;
+	x := 0;
+	while
+	@ x >=0 && x <= 10
+	(x < 10) {
+		x := x + 1;
+	}
+}
