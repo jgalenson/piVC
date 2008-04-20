@@ -16,6 +16,7 @@ Jason
 	Bug: fix index set construction for arrays DP
 	Bug: Lots of consecutive array updates kills yices, but old PiVC handles them just fine (see samples/array_updates.pi).
         Bug: replace sub_idents... function with unique identifier as opposed to name
+	Bug: Errors in a call's formals (e.g. invalid identifier as an argument) are reported twice.  I think it's because you call check_formals twice in the second half of call when we've already checked the formals in the middle, but I don't know that second-half code.
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -32,13 +33,11 @@ Both
 Unassigned
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
+	Do we want to handle array counterexamples specially?
 
 -----------------------------
 Proposed High-level timetable
 -----------------------------
-
-Week 1-2
-	Joel: Counter-example generation (see two of Aaron's emails 1/27/2008)(fix bugs, deal with arrays (maybe, see above))
 
 Week 3
 	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).

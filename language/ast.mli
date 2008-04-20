@@ -42,6 +42,8 @@ val create_varDecl : varType -> identifier -> location -> varDecl
 val create_Existential_varDecl : varType -> identifier -> location -> varDecl
 val create_Universal_varDecl : varType -> identifier -> location -> varDecl
 
+val is_integral_type : varType -> bool ;;
+
 (*val set_quantification_on_varDecl_List : varDecl list -> quantification -> unit*)
 
 val string_of_quantification : quantification -> string
@@ -89,8 +91,8 @@ and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt * expr
-  | ForStmt of location * expr * expr * expr * stmt * expr
+  | WhileStmt of location * expr * stmt * expr * expr list option
+  | ForStmt of location * expr * expr * expr * stmt * expr * expr list option
   | BreakStmt of location
   | ReturnStmt of location * expr
   | AssertStmt of location * expr
@@ -104,9 +106,10 @@ type fnDecl = {
   stmtBlock : stmt;
   preCondition : expr;
   postCondition : expr;
+  rankingAnnotation : expr list option;
   location_fd : location;
 }
-val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> location -> fnDecl
+val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> expr list option -> location -> fnDecl
 
 
 type predicate = {

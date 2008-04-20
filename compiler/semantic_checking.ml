@@ -99,7 +99,7 @@ let annotate_ident ident s =
 
 (* CAGRT *)
 	
-let rec check_and_get_return_type_lval is_annotation s lval errors = match lval with
+let rec check_and_get_return_type_lval (is_annotation) s lval errors = match lval with
   | NormLval(loc, id) ->
       annotate_ident id s;
       let lookupResult = Scope_stack.lookup_decl id.name s in
@@ -112,7 +112,7 @@ let rec check_and_get_return_type_lval is_annotation s lval errors = match lval 
       end;
 
   | ArrayLval(loc, arr, index) ->
-      let typeOfIndex = check_and_get_return_type s index errors (is_annotation, false) in
+      let typeOfIndex = check_and_get_return_type s index errors (is_annotation, false, false) in
         begin
           match typeOfIndex with
             | Int(l) -> ()
@@ -120,7 +120,7 @@ let rec check_and_get_return_type_lval is_annotation s lval errors = match lval 
 	        let error_msg = get_non_int_index_error_msg index in
 		  add_error SemanticError error_msg loc errors
         end;
-        let typeOfArray = check_and_get_return_type s arr errors (is_annotation, false) in
+        let typeOfArray = check_and_get_return_type s arr errors (is_annotation, false, false) in
           match typeOfArray with
               Array(t,loc) -> t
             | _ ->
@@ -158,8 +158,13 @@ and check_for_same_type t1 t2 loc errors =
     end
   else
     true
-  
-and check_and_get_return_type scope_stack e errors (is_annotation, is_top_level) =
+
+(* Semantically check an expression.
+   Note that is_ranking_fn is only true if we're in the scope of the original call to this fn from a ranking fn.
+   That is, if we call comething else (e.g. check_lval), it is set to false.
+   This prevents us from throwing multiple errors (e.g. array[0] would given an error that array is of type int[] and not int).
+ *)
+and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
@@ -222,17 +227,17 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_top_level)
 
   and cagrt_full e (is_top_level) = match e with
     | Assign (loc,l,e) ->
-	if is_annotation then
+	if (is_annotation || is_ranking_fn) then
 	  begin
 	    let error_msg = "Assign expr inside an annotation." in
             add_error SemanticError error_msg loc errors
-	  end	
+	  end
 	else if (not is_top_level) then
 	  begin
 	    let error_msg = "Assign expr not at the root of a statement." in
             add_error SemanticError error_msg loc errors
 	  end;
-	let lhsType = check_and_get_return_type_lval is_annotation scope_stack l errors in
+	let lhsType = check_and_get_return_type_lval (is_annotation) scope_stack l errors in
         let rhsType = cagrt e in
 	ignore (check_for_same_type lhsType rhsType loc errors);
         lhsType
@@ -243,7 +248,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_top_level)
 	  | ConstFloat (l, f) -> Float (loc)
 	  | ConstBool (l, b) -> Bool (loc)
 	end
-    | LValue (loc,l) -> check_and_get_return_type_lval is_annotation scope_stack l errors
+    | LValue (loc,l) -> check_and_get_return_type_lval (is_annotation) scope_stack l errors
     | Call (loc, ident, ac) -> (* TODO: Check this more? *)
         begin
           let word = match is_annotation with
@@ -364,16 +369,31 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_top_level)
     | EmptyExpr -> Void (Ast.get_dummy_location ())
   and cagrt e = cagrt_full e (false)
   in
-  cagrt_full e (is_top_level)
+    
+  let my_type = cagrt_full e (is_top_level) in
+  if (is_ranking_fn && not (Ast.is_integral_type my_type)) then
+    begin
+      let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
+      add_error SemanticError error_msg (location_of_expr e) errors;
+    end;
+  my_type ;;
+
+let check_ranking_annotation ra scope_stack errors = match ra with
+    Some (expr) ->
+      let check_ranking_expr e =
+	ignore (check_and_get_return_type scope_stack e errors (false, true, true))
+      in
+      List.iter check_ranking_expr expr
+  | None -> () ;;
 
 let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
   match stmt with
-    Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (false, true))
+    Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (false, false, true))
 
   | VarDeclStmt(loc,d) -> (insert_decl scope_stack errors (VarDecl(loc,d))) 
 
   | IfStmt (loc, test, then_block, else_block) ->
-      let testType = check_and_get_return_type scope_stack test errors (false, true) in
+      let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
 	begin
 	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
@@ -382,9 +402,10 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
       check_stmt scope_stack returnType errors (is_in_loop) then_block;
       check_stmt scope_stack returnType errors (is_in_loop) else_block;
 
-  | WhileStmt (loc, test, block, annotation) -> 
-      ignore (check_and_get_return_type scope_stack annotation errors (true, true));
-      let testType = check_and_get_return_type scope_stack test errors (false, true) in
+  | WhileStmt (loc, test, block, annotation, ra) -> 
+      ignore (check_and_get_return_type scope_stack annotation errors (true, false, true));
+      check_ranking_annotation ra scope_stack errors;
+      let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
 	begin
 	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
@@ -392,16 +413,17 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 	end;
       check_stmt scope_stack returnType errors (true) block;
       
-  | ForStmt (loc, init, test, incr, block, annotation) ->
-      ignore (check_and_get_return_type scope_stack annotation errors (true, true));
-      ignore (check_and_get_return_type scope_stack init errors (false, true));
-      let testType = check_and_get_return_type scope_stack test errors (false, true) in
+  | ForStmt (loc, init, test, incr, block, annotation, ra) ->
+      ignore (check_and_get_return_type scope_stack annotation errors (true, false, true));
+      check_ranking_annotation ra scope_stack errors;      
+      ignore (check_and_get_return_type scope_stack init errors (false, false, true));
+      let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
 	begin
 	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	  add_error SemanticError error_msg loc errors;
 	end;
-      ignore (check_and_get_return_type scope_stack incr errors (false, true));
+      ignore (check_and_get_return_type scope_stack incr errors (false, false, true));
       check_stmt scope_stack returnType errors (true) block;
       
   | BreakStmt (loc) ->
@@ -411,12 +433,12 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
           add_error SemanticError error_msg loc errors
 	end
 
-  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e errors (false, true)) in
+  | ReturnStmt(loc,e) ->  let type_of_return = (check_and_get_return_type scope_stack e errors (false, false, true)) in
                           if not (types_equal type_of_return returnType) then
 			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
                             add_error SemanticError error_msg  loc errors
 
-  | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (true, true))
+  | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (true, false, true))
 
   | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
                       List.iter (check_stmt scope_stack returnType errors (is_in_loop)) st;
@@ -454,7 +476,8 @@ let ensure_function_returns f =
 let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
-  ignore (check_and_get_return_type s func.preCondition errors (true, true));
+  ignore (check_and_get_return_type s func.preCondition errors (true, false, true));
+  check_ranking_annotation func.rankingAnnotation s errors;
 
 
   Scope_stack.enter_scope s;
@@ -464,7 +487,7 @@ let check_function func s errors =
       Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
   end;
   (*add rv to scope*)
-  ignore (check_and_get_return_type s func.postCondition errors (true, true));
+  ignore (check_and_get_return_type s func.postCondition errors (true, false, true));
   Scope_stack.exit_scope s;
 
 
@@ -477,7 +500,7 @@ let check_function func s errors =
 let check_predicate pred s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors pred.formals_p;
-  let pred_type = check_and_get_return_type s pred.expr errors (true, true) in
+  let pred_type = check_and_get_return_type s pred.expr errors (true, false, true) in
     begin
       match pred_type with
           Bool(loc) -> ignore ()

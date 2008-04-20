@@ -233,8 +233,8 @@ Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_sta
 Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
 
 
-FnDecl    : OptionalTermination T_Pre Annotation T_Post Annotation Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $7 $9 $6 $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) (loc 1 11) }
-          | OptionalTermination T_Pre Annotation T_Post Annotation T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $7 $9 (Ast.Void (loc 5 5)) $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) (loc 1 11) }
+FnDecl    : OptionalTermination T_Pre Annotation T_Post Annotation Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $7 $9 $6 $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
+          | OptionalTermination T_Pre Annotation T_Post Annotation T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $7 $9 (Ast.Void (loc 5 5)) $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
           ;
 
 Predicate : T_Predicate Identifier T_LParen FormalsOrEmpty T_RParen T_Assign Expr T_Semicolon { {predName=$2;formals_p=$4;expr=(expr_from_temp_expr false $7);location_p=(loc 1 7)} }
@@ -293,7 +293,7 @@ IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.I
 
 WhileStmt  : T_While OptionalTermination T_Assert Annotation Stmt {
                let condition = List.nth (snd (condition_from_temp_expr $4)) 0 in
-               Ast.WhileStmt ( loc 1 5, (condition), condense_stmt_list $5, expr_from_temp_expr true $4)
+               Ast.WhileStmt ( loc 1 5, (condition), condense_stmt_list $5, expr_from_temp_expr true $4, $2)
 	   }
 
 ;
@@ -301,7 +301,7 @@ WhileStmt  : T_While OptionalTermination T_Assert Annotation Stmt {
 ForStmt    : T_For OptionalTermination T_Assert Annotation Stmt {
                let assign_stmt_and_for_components = condition_from_temp_expr $4 in
                let for_components = snd assign_stmt_and_for_components in
-               let for_stmt = Ast.ForStmt ( loc 1 5, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $5, expr_from_temp_expr true $4) in
+               let for_stmt = Ast.ForStmt ( loc 1 5, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $5, expr_from_temp_expr true $4, $2) in
                let assign_stmt = fst assign_stmt_and_for_components in
                  match assign_stmt with
                      None -> for_stmt
@@ -309,8 +309,13 @@ ForStmt    : T_For OptionalTermination T_Assert Annotation Stmt {
 }
 ;
 
-OptionalTermination : T_Termination Expr {Some(expr_from_temp_expr false $2)}
+OptionalTermination : T_Termination T_LParen TerminationArgs T_RParen {Some ($3)}
                     | {None}
+		    ;
+
+TerminationArgs   : Expr                    { [expr_from_temp_expr false $1] }
+                  | TerminationArgs T_Comma Expr    { $1 @ [expr_from_temp_expr false $3] }
+                  ;			
 
 ReturnStmt : T_Return OptionalExpr T_Semicolon {Ast.ReturnStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), expr_from_temp_expr false $2) }
 ;

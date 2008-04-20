@@ -60,6 +60,11 @@ let create_varDecl t name location = {varType=t; varName=name; location_vd=locat
 let create_Existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential;}
 let create_Universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal;}
 
+let is_integral_type t = match t with
+  | Int (loc) -> true
+  | ErrorType -> true
+  | _ -> false ;;
+  
 (*let set_quantification_on_varDecl_List vd_list quant = 
   let set_quantification_on_varDecl vd = 
     vd.quant := quant
@@ -147,8 +152,8 @@ and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt * expr
-  | ForStmt of location * expr * expr * expr * stmt * expr
+  | WhileStmt of location * expr * stmt * expr * expr list option
+  | ForStmt of location * expr * expr * expr * stmt * expr * expr list option
   | BreakStmt of location
   | ReturnStmt of location * expr
   | AssertStmt of location * expr
@@ -165,9 +170,10 @@ type fnDecl = {
   stmtBlock     : stmt;
   preCondition  : expr;
   postCondition : expr;
+  rankingAnnotation : expr list option;
   location_fd   : location;
 }
-let create_fnDecl name formals returnType stmtBlock preCondition postCondition location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; location_fd = location;}
+let create_fnDecl name formals returnType stmtBlock preCondition postCondition rankingAnnotation location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; rankingAnnotation = rankingAnnotation; location_fd = location;}
 
 type predicate = {
   predName   : identifier;
@@ -233,8 +239,8 @@ let location_of_stmt = function
   | Expr (loc, e) -> loc
   | VarDeclStmt (loc, d) -> loc
   | IfStmt (loc, e, s1, s2) -> loc
-  | WhileStmt (loc, e1, s, e2) -> loc
-  | ForStmt (loc, e1, e2, e3, s, e4) -> loc
+  | WhileStmt (loc, e1, s, e2, ra) -> loc
+  | ForStmt (loc, e1, e2, e3, s, e4, ra) -> loc
   | BreakStmt (loc) -> loc
   | ReturnStmt (loc, e) -> loc
   | AssertStmt (loc, e) -> loc
@@ -362,8 +368,19 @@ and string_of_expr e =
   soe e
 
 let string_of_var_decl d =
-  (string_of_type d.varType) ^ " " ^ string_of_identifier d.varName
-			     
+  (string_of_type d.varType) ^ " " ^ string_of_identifier d.varName ;;
+
+let string_of_ranking_annotation ra num_tabs = 
+  let soa ra =
+    let string_of_annotation prev a =
+      (if (prev = "(") then prev else prev ^ ", ") ^ (string_of_expr a)
+    in
+    (List.fold_left string_of_annotation "(" ra) ^ ")"
+  in
+  match ra with
+    | Some (a) -> (insert_tabs num_tabs) ^ "#" ^ (soa a) ^ "\n"
+    | None -> "" ;;
+
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
   let ins_tabs n = insert_tabs (num_tabs + n) in
@@ -377,14 +394,14 @@ let rec string_of_stmt s num_tabs =
 	in
 	"if (" ^ (soe test) ^ ") "
 	^ (sos then_block) ^ (else_part else_block)
-    | WhileStmt (loc, test, block, annotation) ->
+    | WhileStmt (loc, test, block, annotation, ra) ->
 	"while\n"
-	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (ins_tabs 1)
-	^ "(" ^ (soe test) ^ ") " ^ (sos block)
-    | ForStmt (loc, init, test, incr, block, annotation) ->
+	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (string_of_ranking_annotation ra (num_tabs+1))
+	 ^ (ins_tabs 1) ^ "(" ^ (soe test) ^ ") " ^ (sos block)
+    | ForStmt (loc, init, test, incr, block, annotation, ra) ->
 	"for\n"
-	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (ins_tabs 1)
-	^ "(" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
+	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (string_of_ranking_annotation ra (num_tabs+1))
+	^ (ins_tabs 1) ^ "(" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
 	^ (soe incr) ^ ") " ^ (sos block)
     | BreakStmt loc -> "break;"
     | ReturnStmt (loc, t) ->
@@ -411,6 +428,7 @@ let tabbed_string_of_decl d num_tabs = match d with
       (string_of_var_decl d) ^ ";"
   | FnDecl  (loc, d) ->
       "@pre " ^ (string_of_expr d.preCondition) ^ "\n@post " ^ (string_of_expr d.postCondition) ^ "\n"
+      ^ (string_of_ranking_annotation d.rankingAnnotation 0)
       ^ (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "
       ^ (string_of_stmt d.stmtBlock num_tabs)
