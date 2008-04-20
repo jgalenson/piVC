@@ -10,7 +10,7 @@ public class Config {
 	//be purged from the config file upon program startup,
 	//and an error will be thrown when that key's value is requested or set.
 	private static final String[][] DEFAULTS = 	{
-								{"server_address","127.0.1.1:4242"},
+								{"server_address","127.0.0.1:4242"},
 								{"pi_files_location","."}
 							};
 	
