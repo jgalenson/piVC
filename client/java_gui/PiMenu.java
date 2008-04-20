@@ -12,16 +12,14 @@ import javax.swing.undo.UndoManager;
 public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	
 	private PiGui piGui;
-	private Config config;
 	private JMenuItem save;
 	private JMenuItem undo, redo;
 	private JMenuItem displayPath;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	
-	public PiMenu(PiGui piGui, Config config) {
+	public PiMenu(PiGui piGui) {
 		super();
 		this.piGui = piGui;
-		this.config = config;
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
 		addEditMenu();
@@ -161,9 +159,8 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		serverAddress.setMnemonic(KeyEvent.VK_S);
 		serverAddress.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String result = JOptionPane.showInputDialog("New server host:port", config.getValue("default_server_address"));
-				config.setValue("default_server_address", result);
-				config.writeOutConfig();
+				String result = JOptionPane.showInputDialog("New server host:port", Config.getValue("server_address"));
+				Config.setValue("server_address", result);
 			}
 		});
 		settingsMenu.add(serverAddress);

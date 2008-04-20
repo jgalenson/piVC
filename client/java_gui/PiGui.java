@@ -37,7 +37,6 @@ public class PiGui extends JFrame {
 	private PiTree piTree;
 	private PiMenu piMenu;
 	private JTabbedPane rightTabbedPane;
-	private Config config;
 	private ServerResponseParser serverResponseParser;
 	private JFileChooser fileChooser;
 	private File curFile;
@@ -63,6 +62,7 @@ public class PiGui extends JFrame {
 	}
 
 	public static void main(String[] args) {
+		Config.initConfig();
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				new PiGui();
@@ -83,6 +83,7 @@ public class PiGui extends JFrame {
 		}
 		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             curFile = fileChooser.getSelectedFile();
+			setDefaultPiFilesLocation(curFile);
 			loadFile(curFile);
 			filenameChanged();
 		}
@@ -103,10 +104,23 @@ public class PiGui extends JFrame {
 	 * Saves a file after prompting the user for the name.
 	 */
 	public void saveAs () {
-		if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION)
-			saveFile(fileChooser.getSelectedFile());
+		if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION){
+			File f = fileChooser.getSelectedFile();
+			setDefaultPiFilesLocation(f);
+			saveFile(f);
+		}
 	}
 
+	private void setDefaultPiFilesLocation(File f){
+		String fStr = null; 
+		try {
+			fStr = f.getParentFile().getCanonicalPath();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		Config.setValue("pi_files_location", fStr);		
+	}
+	
 	/**
 	 * Cleanup and exit the program.  We prompt the user
 	 * to save first if it is dirty.
@@ -242,7 +256,7 @@ public class PiGui extends JFrame {
 		
 		@Override
 		public void run() {
-			String result = config.getValue("default_server_address");
+			String result = Config.getValue("default_server_address");
 			if (result != null) {
 				String[] parts = result.split(":");
 				String name = parts[0].trim();
@@ -393,7 +407,6 @@ public class PiGui extends JFrame {
 	 * Inits some data before we install the GUI elements. 
 	 */
 	private void initDataPre() {
-		config = new Config();
 		serverResponseParser = new ServerResponseParser(this);
 		initFileChooser();
 		curFile = null;
@@ -413,8 +426,8 @@ public class PiGui extends JFrame {
 	 */
 	private void initFileChooser() {
 		try {
-			fileChooser = new JFileChooser(new File(".").getCanonicalPath());
-		} catch (IOException ex) {
+			fileChooser = new JFileChooser(new File(Config.getValue("pi_files_location")).getCanonicalPath());
+		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 		fileChooser.addChoosableFileFilter(new PiFileFilter());
@@ -469,7 +482,7 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		piMenu = new PiMenu(this, config);
+		piMenu = new PiMenu(this);
 		setJMenuBar(piMenu);
 	}
 	
