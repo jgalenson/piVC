@@ -99,7 +99,7 @@ let annotate_ident ident s =
 
 (* CAGRT *)
 	
-let rec check_and_get_return_type_lval (is_annotation) s lval errors = match lval with
+let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval errors = match lval with
   | NormLval(loc, id) ->
       annotate_ident id s;
       let lookupResult = Scope_stack.lookup_decl id.name s in
@@ -112,7 +112,7 @@ let rec check_and_get_return_type_lval (is_annotation) s lval errors = match lva
       end;
 
   | ArrayLval(loc, arr, index) ->
-      let typeOfIndex = check_and_get_return_type s index errors (is_annotation, false, false) in
+      let typeOfIndex = check_and_get_return_type s index errors (is_annotation, is_ranking_fn, false) in
         begin
           match typeOfIndex with
             | Int(l) -> ()
@@ -120,7 +120,7 @@ let rec check_and_get_return_type_lval (is_annotation) s lval errors = match lva
 	        let error_msg = get_non_int_index_error_msg index in
 		  add_error SemanticError error_msg loc errors
         end;
-        let typeOfArray = check_and_get_return_type s arr errors (is_annotation, false, false) in
+        let typeOfArray = check_and_get_return_type s arr errors (is_annotation, is_ranking_fn, false) in
           match typeOfArray with
               Array(t,loc) -> t
             | _ ->
@@ -159,11 +159,6 @@ and check_for_same_type t1 t2 loc errors =
   else
     true
 
-(* Semantically check an expression.
-   Note that is_ranking_fn is only true if we're in the scope of the original call to this fn from a ranking fn.
-   That is, if we call comething else (e.g. check_lval), it is set to false.
-   This prevents us from throwing multiple errors (e.g. array[0] would given an error that array is of type int[] and not int).
- *)
 and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
   let rec check_and_get_return_type_relational loc t1 t2 =
@@ -237,7 +232,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	    let error_msg = "Assign expr not at the root of a statement." in
             add_error SemanticError error_msg loc errors
 	  end;
-	let lhsType = check_and_get_return_type_lval (is_annotation) scope_stack l errors in
+	let lhsType = check_and_get_return_type_lval (is_annotation, is_ranking_fn) scope_stack l errors in
         let rhsType = cagrt e in
 	ignore (check_for_same_type lhsType rhsType loc errors);
         lhsType
@@ -248,7 +243,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	  | ConstFloat (l, f) -> Float (loc)
 	  | ConstBool (l, b) -> Bool (loc)
 	end
-    | LValue (loc,l) -> check_and_get_return_type_lval (is_annotation) scope_stack l errors
+    | LValue (loc,l) -> check_and_get_return_type_lval (is_annotation, is_ranking_fn) scope_stack l errors
     | Call (loc, ident, ac) -> (* TODO: Check this more? *)
         begin
           let word = match is_annotation with
@@ -369,19 +364,17 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
     | EmptyExpr -> Void (Ast.get_dummy_location ())
   and cagrt e = cagrt_full e (false)
   in
-    
-  let my_type = cagrt_full e (is_top_level) in
-  if (is_ranking_fn && not (Ast.is_integral_type my_type)) then
-    begin
-      let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
-      add_error SemanticError error_msg (location_of_expr e) errors;
-    end;
-  my_type ;;
+  cagrt_full e (is_top_level) ;;
 
 let check_ranking_annotation ra scope_stack errors = match ra with
     Some (expr) ->
       let check_ranking_expr e =
-	ignore (check_and_get_return_type scope_stack e errors (false, true, true))
+	let my_type = check_and_get_return_type scope_stack e errors (false, true, true) in
+	if not (Ast.is_integral_type my_type) then
+	  begin
+	    let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
+            add_error SemanticError error_msg (location_of_expr e) errors;
+	  end;
       in
       List.iter check_ranking_expr expr
   | None -> () ;;
