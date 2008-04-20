@@ -1,11 +1,9 @@
 import java.awt.Color;
-import java.awt.Font;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
-import javax.swing.JTextArea;
-import javax.swing.JTextPane;
+
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
@@ -19,13 +17,10 @@ import data_structures.Location;
 /**
  * A class for the code section on the left-hand side.
  */
-public class PiCode extends JTextArea implements DocumentListener, DirtyChangedListener {
+public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
 
 	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 	public static DefaultHighlighter.DefaultHighlightPainter redHP = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
-	
-	private static final int TAB_SIZE = 2;
-	private static final Font DEFAULT_FONT = new JTextPane().getFont();
 	
 	private PiGui piGui;
 	private boolean justLoaded;
@@ -38,8 +33,6 @@ public class PiCode extends JTextArea implements DocumentListener, DirtyChangedL
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
 		addUndoableEditListener();
-		setTabSize(TAB_SIZE);
-		setFont(DEFAULT_FONT);
 	}
 	
 	/**
@@ -58,8 +51,11 @@ public class PiCode extends JTextArea implements DocumentListener, DirtyChangedL
 	private void addUndoableEditListener() {
 		getDocument().addUndoableEditListener(new UndoableEditListener() {
 		    public void undoableEditHappened(UndoableEditEvent e) {
-		        undo.addEdit(e.getEdit());
-		        piGui.undoChangeHappened(undo);
+		    	//style changes are done automatically by the text pane. it doesn't make sense to undo them
+		    	if(!e.getEdit().getPresentationName().equals("style change")){
+		    		undo.addEdit(e.getEdit());
+		    		piGui.undoChangeHappened(undo);
+		    	}
 		    }
 		});
 	}
@@ -137,8 +133,6 @@ public class PiCode extends JTextArea implements DocumentListener, DirtyChangedL
 		removeAllHighlights();
 		undo.discardAllEdits();
 		piGui.undoChangeHappened(undo);
-		addUndoableEditListener();
-		setTabSize(TAB_SIZE);
 	}
 
 	/**
