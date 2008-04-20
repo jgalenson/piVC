@@ -27,42 +27,38 @@ Joel
 	Timeouts.
 
 Both
-	Figure out whether counterexamples need to deal with arrays (test by verifying real programs).
-	Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
 	Figure out how to display VCs in the GUI.
 		One idea: pretty-print the VC (using http://caml.inria.fr/resources/doc/guides/format.html perhaps?) and put in the GUI tree on multiple lines (e.g. by conjuncts).
 
 Unassigned
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
-	Do we want to handle array counterexamples specially?
 
 -----------------------------
 Proposed High-level timetable
 -----------------------------
 
-Week 3
-	Jason: Figure out how to deal with predicates (sorted, partitioned, etc.)(and user-defined definitions file).
-	Have the gui send its code to the server in xml and have the server parse that xml.
-	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
-
 Week 4
 	Jason: semantically check assertions
-	Jason: Run-time assertions
+	Joel: Run-time assertions
+		Have the gui send its code to the server in xml and have the server parse that xml.
+	Jason: Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
+	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 5
-	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
+	Jason: Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
 	Joel: Proof of termination (see Aaron's original PiVC email)
 
 Week 6
-	At least one of hashtables, sets, multisets (see Aaron's email 12/6/07)
+	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
 
 Week 7
 	Joel: Static analysis API
-	Jason: Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
+	At least one of hashtables, sets, multisets (see Aaron's email 12/6/07)
 
 Week 8
 	Both: Fully-working version, only polishing is necessary
+	Jason: Email stuff.
 
 Week 9
 	Convert to C++ and run.
@@ -75,5 +71,4 @@ Week 10
 Possible later TODOs
 --------------------
 
-Syntax highlighting in GUI.
 Auto-indent in GUI (especially for assertions).
