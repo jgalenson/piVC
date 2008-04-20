@@ -22,15 +22,15 @@ public class Config {
 		if(isValidKey(key)){
 			return settings.get(key);
 		}else{
-			throw new RuntimeException("Invalid key. Every key needs to be included in the defaults list.");
+			throw new RuntimeException("Invalid key: "+key+". Every key needs to be included in the defaults list.");
 		}
 	}
 	
 	public static void setValue(String key, String newValue){
 		if(!isValidKey(key)){
-			throw new RuntimeException("Invalid key. Every key needs to be included in the defaults list.");
+			throw new RuntimeException("Invalid key: "+key+". Every key needs to be included in the defaults list.");
 		}else if(newValue.indexOf('=')!=-1 || newValue.indexOf('\n')!=-1 || newValue.indexOf('\r')!=-1){
-			throw new RuntimeException("Invalid value. Values cannot have an equals signs or line seperators.");			
+			throw new RuntimeException("Invalid value: "+newValue+". Values cannot have an equals signs or line seperators.");			
 		}
 		else{
 			settings.put(key, newValue);

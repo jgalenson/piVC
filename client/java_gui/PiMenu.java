@@ -160,7 +160,9 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		serverAddress.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String result = JOptionPane.showInputDialog("New server host:port", Config.getValue("server_address"));
-				Config.setValue("server_address", result);
+				if(result!=null){
+					Config.setValue("server_address", result);
+				}
 			}
 		});
 		settingsMenu.add(serverAddress);

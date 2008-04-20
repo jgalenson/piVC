@@ -256,7 +256,7 @@ public class PiGui extends JFrame {
 		
 		@Override
 		public void run() {
-			String result = Config.getValue("default_server_address");
+			String result = Config.getValue("server_address");
 			if (result != null) {
 				String[] parts = result.split(":");
 				String name = parts[0].trim();
