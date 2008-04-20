@@ -334,14 +334,14 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
 
     @Override
 	public void read(Reader in, Object desc) throws IOException {
+    	BufferedReader bufRead = (BufferedReader)in;
     	try {
     		String text = "";
     		while(true){
-    			int c = in.read();
-    			if(c==-1){
+    			String line = bufRead.readLine();
+    			if (line == null)
     				break;
-    			}
-    			text+=(char)c;
+    			text += line + "\n";
     		}
 			document.setString(text, getStyleNew("text"));
 		} catch (Exception e) {
