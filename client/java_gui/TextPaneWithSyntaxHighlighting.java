@@ -17,10 +17,8 @@
  
 
 import java.awt.*;
-import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import javax.swing.event.*;
 
 import java.io.*;
 import java.util.*;
@@ -31,6 +29,7 @@ import com.Ostermiller.Syntax.Lexer.*;
  * A <a href="http://ostermiller.org/syntax/editor.html">demonstration text editor</a>
  * that uses syntax highlighting.
  */
+@SuppressWarnings("unchecked")
 public class TextPaneWithSyntaxHighlighting extends JTextPane {
 	
 	private static final int TAB_SIZE = 4;	
