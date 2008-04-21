@@ -5,6 +5,8 @@ open Semantic_checking
 open Server_framework
 open Net_utils
 
+exception InvalidXml of string ;;
+
 (*
  * Code for the main server.
  * Gets input from a client, builds bps and vcs,
@@ -20,9 +22,50 @@ let rec compile vc_cache_and_lock ic oc =
     List.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
     Buffer.contents buf
   in*)
+
+  (* Parse the xml we get from the client. *)
+  let parse_xml xml_str =
+    (* Replace bad characters, including \r. *)
+    let replace_bad_chars str = 
+      let str1 = Str.global_replace (Str.regexp "&amp;") "&" str in
+      let str2 = Str.global_replace (Str.regexp "&lt;") "<" str1 in
+      let str3 = Str.global_replace (Str.regexp "&gt;") ">" str2 in
+      let str4 = Str.global_replace (Str.regexp "&apos;") "'" str3 in
+      let str5 = Str.global_replace (Str.regexp "&quot;") "\"" str4 in
+      (* The following line strips out \rs.... *)
+      let str6 = Str.global_replace (Str.regexp "&#13;") "" str5 in
+      str6
+    in
+    (* Ensure the xml we got from the client has a valid root tag. *)
+    let check_xml xml =
+      assert (Xml.tag xml = "piVC_transmission");
+      try
+	assert (Xml.attrib xml "type" = "program_submission_request");
+      with _ -> raise (InvalidXml "No type attribute in xml from client.");
+    in
+    (* Gets the child node named tag from the node xml. *)
+    let get_child_node tag xml =
+      try
+	List.find (function n -> Xml.tag n = tag) (Xml.children xml)
+      with _ -> raise (InvalidXml ("No " ^ tag ^ " tag in xml from client."))
+    in
+    (* Gets the text from a text node.
+       We assume a text node has one child, which is its text. *)
+    let get_text_from_text_node node =
+      let text = Xml.pcdata (List.hd (Xml.children node)) in
+      replace_bad_chars text
+    in
+    let xml = Xml.parse_string xml_str in
+    check_xml xml;
+    let code_node = get_child_node "code" xml in
+    let code = get_text_from_text_node code_node in
+    (code)
+  in
+  
   begin
     try    
-      let code = get_input ic in
+      let xml_str = get_input ic in
+      let (code) = parse_xml xml_str in
         (* print_endline code; *)
       let (program, errors) = Parse_utils.parse_strings [("user-file", code)] in
         

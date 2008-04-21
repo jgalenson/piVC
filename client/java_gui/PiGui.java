@@ -13,12 +13,23 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.undo.UndoManager;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import data_structures.BasicPath;
 import data_structures.PiError;
@@ -264,8 +275,9 @@ public class PiGui extends JFrame {
 				try {
 					Socket toServer = new Socket(name, port);
 					DataOutputStream out = new DataOutputStream(toServer.getOutputStream());
-					out.writeInt(code.length());
-					out.writeBytes(code);
+					String xmlString = createXmlString();
+					out.writeInt(xmlString.length());
+					out.writeBytes(xmlString);
 					out.flush();
 					DataInputStream in = new DataInputStream(toServer.getInputStream());
 					int len = in.readInt();
@@ -284,6 +296,34 @@ public class PiGui extends JFrame {
 					ex.printStackTrace();
 				}
 			}			
+		}
+		
+		// http://www.genedavis.com/library/xml/java_dom_xml_creation.jsp
+		private String createXmlString() {
+            DocumentBuilder docBuilder;
+			try {
+				// Build the xml node.
+				docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+	            Document doc = docBuilder.newDocument();
+	            Element rootNode = doc.createElement("piVC_transmission");
+	            rootNode.setAttribute("type", "program_submission_request");
+	            doc.appendChild(rootNode);
+	            Element codeNode = doc.createElement("code");
+	            codeNode.setTextContent(code);
+	            rootNode.appendChild(codeNode);
+	            
+	            // Convert the node into a string
+	            Transformer trans = TransformerFactory.newInstance().newTransformer();
+	            trans.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+	            trans.setOutputProperty(OutputKeys.INDENT, "yes");
+	            StringWriter sw = new StringWriter();
+	            trans.transform(new DOMSource(doc), new StreamResult(sw));
+	            return sw.toString();
+			} catch (Exception e) {
+				e.printStackTrace();
+				JOptionPane.showMessageDialog(null, e.getMessage(), "XML building error error", JOptionPane.ERROR_MESSAGE);
+				throw new RuntimeException("Xml building error: " + e.getMessage());
+			}
 		}
 	}
 

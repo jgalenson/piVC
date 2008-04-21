@@ -31,6 +31,7 @@ Both
 		One idea: pretty-print the VC (using http://caml.inria.fr/resources/doc/guides/format.html perhaps?) and put in the GUI tree on multiple lines (e.g. by conjuncts).
 
 Unassigned
+	Disallow updates to parameters.
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
 
@@ -40,9 +41,8 @@ Proposed High-level timetable
 
 Week 4
 	Jason: semantically check assertions
-	Joel: Run-time assertions
-		Have the gui send its code to the server in xml and have the server parse that xml.
 	Jason: Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
+	Joel: Run-time assertions
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 5
