@@ -25,16 +25,9 @@ let rec compile vc_cache_and_lock ic oc =
 
   (* Parse the xml we get from the client. *)
   let parse_xml xml_str =
-    (* Replace bad characters, including \r. *)
+    (* Replace \rs. *)
     let replace_bad_chars str = 
-      let str1 = Str.global_replace (Str.regexp "&amp;") "&" str in
-      let str2 = Str.global_replace (Str.regexp "&lt;") "<" str1 in
-      let str3 = Str.global_replace (Str.regexp "&gt;") ">" str2 in
-      let str4 = Str.global_replace (Str.regexp "&apos;") "'" str3 in
-      let str5 = Str.global_replace (Str.regexp "&quot;") "\"" str4 in
-      (* The following line strips out \rs.... *)
-      let str6 = Str.global_replace (Str.regexp "&#13;") "" str5 in
-      str6
+      Str.global_replace (Str.regexp "&#13;") "" str
     in
     (* Ensure the xml we got from the client has a valid root tag. *)
     let check_xml xml =
