@@ -1,4 +1,4 @@
-@pre |arr|>=0
+@pre true
 @post sorted(0,|arr|-1, arr)
 int[] BubbleSort(int[] arr) {
 	for

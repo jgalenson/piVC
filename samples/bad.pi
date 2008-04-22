@@ -1,28 +1,5 @@
-int global;
-int globalb;
+@pre true
+@post true
+bool simpleFunction(){
 
-@pre true
-@post true
-void simpleFunction(){
-    int globalc;
-    int globald;
-    {
-        int globale;
-        int globalf;
-    }
-    globaldsf = 5+3;
-    int yepg;
-    int yeph;
-}
-@pre true
-@post true
-void func2(){
-}
-@pre true
-@post true
-void globalfunc(){
-}
-@pre true
-@post true
-float jason(){
 }

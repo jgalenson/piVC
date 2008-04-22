@@ -20,7 +20,7 @@ let convert_basic_path_to_acceptable_form path =
         Length(loc,exp) -> 
           begin
             let ident = identifier_of_array_expr exp in
-            let new_ident = Ast.create_identifier ("|" ^ ident.name ^ "|") (gdl()) in
+            let new_ident = Ast.create_length_identifier ("|" ^ ident.name ^ "|") (gdl()) in
             let vd = Ast.create_varDecl (Int(gdl())) new_ident (gdl()) in
               vd.var_id := Some("_length_"^id_of_identifier ident);
               new_ident.decl := Some(vd);
@@ -107,6 +107,48 @@ let convert_basic_path_to_acceptable_form path =
   in
     glo path
         
+let add_array_length_greater_than_0_to_expr expr = 
+  let rec gl exp =
+    match exp with
+    | Assign (loc,l, e) -> assert(false)
+    | Constant (loc,c) -> []
+    | LValue (loc,l) ->
+        begin
+          match l with
+              NormLval(loc,ident) -> if ident.is_length then [exp] else []
+            | ArrayLval(loc,exp1,exp2) -> []
+        end
+    | Call (loc,s, el) -> assert(false)
+    | Plus (loc,t1, t2) -> gl t1 @ gl t2
+    | Minus (loc,t1, t2) -> gl t1 @ gl t2
+    | Times (loc,t1, t2) -> gl t1 @ gl t2
+    | Div (loc,t1, t2) -> gl t1 @ gl t2
+    | IDiv (loc,t1, t2) -> gl t1 @ gl t2
+    | Mod (loc,t1, t2) -> gl t1 @ gl t2
+    | UMinus (loc,t) -> gl t
+    | ForAll (loc,decls,e) -> gl e
+    | Exists (loc,decls,e) -> gl e
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> []
+    | LT (loc,t1, t2) -> gl t1 @ gl t2
+    | LE (loc,t1, t2) -> gl t1 @ gl t2
+    | GT (loc,t1, t2) -> gl t1 @ gl t2
+    | GE (loc,t1, t2) -> gl t1 @ gl t2
+    | EQ (loc,t1, t2) -> gl t1 @ gl t2
+    | NE (loc,t1, t2) -> gl t1 @ gl t2
+    | And (loc,t1, t2) -> gl t1 @ gl t2
+    | Or (loc,t1, t2) -> gl t1 @ gl t2
+    | Not (loc,t) -> gl t
+    | Length (loc, t) -> assert(false)
+    | Iff (loc,t1, t2) -> gl t1 @ gl t2
+    | Implies (loc,t1, t2) -> gl t1 @ gl t2
+    | EmptyExpr -> []
+  in
+  let geq_0_expr_of_expr expr = Not(gdl(),LT(gdl(),expr,Constant(gdl(),ConstInt(gdl(),0)))) in
+  let all_geq_0_exprs = conjuncts_of_exprs (List.map geq_0_expr_of_expr (Expr_utils.remove_duplicates_from_list (gl expr))) in
+    match all_geq_0_exprs with
+        EmptyExpr -> expr
+      | _ -> Implies(gdl(),all_geq_0_exprs,expr)
+      
 
 (* Gets a VC out of a basic path.
    Returns the VC as an Ast.Expr. *)

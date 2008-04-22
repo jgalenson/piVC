@@ -144,7 +144,7 @@ let change_quantifier old_decls old_expr new_quant =
   in
   let new_decls = List.map old_decl_to_new_decl old_decls in
   let new_decl_to_replacement_pair new_decl = 
-    (new_decl.varName.name,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl))})))
+    (new_decl.varName.name,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl)); is_length = false;})))
   in
   let replacement_pairs = List.map new_decl_to_replacement_pair new_decls in
   let new_expr = sub_idents_in_expr old_expr replacement_pairs in
@@ -267,6 +267,16 @@ let guaranteed_unique_string_of_expr e =
     | EmptyExpr  -> ""
   in
   soe e
+
+
+let conjuncts_of_exprs exprs = 
+  let rec coe exprs = 
+    match List.length exprs with
+        0 -> EmptyExpr
+      | 1 -> List.hd exprs
+      | _ -> And(gdl(),List.hd exprs,coe (List.tl exprs))
+  in coe exprs
+    
 
 module Expr_set = Set.Make (struct
                               type t = expr

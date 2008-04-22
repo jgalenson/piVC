@@ -19,7 +19,7 @@ let rename_and_replace_id ident var_names rev_var_names =
 	Hashtbl.add rev_var_names new_var_name ident;
 	new_var_name
   in
-    {name = new_name; location_id = ident.location_id; decl = ident.decl} ;;
+    {name = new_name; location_id = ident.location_id; decl = ident.decl; is_length = ident.is_length} ;;
 
 (* Transforms an expr by renaming any identifiers in it. *)
 let rec parse_expr e var_names rev_var_names =

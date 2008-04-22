@@ -129,7 +129,12 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
       (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
       (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
       (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
-      let negated_vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), vc)) in
+      (*let vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp vc in*)
+      (*let vc_no_quants_array_lengths_geq_0 = (*Verification_conditions.add_array_length_greater_than_0_to_expr*) vc_no_quants in*)
+      (*let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in*)
+
+      let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
+
 
 (*  
   print_endline ("*********************************");
@@ -142,7 +147,7 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
   print_endline ("*********************************");
 *) 
 
-      let (vc, rev_var_names) = Transform_yices.transform_for_yices negated_vc_no_quants in
+      let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
       let (sock, inchan, outchan) =
         let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
         let server_addr = Constants.dp_server_address in

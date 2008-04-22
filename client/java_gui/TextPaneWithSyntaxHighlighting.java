@@ -376,7 +376,7 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
     private void initDocument() {
         String initString = "";
 
-        syntaxLexer = new JavaLexer(documentReader);
+        syntaxLexer = new CLexer(documentReader);
 
         try {
             document.insertString(document.getLength(), initString, getStyleNew("text"));

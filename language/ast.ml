@@ -39,6 +39,7 @@ type identifier = {
   name: string;
   location_id: location;
   decl : (varDecl option) ref;
+  is_length : bool; (*array lengths are converted to identifiers*)
 }
 and varType =  
   | Bool of location
@@ -107,7 +108,10 @@ let id_of_identifier_if_available ident =
     | None -> ""
 
 let create_identifier name location =
-  {name = name; location_id = location; decl = ref None}
+  {name = name; location_id = location; decl = ref None; is_length = false}
+
+let create_length_identifier name location =
+  {name = name; location_id = location; decl = ref None; is_length = true}
      
 type lval =
   | NormLval of location * identifier

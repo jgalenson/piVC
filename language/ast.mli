@@ -20,6 +20,7 @@ type identifier = {
   name: string;
   location_id: location;
   decl : (varDecl option) ref;
+  is_length : bool;
 }
 
 and varType = 
@@ -49,6 +50,7 @@ val is_integral_type : varType -> bool ;;
 val string_of_quantification : quantification -> string
 
 val create_identifier : string -> location -> identifier
+val create_length_identifier : string -> location -> identifier
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
