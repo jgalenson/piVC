@@ -29,9 +29,18 @@ let rec compile vc_cache_and_lock ic oc =
     let replace_bad_chars str = 
       Str.global_replace (Str.regexp "&#13;") "" str
     in
+    (* Returns whether or not xml has a child tag named tag. *)
+    let has_child tag xml =
+      try
+	ignore (List.find (function n -> Xml.tag n = tag) (Xml.children xml));
+	true
+      with Not_found -> false
+    in
     (* Ensure the xml we got from the client has a valid root tag. *)
     let check_xml xml =
       assert (Xml.tag xml = "piVC_transmission");
+      assert (has_child "code" xml);
+      assert (has_child "options" xml);      
       try
 	assert (Xml.attrib xml "type" = "program_submission_request");
       with _ -> raise (InvalidXml "No type attribute in xml from client.");
@@ -52,13 +61,19 @@ let rec compile vc_cache_and_lock ic oc =
     check_xml xml;
     let code_node = get_child_node "code" xml in
     let code = get_text_from_text_node code_node in
-    (code)
+    (* Gets the options. *)
+    let options =
+      let option_node = get_child_node "options" xml in
+      let should_generate_runtime_assertions = has_child "generate_runtime_assertions" option_node in
+	(should_generate_runtime_assertions)
+    in
+    (code, options)
   in
   
   begin
     try    
       let xml_str = get_input ic in
-      let (code) = parse_xml xml_str in
+      let (code, (gen_runtime_asserts)) = parse_xml xml_str in
         (* print_endline code; *)
       let (program, errors) = Parse_utils.parse_strings [("user-file", code)] in
         

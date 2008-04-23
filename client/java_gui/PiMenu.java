@@ -2,6 +2,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -16,6 +17,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem undo, redo;
 	private JMenuItem displayPath;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
+	private JCheckBoxMenuItem runtimeAssertions;
 	
 	public PiMenu(PiGui piGui) {
 		super();
@@ -130,6 +132,11 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		});
 		compileMenu.add(cancelCompileMenuItem);
 		
+		compileMenu.addSeparator();
+		
+		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
+		compileMenu.add(runtimeAssertions);
+		
 		add(compileMenu);
 	}
 	
@@ -210,6 +217,13 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	public void isCompiling(boolean isCompiling) {
 		compileMenuItem.setEnabled(!isCompiling);
 		cancelCompileMenuItem.setEnabled(isCompiling);
+	}
+	
+	/**
+	 * Returns whether we should generate runtime assertions.
+	 */
+	public boolean shouldGenerateRuntimeAssertions() {
+		return runtimeAssertions.getState();
 	}
 	
 }

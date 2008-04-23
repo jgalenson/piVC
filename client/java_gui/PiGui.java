@@ -220,7 +220,8 @@ public class PiGui extends JFrame {
 	 */
 	public void doCompile() {
 		String code = piCode.getText();
-		curCompilation = new Compiler(code);
+		boolean shouldGenerateRuntimeAssertions = piMenu.shouldGenerateRuntimeAssertions();
+		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions);
 		compileStarted();
 		curCompilation.start();
 	}
@@ -260,9 +261,11 @@ public class PiGui extends JFrame {
 	private class Compiler extends Thread {
 		
 		private String code;  // Store the code since we can't get it from piCode.
+		private boolean shouldGenerateRuntimeAssertions;
 		
-		public Compiler(String code) {
+		public Compiler(String code, boolean shouldGenerateRuntimeAssertions) {
 			this.code = code;
+			this.shouldGenerateRuntimeAssertions = shouldGenerateRuntimeAssertions;
 		}
 		
 		@Override
@@ -311,6 +314,12 @@ public class PiGui extends JFrame {
 	            Element codeNode = doc.createElement("code");
 	            codeNode.setTextContent(code);
 	            rootNode.appendChild(codeNode);
+            	Element optionNode = doc.createElement("options");
+	            if (shouldGenerateRuntimeAssertions) {
+	            	Element runtimeAssertionNode = doc.createElement("generate_runtime_assertions");
+	            	optionNode.appendChild(runtimeAssertionNode);
+	            }
+            	rootNode.appendChild(optionNode);
 	            
 	            // Convert the node into a string
 	            Transformer trans = TransformerFactory.newInstance().newTransformer();

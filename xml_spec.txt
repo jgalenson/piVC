@@ -7,6 +7,9 @@ Program send:
 Client:
 <piVC_transmission type="program_submission_request" >
 	<code> code </code>
+	<options>  // required even if empty
+		<generate_runtime_assertions />  // optional: we generate them if this is there
+	<options>
 </piVC_transmission>
 
 
