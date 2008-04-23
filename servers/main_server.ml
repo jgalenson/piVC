@@ -15,7 +15,6 @@ exception InvalidXml of string ;;
  *)
 
 let rec compile vc_cache_and_lock ic oc =
-
   (* Convert queue of errors into a string. *)
   (*let get_error_string errors =
     let buf = Buffer.create 1024 in

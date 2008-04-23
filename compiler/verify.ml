@@ -113,8 +113,8 @@ let add_to_cache cache key result =
    Either returns the validity and a counterexample option
    or returns whatever exception was thrown. *)
 let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
-  let vc = instantiate_predicates vc_with_preds program in
   try
+    let vc = instantiate_predicates vc_with_preds program in
     (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
     Mutex.lock cache_lock;
