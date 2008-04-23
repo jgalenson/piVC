@@ -12,7 +12,7 @@ Jason
 	Don't run arrays DP on VCs not in the fragment
 	Remaining TODOs in arrays DP code
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
-	Bug: func call in condition doesn't work
+	Bug: func call in while/for conditions doesn't work
 	Bug: fix index set construction for arrays DP
 	Bug: Lots of consecutive array updates kills yices, but old PiVC handles them just fine (see samples/array_updates.pi).
         Bug: replace sub_idents... function with unique identifier as opposed to name

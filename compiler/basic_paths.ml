@@ -164,10 +164,11 @@ let generate_paths_for_func func program =
 
 	| Ast.VarDeclStmt(loc, vd) -> generate_path curr_path remaining_stmts closing_scope_actions
 	| Ast.IfStmt(loc, condition, ifp, elsep) -> (
+            let (new_condition, new_steps) = generate_nodes_for_expr curr_path condition in
 	    let remaining_stmts_if_branch = List.append (get_statement_list ifp) remaining_stmts in
 	    let remaining_stmts_else_branch = List.append (get_statement_list elsep) remaining_stmts in 
-	      generate_path (List.append curr_path [Assume(condition)]) remaining_stmts_if_branch closing_scope_actions;
-	      generate_path (List.append curr_path [Assume(get_not condition)]) remaining_stmts_else_branch closing_scope_actions
+	      generate_path (List.append curr_path (new_steps @ [Assume(new_condition)])) remaining_stmts_if_branch closing_scope_actions;
+	      generate_path (List.append curr_path (new_steps @ [Assume(get_not new_condition)])) remaining_stmts_else_branch closing_scope_actions
 	  )
         | Ast.WhileStmt(loc, test, block, annotation, ra) -> (
             Queue.add (List.append curr_path [Annotation(annotation,"guard")]) all_paths;

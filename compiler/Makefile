@@ -15,8 +15,8 @@ default :
 
 all : depend compiler
 
-compiler : $(COMPILER_OBJS)
-	$(OC) -o test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS)
+compiler : $(COMPILER_OBJS) test_parser.cmo
+	$(OC) -o test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
 
 %.cmo : %.ml %.cmi
 	$(OC) -c $<

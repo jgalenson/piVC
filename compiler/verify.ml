@@ -21,10 +21,13 @@ let instantiate_predicates expr program =
           Predicate(loc,p) -> p.predName.name=pred_ident.name
         | _ -> false
     in
-    let pred = List.find is_match program.decls in
-      match pred with
-          Predicate(loc,p) -> p
-        | _ -> assert(false)
+      try
+        let pred = List.find is_match program.decls
+        in
+          match pred with
+              Predicate(loc,p) -> p
+            | _ -> assert(false)
+      with ex -> assert(false)
   in
   let rec ip expr = 
     match expr with

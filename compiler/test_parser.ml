@@ -27,7 +27,16 @@ let print_program program = match program with
   | None -> print_string "";;
 
 let _ =
-  let (program, errors) = goParse stdin in
-  print_program program;
-  let map_fn e = print_string (string_of_error e) in
-  List.iter map_fn errors
+  let input = ref "" in
+    try
+      while true do      
+        input := !input ^ String.make 1 (Pervasives.input_char stdin) 
+      done;
+    with
+        ex -> ignore()
+    ;
+    let (program, errors) = parse_strings [("",!input)] in
+      print_program program;
+      let map_fn e = print_string (string_of_error e) in
+        List.iter map_fn errors
+    
