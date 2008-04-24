@@ -134,6 +134,13 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		undo.discardAllEdits();
 		piGui.undoChangeHappened(undo);
 	}
+	
+	/**
+	 * Clears the text.
+	 */
+	public void clear() {
+		setText("");
+	}
 
 	/**
 	 * When something has changed, set the dirty bit to true

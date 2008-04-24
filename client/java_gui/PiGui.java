@@ -87,11 +87,8 @@ public class PiGui extends JFrame {
 	 * them choose a file to open.
 	 */
 	public void open() {
-		if (dirty) {
-			boolean ok = askToSave();
-			if (!ok)
-				return;
-		}
+		if (!saveAndConfirmIfDirty())
+			return;
 		if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             curFile = fileChooser.getSelectedFile();
 			setDefaultPiFilesLocation(curFile);
@@ -137,11 +134,8 @@ public class PiGui extends JFrame {
 	 * to save first if it is dirty.
 	 */
 	public void doExit() {
-		if (dirty) {
-			boolean ok = askToSave();
-			if (!ok)
-				return;
-		}
+		if (!saveAndConfirmIfDirty())
+			return;
 		System.exit(0);
 	}
 
@@ -182,12 +176,43 @@ public class PiGui extends JFrame {
 	}
 	
 	/**
+	 * Opens a new file.
+	 */
+	public void newFile() {
+		if (!saveAndConfirmIfDirty())
+			return;
+		piCode.clear();
+        piCode.openedNewFile();
+		piTree.clear();
+		piErrorOutput.clear();
+		// If we don't do this, next time you do open or save the las opened/saved filename will be there by default.
+		initFileChooser();
+		curFile = null;
+		filenameChanged();
+	}
+	
+	/**
+	 * If the file is dirty, asks if the user wants to save
+	 * it and does so if they want to.
+	 * Returns true if they want to continue (or the dirty
+	 * bit is not set) or false if they pressed cancel.
+	 */
+	private boolean saveAndConfirmIfDirty() {
+		if (dirty)
+			return askToSave();
+		else
+			return true;
+	}
+	
+	/**
 	 * Called whenever the name of the currently-opened
 	 * file changes.  We reset anything that relies on it.
 	 */
 	private void filenameChanged() {
 		setDirty(false);
-		setTitle(TITLE + " - " + curFile.getName());
+		String curFilename = getCurFilename();
+		String titleEnd = (curFilename != "" ? " - " + curFilename : "");
+		setTitle(TITLE + titleEnd);
 		setStatusBarLabel();
 	}
 
@@ -240,13 +265,20 @@ public class PiGui extends JFrame {
 	}
 	
 	/**
+	 * Gets the name of the currently-opened file if there is one.
+	 */
+	private String getCurFilename() {
+		return (curFile == null ? "" : " " + curFile.getName()) ;
+	}
+	
+	/**
 	 * Sets the label on the status bar.
 	 * We need to track whether or not we're in a compile
 	 * in case you change the filename (which changes the
 	 * status bar label) when we're compiling.
 	 */
 	private void setStatusBarLabel() {
-		String filenameStr = (curFile == null ? "" : " " + curFile.getName()) ;
+		String filenameStr = getCurFilename();
 		if (curCompilation != null)
 			statusBarLabel.setText("Compiling" + filenameStr);
 		else
@@ -348,7 +380,7 @@ public class PiGui extends JFrame {
 				piTree.clear();
 				piErrorOutput.clear();
 				piCompilerOutput.setText(text);
-				serverResponseParser.parse(text, getFilename());
+				serverResponseParser.parse(text, getCurFilename());
 				rightTabbedPane.repaint();
 				compileEnded();
 			}
@@ -395,16 +427,6 @@ public class PiGui extends JFrame {
 	public void handleCompilerError(PiError compilerError) {
 		piErrorOutput.setCompilerError(compilerError);
 		rightTabbedPane.setSelectedIndex(1);
-	}
-	
-	/**
-	 * Gets the name of the currently-opened file.
-	 */
-	private String getFilename() {
-		if (curFile == null)
-			return null;
-		else
-			return curFile.getName();
 	}
 	
 	/**

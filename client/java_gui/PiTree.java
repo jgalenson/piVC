@@ -236,7 +236,7 @@ public class PiTree extends JPanel {
 			if (obj instanceof VerificationResult) {
 				VerificationResult verificationResult = (VerificationResult)obj;
 				setIcon(getProperIcon(verificationResult.getValidity()));
-				String name = verificationResult.getFilename() != null ? verificationResult.getFilename() : "Program";
+				String name = verificationResult.getFilename() != "" ? verificationResult.getFilename() : "Program";
 				setText(name);
 			} else if (obj instanceof Function) {
 				Function function = (Function)obj;

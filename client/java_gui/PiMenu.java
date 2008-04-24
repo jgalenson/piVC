@@ -37,6 +37,16 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		JMenu file = new JMenu("File");
 		file.setMnemonic(KeyEvent.VK_F);
 		
+		JMenuItem newMenuItem = new JMenuItem("New");
+		newMenuItem.setMnemonic(KeyEvent.VK_N);
+		newMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+		newMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.newFile();
+			}
+		});
+		file.add(newMenuItem);
+		
 		JMenuItem open = new JMenuItem("Open");
 		open.setMnemonic(KeyEvent.VK_O);
 		open.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
