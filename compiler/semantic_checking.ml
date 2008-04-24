@@ -96,7 +96,7 @@ let annotate_ident ident s =
             let vd = (varDecl_of_decl decl) in
               ident.decl := Some(vd)
           end
-
+          
 (* CAGRT *)
 	
 let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval errors = match lval with
@@ -161,6 +161,32 @@ and check_for_same_type t1 t2 loc errors =
 
 and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
+  let check_lhs_of_assign lval_orig = 
+    let rec cloa lval = 
+      match lval with
+          NormLval(loc,id) ->
+            begin
+              match Scope_stack.lookup_decl id.name scope_stack with
+                | Some(decl) ->
+                    begin
+                      match decl with 
+                          VarDecl(loc2,vd) -> if(vd.is_param) then add_error SemanticError "Updates to parameters not permitted."  loc errors
+                        | _ -> ignore() (*this is an error, but it'll be caught in cagrt*)
+                    end
+                | None -> ignore() (*this is an error, but it'll be caught in cagrt*)
+            end
+        | ArrayLval(loc,arr,index) -> 
+            begin
+              let rec check_lhs_expr_of_assign exp = 
+                match exp with
+                    LValue(loc,l) -> cloa l
+                  | ArrayUpdate(loc,arr,index,value) -> check_lhs_expr_of_assign arr
+                  | _ -> add_error SemanticError "Illegal LHS of assignment."  (location_of_lval lval_orig) errors
+              in
+                check_lhs_expr_of_assign arr
+            end
+    in cloa lval_orig
+  in
   let rec check_and_get_return_type_relational loc t1 t2 =
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
@@ -232,10 +258,11 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	    let error_msg = "Assign expr not at the root of a statement." in
             add_error SemanticError error_msg loc errors
 	  end;
-	let lhsType = check_and_get_return_type_lval (is_annotation, is_ranking_fn) scope_stack l errors in
+        let lhsType = check_and_get_return_type_lval (is_annotation, is_ranking_fn) scope_stack l errors in
         let rhsType = cagrt e in
-	ignore (check_for_same_type lhsType rhsType loc errors);
-        lhsType
+          ignore (check_lhs_of_assign l);
+	  ignore (check_for_same_type lhsType rhsType loc errors);
+          lhsType
     | Constant (loc,c) ->
 	begin
 	  match c with
@@ -268,8 +295,6 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	      in
 		List.iter2 check_formal ac formals
           in
-	  let map_fn e = ignore (cagrt e) in
-	    List.iter (map_fn) ac;
 	  let lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
 	    match lookup_result with
 	      | None ->

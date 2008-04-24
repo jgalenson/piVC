@@ -38,10 +38,12 @@ and varDecl = {
   location_vd : location;
   var_id : (string option) ref;
   quant: quantification;
+  is_param : bool;
 }
 val create_varDecl : varType -> identifier -> location -> varDecl
-val create_Existential_varDecl : varType -> identifier -> location -> varDecl
-val create_Universal_varDecl : varType -> identifier -> location -> varDecl
+val create_existential_varDecl : varType -> identifier -> location -> varDecl
+val create_universal_varDecl : varType -> identifier -> location -> varDecl
+val create_param_varDecl : varType -> identifier -> location -> varDecl
 
 val is_integral_type : varType -> bool ;;
 
@@ -145,6 +147,8 @@ val location_of_decl : decl -> location
 val location_of_stmt : stmt -> location
 
 val location_of_expr : expr -> location
+
+val location_of_lval : lval -> location
 
 val id_of_varDecl : varDecl -> string
 

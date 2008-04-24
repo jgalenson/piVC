@@ -56,10 +56,12 @@ and varDecl = {
   location_vd : location;
   var_id: (string option) ref;
   quant : quantification;
+  is_param : bool;
 }
-let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified;}
-let create_Existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential;}
-let create_Universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal;}
+let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = false;}
+let create_param_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = true;}
+let create_existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential; is_param = false;}
+let create_universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal; is_param = false;}
 
 let is_integral_type t = match t with
   | Int (loc) -> true
@@ -279,6 +281,11 @@ let location_of_expr = function
     | Iff (loc,t1, t2) -> loc
     | Implies (loc,t1, t2) -> loc
     | EmptyExpr -> get_dummy_location ()
+
+
+let location_of_lval lval = match lval with
+  | NormLval(loc,_) -> loc
+  | ArrayLval(loc,_,_) -> loc
 
 (******************
 Printing functions

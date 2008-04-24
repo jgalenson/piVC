@@ -178,9 +178,9 @@ and xml_of_verified_program (all_valid, functions) =
   and xml_of_step step = 
     let step_node = Xml_generator.create "step" in
       add_attribute ("type", Basic_paths.type_of_step step) step_node;
-      add_child (xml_of_location (Basic_paths.location_of_path_node step)) step_node;
+      add_child (xml_of_location (Basic_paths.location_of_path_step step)) step_node;
       let text_node = Xml_generator.create "text" in
-        set_text (Basic_paths.string_of_path_node step) text_node;
+        set_text (Basic_paths.string_of_path_step step) text_node;
         add_child text_node step_node;
         step_node
   and xml_of_counterexample counterexample =

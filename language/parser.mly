@@ -249,8 +249,12 @@ Var       : Type Identifier               { Ast.create_varDecl $1 $2 (create_loc
           ;
 
 
-Formals   : Var                    { [$1] }
-          | Formals T_Comma Var    { $1 @ [$3] }
+ParamVar  : Type Identifier               { Ast.create_param_varDecl $1 $2 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
+          ;
+
+
+Formals   : ParamVar                    { [$1] }
+          | Formals T_Comma ParamVar    { $1 @ [$3] }
           ;
 
 StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), $2) }
@@ -331,12 +335,12 @@ AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location 
            ;
 
 /*All quantified variables are deemed integers*/
-CommaSeperatedListOfUniversalVarDecls : Identifier T_Comma CommaSeperatedListOfUniversalVarDecls {(create_Universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
-                                      | Identifier { [create_Universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
+CommaSeperatedListOfUniversalVarDecls : Identifier T_Comma CommaSeperatedListOfUniversalVarDecls {(create_universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
+                                      | Identifier { [create_universal_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
 ;
 /*All quantified variables are deemed integers*/
-CommaSeperatedListOfExistentialVarDecls : Identifier T_Comma CommaSeperatedListOfExistentialVarDecls {(create_Existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
-                                        | Identifier { [create_Existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
+CommaSeperatedListOfExistentialVarDecls : Identifier T_Comma CommaSeperatedListOfExistentialVarDecls {(create_existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
+                                        | Identifier { [create_existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
 ;
  
 Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}

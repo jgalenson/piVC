@@ -5,14 +5,14 @@ exception UnexpectedStatementException
 exception NoDeclException
 exception BadDeclException
 
-type path_node = 
+type path_step = 
   | Expr of Ast.expr
   | Assume of Ast.expr
   | Annotation of Ast.expr * string
 
 type closing_scope_action = {
-  post_condition: path_node;
-  incr: path_node option;
+  post_condition: path_step;
+  incr: path_step option;
   stmts: stmt list;
 }
 
@@ -21,18 +21,18 @@ let type_of_step step = match step with
   | Assume(e) -> "assume"
   | Annotation(e,s) -> "annotation"
  
-let location_of_path_node node = match node with
+let location_of_path_step step = match step with
     Expr(e) -> Ast.location_of_expr e
   | Assume(e) -> Ast.location_of_expr e
   | Annotation(e,s) -> Ast.location_of_expr e
 
-let string_of_path_node node = match node with
+let string_of_path_step step = match step with
     Expr(exp) -> (Ast.string_of_expr exp)
   | Assume(exp) -> "Assume " ^ (Ast.string_of_expr exp)
   | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp)
 
 let string_of_basic_path path = 
-  String.concat "\n" (List.map string_of_path_node path) ;;
+  String.concat "\n" (List.map string_of_path_step path) ;;
     
 let print_basic_path path = 
     print_string "---------\n";
@@ -50,7 +50,7 @@ let get_statement_list stmts =
     | _ -> [stmts]
 
 let create_rv_decl t ident =
-  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified;}
+  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified; is_param = false;}
 
 
 
@@ -71,17 +71,22 @@ let gen_func_postcondition_with_rv_substitution func rv_sub =
 (* CODE SECTION: GENERATING PATHS *)
 
 let generate_paths_for_func func program = 
-  let all_paths : ((path_node list) Queue.t) = Queue.create () in
+  let all_paths : ((path_step list) Queue.t) = Queue.create () in
   let func_pre_condition = Annotation(func.preCondition, "pre") in
   let func_post_condition = Annotation(func.postCondition, "post") in
   let temp_var_number = (ref 0) in
-  let generate_nodes_for_expr (curr_path:path_node list) expr = 
-    let (new_nodes:path_node list ref) = ref [] in
+  let generate_steps_for_expr (curr_path:path_step list) expr = 
+    let (new_steps:path_step list ref) = ref [] in
     let rec gnfe expr =
     match expr with
       Assign (loc,l, e) -> Assign(loc, l, gnfe e)
     | Constant (loc,c) -> expr
-    | LValue (loc,l) -> expr
+    | LValue (loc,l) ->
+        begin
+          match l with
+              NormLval(loc2,l) -> expr
+            | ArrayLval(loc2,arr,index) -> LValue(loc,ArrayLval(loc2, gnfe arr, gnfe index))
+        end
     | Call (loc,s, el) ->
         (   
             match (Ast.get_root_decl program s.name) with 
@@ -99,7 +104,7 @@ let generate_paths_for_func func program =
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
                         Queue.add (List.append curr_path [Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]) all_paths;
-                        new_nodes := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_nodes;
+                        new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )
               )
@@ -129,18 +134,18 @@ let generate_paths_for_func func program =
     | EmptyExpr -> expr
     in
     let new_expr = gnfe expr in
-     (new_expr, !new_nodes)
+     (new_expr, !new_steps)
 
   in 
-  let generate_nodes_for_rv_expression expr t curr_path loc = 
+  let generate_steps_for_rv_expression expr t curr_path loc = 
     let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
       rv_ident.decl := Some(create_rv_decl t rv_ident);
       let rv_lval = Ast.NormLval(Ast.get_dummy_location (), rv_ident) in
       let rv_assignment = Ast.Assign(loc, rv_lval, expr) in
-      let (new_exp, new_nodes) = generate_nodes_for_expr curr_path rv_assignment in
-        new_nodes @ [Expr(new_exp)]
+      let (new_exp, new_steps) = generate_steps_for_expr curr_path rv_assignment in
+        new_steps @ [Expr(new_exp)]
   in
-  let rec generate_path (curr_path:path_node list) stmts (closing_scope_actions:closing_scope_action list) = 
+  let rec generate_path (curr_path:path_step list) stmts (closing_scope_actions:closing_scope_action list) = 
 
     match List.length stmts with
 	0 -> (match List.length closing_scope_actions with
@@ -158,27 +163,29 @@ let generate_paths_for_func func program =
     let remaining_stmts = List.tl stmts in
       match curr_stmt with
 	  Ast.Expr(loc, exp) -> (
-            let (new_exp, new_nodes) = generate_nodes_for_expr curr_path exp in
-            generate_path ((curr_path @ new_nodes) @ [(Expr(new_exp))]) remaining_stmts closing_scope_actions
+            let (new_exp, new_steps) = generate_steps_for_expr curr_path exp in
+            generate_path ((curr_path @ new_steps) @ [(Expr(new_exp))]) remaining_stmts closing_scope_actions
           )
 
 	| Ast.VarDeclStmt(loc, vd) -> generate_path curr_path remaining_stmts closing_scope_actions
 	| Ast.IfStmt(loc, condition, ifp, elsep) -> (
-            let (new_condition, new_steps) = generate_nodes_for_expr curr_path condition in
+            let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
 	    let remaining_stmts_if_branch = List.append (get_statement_list ifp) remaining_stmts in
 	    let remaining_stmts_else_branch = List.append (get_statement_list elsep) remaining_stmts in 
 	      generate_path (List.append curr_path (new_steps @ [Assume(new_condition)])) remaining_stmts_if_branch closing_scope_actions;
 	      generate_path (List.append curr_path (new_steps @ [Assume(get_not new_condition)])) remaining_stmts_else_branch closing_scope_actions
 	  )
-        | Ast.WhileStmt(loc, test, block, annotation, ra) -> (
-            Queue.add (List.append curr_path [Annotation(annotation,"guard")]) all_paths;
-            generate_path (List.append [Annotation(annotation,"guard")] [Assume(test)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = None; stmts = remaining_stmts}::closing_scope_actions);                       
-            generate_path (List.append [Annotation(annotation,"guard")] [Assume(get_not test)]) remaining_stmts closing_scope_actions           
+        | Ast.WhileStmt(loc, condition, block, annotation, ra) -> (
+            let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
+              Queue.add (List.append curr_path [Annotation(annotation,"guard")]) all_paths;
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = None; stmts = remaining_stmts}::closing_scope_actions);                       
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition)]) remaining_stmts closing_scope_actions           
           )
-        | Ast.ForStmt(loc, init, test, incr, block, annotation, ra) -> (
-            Queue.add (List.append curr_path [Expr(init);Annotation(annotation,"guard")]) all_paths;
-            generate_path (List.append [Annotation(annotation,"guard")] [Assume(test)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = Some(Expr(incr)); stmts = remaining_stmts}::closing_scope_actions);                       
-            generate_path (List.append [Annotation(annotation,"guard")] [Assume(get_not test)]) remaining_stmts closing_scope_actions          
+        | Ast.ForStmt(loc, init, condition, incr, block, annotation, ra) -> (
+            let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
+              Queue.add (List.append curr_path [Expr(init);Annotation(annotation,"guard")]) all_paths;
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = Some(Expr(incr)); stmts = remaining_stmts}::closing_scope_actions);                       
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition)]) remaining_stmts closing_scope_actions          
           )
         | Ast.BreakStmt(loc) -> (
 	    generate_path curr_path (List.hd closing_scope_actions).stmts (List.tl closing_scope_actions)
@@ -187,7 +194,7 @@ let generate_paths_for_func func program =
         | Ast.ReturnStmt(loc, exp) -> (
             match func.returnType with
                 Void(loc) -> Queue.add (List.append curr_path [func_post_condition]) all_paths
-              | _ -> Queue.add (List.append curr_path ((generate_nodes_for_rv_expression exp func.returnType curr_path loc) @ [func_post_condition])) all_paths
+              | _ -> Queue.add (List.append curr_path ((generate_steps_for_rv_expression exp func.returnType curr_path loc) @ [func_post_condition])) all_paths
           )
         | Ast.AssertStmt(loc, exp) -> 
             Queue.add (List.append curr_path [Annotation(exp,"assert")]) all_paths;

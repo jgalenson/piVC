@@ -140,7 +140,7 @@ let get_idents_of_formals func =
 
 let change_quantifier old_decls old_expr new_quant =
   let old_decl_to_new_decl decl = 
-    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; (*TODO-A: may need to re-number here*) quant = new_quant}
+    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; (*TODO-A: may need to re-number here*) quant = new_quant; is_param = decl.is_param;}
   in
   let new_decls = List.map old_decl_to_new_decl old_decls in
   let new_decl_to_replacement_pair new_decl = 
