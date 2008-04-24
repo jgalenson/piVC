@@ -19,13 +19,13 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	private JCheckBoxMenuItem runtimeAssertions;
 	
-	public PiMenu(PiGui piGui) {
+	public PiMenu(PiGui piGui, boolean generateRuntimeAssertions) {
 		super();
 		this.piGui = piGui;
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
 		addEditMenu();
-		addCompileMenu();
+		addCompileMenu(generateRuntimeAssertions);
 		addAnalyzeMenu();
 		addSettingsMenu();
 	}
@@ -120,7 +120,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		add(editMenu);
 	}
 	
-	private void addCompileMenu() {
+	private void addCompileMenu(boolean generateRuntimeAssertions) {
 		JMenu compileMenu = new JMenu("Compile");
 		compileMenu.setMnemonic(KeyEvent.VK_O);
 		
@@ -145,6 +145,12 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		compileMenu.addSeparator();
 		
 		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
+		runtimeAssertions.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Config.setBooleanValue("generate_runtime_assertions", runtimeAssertions.getState());
+			}
+		});
+		runtimeAssertions.setState(generateRuntimeAssertions);
 		compileMenu.add(runtimeAssertions);
 		
 		add(compileMenu);
@@ -227,13 +233,6 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	public void isCompiling(boolean isCompiling) {
 		compileMenuItem.setEnabled(!isCompiling);
 		cancelCompileMenuItem.setEnabled(isCompiling);
-	}
-	
-	/**
-	 * Returns whether we should generate runtime assertions.
-	 */
-	public boolean shouldGenerateRuntimeAssertions() {
-		return runtimeAssertions.getState();
 	}
 	
 }

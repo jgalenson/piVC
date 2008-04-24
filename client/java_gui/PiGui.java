@@ -245,7 +245,7 @@ public class PiGui extends JFrame {
 	 */
 	public void doCompile() {
 		String code = piCode.getText();
-		boolean shouldGenerateRuntimeAssertions = piMenu.shouldGenerateRuntimeAssertions();
+		boolean shouldGenerateRuntimeAssertions = Config.getBooleanValue("generate_runtime_assertions");
 		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions);
 		compileStarted();
 		curCompilation.start();
@@ -553,7 +553,7 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		piMenu = new PiMenu(this);
+		piMenu = new PiMenu(this, Config.getBooleanValue("generate_runtime_assertions"));
 		setJMenuBar(piMenu);
 	}
 	

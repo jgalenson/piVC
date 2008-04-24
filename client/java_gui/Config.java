@@ -11,7 +11,8 @@ public class Config {
 	//and an error will be thrown when that key's value is requested or set.
 	private static final String[][] DEFAULTS = 	{
 								{"server_address","127.0.0.1:4242"},
-								{"pi_files_location","."}
+								{"pi_files_location","."},
+								{"generate_runtime_assertions", "false"}
 							};
 	
 	private static Map<String,String> settings;
@@ -26,6 +27,16 @@ public class Config {
 		}
 	}
 	
+	public static boolean getBooleanValue(String key) {
+		String val = getValue(key);
+		if ("true".equals(val))
+			return true;
+		else if ("false".equals(val))
+			return false;
+		else
+			throw new RuntimeException("The hey "+key+" should be either 'true' or 'false' but is currently " + val);
+	}
+	
 	public static void setValue(String key, String newValue){
 		if(!isValidKey(key)){
 			throw new RuntimeException("Invalid key: "+key+". Every key needs to be included in the defaults list.");
@@ -38,6 +49,12 @@ public class Config {
 		}
 	}
 
+	public static void setBooleanValue(String key, boolean value) {
+		if (value)
+			setValue(key, "true");
+		else
+			setValue(key, "false");
+	}
 	
 	public static void initConfig(){
 		settings = new HashMap<String,String>();
