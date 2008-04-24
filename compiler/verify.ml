@@ -228,7 +228,7 @@ let verify_program program_info program_ast vc_cache_and_lock =
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list
    Returns (fn * (Basic Path * VC) list) list. *)
-let get_all_info program =
+let get_all_info program gen_runtime_asserts =
   (* Returns a list of pairs of fnName and its basic path.
      Returns (fn * path_node list list) list. *)
   let get_basic_paths program =
@@ -236,7 +236,7 @@ let get_all_info program =
       match decl with
           VarDecl (loc, vd) -> None
         | Predicate (loc, p) -> None
-	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program))
+	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program gen_runtime_asserts))
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =

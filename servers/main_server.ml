@@ -79,7 +79,7 @@ let rec compile vc_cache_and_lock ic oc =
       let get_output_to_return_to_client = 
         match errors with
             [] -> (
-              let program_info = Verify.get_all_info (Utils.elem_from_opt program) in
+              let program_info = Verify.get_all_info (Utils.elem_from_opt program) gen_runtime_asserts in
               let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock in
                 Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
             )

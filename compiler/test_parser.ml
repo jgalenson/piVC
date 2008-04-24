@@ -19,7 +19,7 @@ let print_program program = match program with
     print_endline "\n---------";
     print_string (string_of_program p);
     print_endline "---------";
-    let all_info = get_all_info p in
+    let all_info = get_all_info p false in
       
     print_endline "Basic paths and VCs:";
     print_basic_paths_and_vcs all_info;

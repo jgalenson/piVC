@@ -41,8 +41,8 @@ let print_basic_path path =
 let print_all_basic_paths paths =
   List.iter print_basic_path paths
 
-let get_not condition = 
-  Ast.Not (Ast.get_dummy_location (), condition)
+let get_not condition loc = 
+  Ast.Not (loc, condition)
 
 let get_statement_list stmts = 
   match stmts with
@@ -70,23 +70,31 @@ let gen_func_postcondition_with_rv_substitution func rv_sub =
 
 (* CODE SECTION: GENERATING PATHS *)
 
-let generate_paths_for_func func program = 
+let generate_paths_for_func func program gen_runtime_asserts = 
   let all_paths : ((path_step list) Queue.t) = Queue.create () in
   let func_pre_condition = Annotation(func.preCondition, "pre") in
   let func_post_condition = Annotation(func.postCondition, "post") in
   let temp_var_number = (ref 0) in
   let generate_steps_for_expr (curr_path:path_step list) expr = 
     let (new_steps:path_step list ref) = ref [] in
-    let rec gnfe expr =
+    let rec gnfl l =
+      match l with
+        | NormLval(loc2,l) -> NormLval(loc2, l)
+        | ArrayLval(loc2,arr,index) ->
+	    if (gen_runtime_asserts) then
+	      begin
+		let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
+		let low_node = Ast.GE(Ast.get_dummy_location (), index, constant_node) in
+		let length_node = Ast.Length(Ast.get_dummy_location (), arr) in
+		let up_node = Ast.LT(Ast.get_dummy_location (), index, length_node) in
+		Queue.add (List.append curr_path [Annotation(Ast.And(loc2, low_node, up_node), "runtime assert")]) all_paths;
+	      end;
+	    ArrayLval(loc2, gnfe arr, gnfe index)
+    and gnfe expr =
     match expr with
-      Assign (loc,l, e) -> Assign(loc, l, gnfe e)
+      Assign (loc,l, e) -> Assign(loc, gnfl l, gnfe e)
     | Constant (loc,c) -> expr
-    | LValue (loc,l) ->
-        begin
-          match l with
-              NormLval(loc2,l) -> expr
-            | ArrayLval(loc2,arr,index) -> LValue(loc,ArrayLval(loc2, gnfe arr, gnfe index))
-        end
+    | LValue (loc,l) -> LValue (loc, gnfl l)
     | Call (loc,s, el) ->
         (   
             match (Ast.get_root_decl program s.name) with 
@@ -112,8 +120,20 @@ let generate_paths_for_func func program =
     | Plus (loc,t1, t2) -> Plus(loc, gnfe t1, gnfe t2)
     | Minus (loc,t1, t2) -> Minus(loc, gnfe t1, gnfe t2)
     | Times (loc,t1, t2) -> Times(loc, gnfe t1, gnfe t2)
-    | Div (loc,t1, t2) -> Div(loc, gnfe t1, gnfe t2)
-    | IDiv (loc,t1, t2) -> IDiv(loc, gnfe t1, gnfe t2)
+    | Div (loc,t1, t2) ->
+	if (gen_runtime_asserts) then
+	  begin
+	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
+	    Queue.add (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) all_paths;
+	  end;
+	Div(loc, gnfe t1, gnfe t2)
+    | IDiv (loc,t1, t2) ->
+	if (gen_runtime_asserts) then
+	  begin
+	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
+	    Queue.add (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) all_paths;
+	  end;
+	IDiv(loc, gnfe t1, gnfe t2)
     | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
     | UMinus (loc,t) -> UMinus(loc, gnfe t)
     | ForAll (loc,decls,e) -> ForAll(loc,decls,gnfe e)
@@ -173,19 +193,19 @@ let generate_paths_for_func func program =
 	    let remaining_stmts_if_branch = List.append (get_statement_list ifp) remaining_stmts in
 	    let remaining_stmts_else_branch = List.append (get_statement_list elsep) remaining_stmts in 
 	      generate_path (List.append curr_path (new_steps @ [Assume(new_condition)])) remaining_stmts_if_branch closing_scope_actions;
-	      generate_path (List.append curr_path (new_steps @ [Assume(get_not new_condition)])) remaining_stmts_else_branch closing_scope_actions
+	      generate_path (List.append curr_path (new_steps @ [Assume(get_not new_condition (Ast.location_of_expr new_condition))])) remaining_stmts_else_branch closing_scope_actions
 	  )
         | Ast.WhileStmt(loc, condition, block, annotation, ra) -> (
             let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
               Queue.add (List.append curr_path [Annotation(annotation,"guard")]) all_paths;
               generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = None; stmts = remaining_stmts}::closing_scope_actions);                       
-              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition)]) remaining_stmts closing_scope_actions           
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition (Ast.location_of_expr new_condition))]) remaining_stmts closing_scope_actions           
           )
         | Ast.ForStmt(loc, init, condition, incr, block, annotation, ra) -> (
             let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
               Queue.add (List.append curr_path [Expr(init);Annotation(annotation,"guard")]) all_paths;
               generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); incr = Some(Expr(incr)); stmts = remaining_stmts}::closing_scope_actions);                       
-              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition)]) remaining_stmts closing_scope_actions          
+              generate_path ([Annotation(annotation,"guard")] @ new_steps @ [Assume(get_not new_condition (Ast.location_of_expr new_condition))]) remaining_stmts closing_scope_actions          
           )
         | Ast.BreakStmt(loc) -> (
 	    generate_path curr_path (List.hd closing_scope_actions).stmts (List.tl closing_scope_actions)

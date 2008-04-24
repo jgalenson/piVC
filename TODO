@@ -11,6 +11,7 @@ Jason
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
         Bug: replace sub_idents... function with unique identifier as opposed to name
         Change lexer/parser to account for different types of line endings in a clean way - also change xml reading code to use this
+	On array assignment (arr := arr_0), it should set |arr| := |arr_0|.
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -29,6 +30,7 @@ Both
 Unassigned
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
+	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
 
 -----------------------------
 Proposed High-level timetable
@@ -37,7 +39,6 @@ Proposed High-level timetable
 Week 4
 	Jason: semantically check assertions
 	Jason: Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
-	Joel: Run-time assertions
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 5
