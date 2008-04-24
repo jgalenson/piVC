@@ -170,7 +170,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
                 | Some(decl) ->
                     begin
                       match decl with 
-                          VarDecl(loc2,vd) -> if(vd.is_param) then add_error SemanticError "Updates to parameters not permitted."  loc errors
+                          VarDecl(loc2,vd) -> if(vd.is_param) then add_error SemanticError "Updates to parameters not permitted."  (location_of_lval lval_orig) errors
                         | _ -> ignore() (*this is an error, but it'll be caught in cagrt*)
                     end
                 | None -> ignore() (*this is an error, but it'll be caught in cagrt*)
@@ -180,7 +180,6 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
               let rec check_lhs_expr_of_assign exp = 
                 match exp with
                     LValue(loc,l) -> cloa l
-                  | ArrayUpdate(loc,arr,index,value) -> check_lhs_expr_of_assign arr
                   | _ -> add_error SemanticError "Illegal LHS of assignment."  (location_of_lval lval_orig) errors
               in
                 check_lhs_expr_of_assign arr

@@ -374,7 +374,7 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
 ;
 
 LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
-         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
+         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
 ;
 
 Call     : Expr T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
