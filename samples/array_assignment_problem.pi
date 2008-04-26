@@ -1,0 +1,9 @@
+@pre i >= 0 && i < |arr_0|
+@post true
+void foo(int[] arr_0, int i) {
+	int[] arr;
+	arr = arr_0;
+	arr_0[i] = 42;  // doesn't give error
+	arr[i] = 42;  // gives error but should be equivalent
+	// see the counterexample for the above line: it has the lengths of the two arrays be different.  And the facy that the two sizes are the same isn't in the vc.
+}
