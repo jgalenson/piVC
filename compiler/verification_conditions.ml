@@ -21,7 +21,7 @@ let convert_basic_path_to_acceptable_form path =
           begin
             let ident = identifier_of_array_expr exp in
             let new_ident = Ast.create_length_identifier ("|" ^ ident.name ^ "|") (gdl()) in
-            let vd = Ast.create_varDecl (Int(gdl())) new_ident (gdl()) in
+            let vd = Ast.create_varDecl (Int(gdl())) new_ident (varDecl_of_identifier ident).location_vd in
               vd.var_id := Some("_length_"^id_of_identifier ident);
               new_ident.decl := Some(vd);
               new_ident
