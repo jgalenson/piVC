@@ -18,6 +18,7 @@ let rec insert_decl decl s =
         VarDecl(loc,vd) ->
           begin
             vd.var_id := Some(vd.varName.name ^ "_" ^ string_of_int !(snd s));
+            vd.varName.decl := Some(vd);
             (snd s) := !(snd s) + 1;
           end
       | FnDecl(loc, fd) -> ignore()

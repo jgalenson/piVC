@@ -8,13 +8,16 @@ exception InvalidFormula
 (* CODE SECTION: SUBSTITUTING VARIABLE NAMES IN EXPRS *)
 
 
-let rec array_name_from_lval lval = match lval with
-    NormLval(loc,id) -> Some(id.name)
+let rec array_ident_from_lval lval = match lval with
+    NormLval(loc,id) -> id
   | ArrayLval(loc,arr,index) -> 
       begin
-        match arr with
-            LValue(loc,lval) -> array_name_from_lval lval
-          | _ -> None (*If, for example, the user is using an index from a function call, there is no array name*)
+        let rec array_name_from_expr arr = 
+          match arr with
+              LValue(loc,lval) -> array_ident_from_lval lval
+            | ArrayUpdate(loc,expr,assign_to,assign_val) -> array_name_from_expr expr
+            | _ -> assert(false)
+        in array_name_from_expr arr
       end
 
 (* The way the user expresses array-writes is different to how the VC expresses array updates.
@@ -33,22 +36,20 @@ let rec array_write_to_array_update lhs rhs =
                 let new_rhs = ArrayUpdate(get_dummy_location (), arr, index, rhs) in
                   array_write_to_array_update arr new_rhs 
         end
-    | _ -> EmptyExpr (*Nothing can be assigned to a non-lval, so even if the user has used an assignment operator, there's no real assignment taking place, and hence we ignore it.*)
-(*TODO-A: is EmptyExpr doing the correct thing? test*)
+    | _ -> assert(false) 
 
-let get_match_sub lval_str ident_subs = 
+let get_match_sub ident ident_subs = 
   let sub_to_return = ref None in
-  let replacement_func possibility = match (String.compare lval_str (fst possibility)) with
+  let replacement_func possibility = match (String.compare (id_of_identifier ident) (id_of_identifier (fst possibility))) with
       0 -> sub_to_return := Some(snd possibility)
     | _ -> ignore ()
   in
     List.iter replacement_func ident_subs;
     !sub_to_return
 
-(* Substitutes variable names, but does not substitue function/predicate names.
-   Also, if it runs across var decls due to a quantifier, it won't replace those new identifiers*)
+(* Substitutes variable names, but does not substitue function/predicate names.*)
 let rec sub_idents_in_expr expr ident_subs = 
-  let rec get_new_ident_subs old_ident_subs decls = 
+(*  let rec get_new_ident_subs old_ident_subs decls = 
     match old_ident_subs with
         sub :: subs -> 
           begin
@@ -60,7 +61,7 @@ let rec sub_idents_in_expr expr ident_subs =
               | _ -> get_new_ident_subs subs decls
           end
       | _ -> []
-  in
+  in*)
   let rec sub_idents_in_expr_list expr_list = 
     match expr_list with 
         [] -> []
@@ -73,7 +74,7 @@ let rec sub_idents_in_expr expr ident_subs =
             match l with
                 NormLval(loc,id) ->
                   begin
-                    let match_sub = get_match_sub id.name ident_subs in
+                    let match_sub = get_match_sub id ident_subs in
                       begin
                         match match_sub with
                             Some(replacement) ->
@@ -93,7 +94,7 @@ let rec sub_idents_in_expr expr ident_subs =
             match l with
                 NormLval(loc,id) ->
                   begin
-                    let match_sub = get_match_sub id.name ident_subs in
+                    let match_sub = get_match_sub id ident_subs in
                       match match_sub with
                           Some(sub) -> sub
                         | None -> expr
@@ -108,8 +109,8 @@ let rec sub_idents_in_expr expr ident_subs =
       | IDiv (loc,t1, t2) -> IDiv(loc, sub t1, sub t2)
       | Mod (loc,t1, t2) -> Mod(loc, sub t1, sub t2) 
       | UMinus (loc,t) -> UMinus(loc, sub t)
-      | ForAll (loc,decls,e) -> ForAll(loc,decls,sub_idents_in_expr e (get_new_ident_subs ident_subs decls))
-      | Exists (loc,decls,e) -> Exists(loc,decls,sub_idents_in_expr e (get_new_ident_subs ident_subs decls))
+      | ForAll (loc,decls,e) -> ForAll(loc,decls,sub_idents_in_expr e ident_subs)
+      | Exists (loc,decls,e) -> Exists(loc,decls,sub_idents_in_expr e ident_subs)
       | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc, sub expr, sub assign_to, sub assign_val)
       | LT (loc,t1, t2) -> LT(loc, sub t1, sub t2)
       | LE (loc,t1, t2) -> LE(loc, sub t1, sub t2)
@@ -132,21 +133,22 @@ let get_idents_of_formals func =
   let rec build_ident_list remaining = 
     match remaining with
         [] -> []
-      | e :: l -> e.varName.name :: build_ident_list l
+      | e :: l -> e.varName :: build_ident_list l
   in 
     build_ident_list func.formals
 
 
-
+(*Changes the quantification e.g. from a forall to an exists. Useful for getting rid of negations etc.*)
 let change_quantifier old_decls old_expr new_quant =
+  (*We also need to change the decls, because the quantification is a property of the decls.*)
   let old_decl_to_new_decl decl = 
-    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; (*TODO-A: may need to re-number here*) quant = new_quant; is_param = decl.is_param;}
+    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; quant = new_quant; is_param = decl.is_param;}
   in
   let new_decls = List.map old_decl_to_new_decl old_decls in
-  let new_decl_to_replacement_pair new_decl = 
-    (new_decl.varName.name,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl)); is_length = false;})))
+  let get_replacement_pair old_decl new_decl = 
+    (old_decl.varName,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl)); is_length = false;})))
   in
-  let replacement_pairs = List.map new_decl_to_replacement_pair new_decls in
+  let replacement_pairs = List.map2 get_replacement_pair old_decls new_decls in
   let new_expr = sub_idents_in_expr old_expr replacement_pairs in
     (new_decls,new_expr)
     
@@ -432,7 +434,7 @@ let remove_quantification_from_vc_with_array_dp exp_orig =
         begin
           let remove_one_decl decl exp =
             let convert_elem_in_index_set_to_term elem = 
-              let sub = [(decl.varName.name, elem)] in
+              let sub = [(decl.varName, elem)] in
                 sub_idents_in_expr exp sub
             in
             let rec make_conjuncts index_set_terms_remaining expr_so_far = 

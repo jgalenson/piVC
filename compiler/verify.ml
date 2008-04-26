@@ -39,7 +39,7 @@ let instantiate_predicates expr program =
             let new_el = List.map ip el in
             let pred_decl = get_predicate s in
             let get_replacement_pair decl arg = 
-              (decl.varName.name,arg) in
+              (decl.varName,arg) in
             let replacement_pairs = List.map2 get_replacement_pair pred_decl.formals_p new_el in
               Expr_utils.sub_idents_in_expr pred_decl.expr replacement_pairs
           end
@@ -67,8 +67,8 @@ let instantiate_predicates expr program =
       | Length (loc, t) -> assert(false);
       | EmptyExpr  -> expr        
   in
-    ip expr
-
+  let result = ip expr in
+    result
 
 
 (* The return type of verify_vc.

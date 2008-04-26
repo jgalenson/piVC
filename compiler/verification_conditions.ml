@@ -175,19 +175,14 @@ let get_vc path_with_length_nodes =
 	      | Ast.Assign (_,l,e) ->
                   begin
                     match l with
-                        Ast.NormLval(loc,id) -> sub_idents_in_expr formula [(Ast.string_of_lval l, e)]
-                      | Ast.ArrayLval(loc,arr,index) ->
+                        Ast.NormLval(loc,id) -> sub_idents_in_expr formula [(id, e)]
+                      | Ast.ArrayLval(loc,arr,index) -> (*sub_idents_in_expr formula [((array_ident_from_lval l),e)]*)
                           begin
-                            match array_name_from_lval l with
-                                Some(name) ->
-                                  begin
-                                    let array_update = array_write_to_array_update (Ast.LValue(Ast.get_dummy_location(),l)) e in
-                                      match array_update with
-                                          Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr formula [(name,update_to)]
-                                        | _ -> assert(false)
-                                  end
-                                    (*TODO-A: possibly clean up the above two lines...possibly use update_from instead of name*)
-                              | None -> formula
+                            let array_ident = array_ident_from_lval l in
+                            let array_update = array_write_to_array_update (Ast.LValue(Ast.get_dummy_location(),l)) e in
+                              match array_update with
+                                  Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr formula [(array_ident,update_to)]
+                                | _ -> assert(false)
                           end
                   end
 	      | _ -> formula

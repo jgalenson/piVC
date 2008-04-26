@@ -128,26 +128,6 @@ let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval err
                   let error_msg = "'" ^ (string_of_expr arr) ^ "' is of type '" ^ string_of_type typeOfArray ^ "' but should be an array" in
                     add_error SemanticError error_msg loc errors; ErrorType
                 end
-
-(*
-        let lookupResult = (Scope_stack.lookup_decl arr.name s) in
-        begin
-	  match lookupResult with
-           | None ->
-	       let error_msg = "Identifier '" ^ (string_of_identifier arr) ^ "' not defined" in
-	       add_error SemanticError error_msg loc errors; ErrorType
-           | Some(decl) -> let typeOfArray = type_of_decl decl in
-	     begin
-               match typeOfArray with
-                 | Array(t, l) -> t
-                 | _ ->
-		     let error_msg = "'" ^ (string_of_identifier arr) ^ "' is not an array" in
-		     add_error SemanticError error_msg loc errors; ErrorType
-             end
-        end
-*)
-      
- 
 	
 and check_for_same_type t1 t2 loc errors = 
   if not (types_equal t1 t2) then
@@ -158,6 +138,14 @@ and check_for_same_type t1 t2 loc errors =
     end
   else
     true
+
+and check_annotation annotation scope_stack errors = 
+  let annotation_type = check_and_get_return_type scope_stack annotation errors (true, false, true) in
+    begin
+      if not (types_equal annotation_type (Bool(gdl()))) then
+        let error_message = get_type_error_msg (string_of_expr annotation) annotation_type "bool" in
+          add_error SemanticError error_message (location_of_expr annotation) errors
+    end;  
 
 and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
@@ -455,7 +443,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
                             add_error SemanticError error_msg  loc errors
 
-  | AssertStmt (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (true, false, true))
+  | AssertStmt (loc, e) -> check_annotation e scope_stack errors
 
   | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
                       List.iter (check_stmt scope_stack returnType errors (is_in_loop)) st;
@@ -493,18 +481,16 @@ let ensure_function_returns f =
 let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
-  ignore (check_and_get_return_type s func.preCondition errors (true, false, true));
+  check_annotation func.preCondition s errors;
   check_ranking_annotation func.rankingAnnotation s errors;
-
-
   Scope_stack.enter_scope s;
+  (*add rv to scope*)
   begin
     let vd = Ast.create_varDecl func.returnType (Ast.create_identifier "rv" (Ast.get_dummy_location ()) ) (Ast.get_dummy_location ()) in
       vd.var_id := Some("rv");
       Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
   end;
-  (*add rv to scope*)
-  ignore (check_and_get_return_type s func.postCondition errors (true, false, true));
+  check_annotation func.postCondition s errors;  
   Scope_stack.exit_scope s;
 
 

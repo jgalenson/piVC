@@ -73,7 +73,7 @@ let recv i =
       input_line m.ic
   with
     | End_of_file
-    | Sys_blocked_io -> raise Not_found
+    | Sys_blocked_io -> assert(false)
 
 let destroy i m =
   try 

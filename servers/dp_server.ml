@@ -15,8 +15,7 @@ let rec getresponse id =
 	| "sat" -> append "sat" (getresponse id)
         | "unknown" -> "unknown"
 	| "unsat" -> "unsat"
-	| "Logical context is inconsistent. Use (pop) to restore the previous state." 
-	  -> assert false
+	| "Logical context is inconsistent. Use (pop) to restore the previous state." -> assert false
 	| "ok" -> getresponse id
 	| "" -> ""
 	| x -> append x (getresponse id)

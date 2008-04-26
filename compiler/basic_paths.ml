@@ -64,7 +64,10 @@ let gen_func_precondition_with_args_substitution func args =
     sub_idents_in_expr func.preCondition ident_subs
 
 let gen_func_postcondition_with_rv_substitution func rv_sub =
-  let ident_subs = [("rv", rv_sub)] in
+  let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
+    rv_ident.decl := Some(create_rv_decl func.returnType rv_ident)
+  ;
+  let ident_subs = [(rv_ident, rv_sub)] in
     sub_idents_in_expr func.postCondition ident_subs
 
 

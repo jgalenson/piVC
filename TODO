@@ -9,9 +9,7 @@ Jason
 	Bug: Loop assertions require parens now.
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
-        Bug: replace sub_idents... function with unique identifier as opposed to name
         Change lexer/parser to account for different types of line endings in a clean way - also change xml reading code to use this
-	On array assignment (arr := arr_0), it should set |arr| := |arr_0|.
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -22,6 +20,7 @@ Joel
 		Maybe -print yices;vc format
 		--truncate-lines
 		Maybe implement by making server framework use modules so we have locals.
+        Catch exceptions in dp server
 
 Both
 	Figure out how to display VCs in the GUI.
