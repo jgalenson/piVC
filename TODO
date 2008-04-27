@@ -10,6 +10,7 @@ Jason
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
         Change lexer/parser to account for different types of line endings in a clean way - also change xml reading code to use this
+	Bug: Fix _v0 highlighting.
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -37,14 +38,13 @@ Proposed High-level timetable
 -----------------------------
 
 Week 4
-	Jason: semantically check assertions
 	Jason: Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
 	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
 
 Week 5
 	Jason: Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
 	Joel: Proof of termination (see Aaron's original PiVC email)
-		Remaining: Sub idents in termination VC, prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?), add GUI support.
+		Remaining: Sub idents in termination VC, prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?), prove non-negativity, add GUI support.
 
 Week 6
 	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
@@ -69,3 +69,4 @@ Possible later TODOs
 --------------------
 
 Auto-indent in GUI (especially for assertions).
+Better syntax highlighting?

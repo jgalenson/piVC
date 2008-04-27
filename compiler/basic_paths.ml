@@ -178,7 +178,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
                         decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
-                        add_path (List.append curr_path [Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]) false;
+                        add_path (List.append curr_path ([Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false;
                         new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )
