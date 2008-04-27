@@ -95,13 +95,18 @@ and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt * expr * expr list option
-  | ForStmt of location * expr * expr * expr * stmt * expr * expr list option
+  | WhileStmt of location * expr * stmt * expr * rankingAnnotation option
+  | ForStmt of location * expr * expr * expr * stmt * expr * rankingAnnotation option
   | BreakStmt of location
   | ReturnStmt of location * expr
   | AssertStmt of location * expr
   | StmtBlock of location * stmt list
   | EmptyStmt
+
+and rankingAnnotation = {
+  tuple : expr list;
+  location_ra : location;
+}
 	
 type fnDecl = {
   fnName       : identifier;
@@ -110,10 +115,10 @@ type fnDecl = {
   stmtBlock : stmt;
   preCondition : expr;
   postCondition : expr;
-  rankingAnnotation : expr list option;
+  fnRankingAnnotation : rankingAnnotation option;
   location_fd : location;
 }
-val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> expr list option -> location -> fnDecl
+val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> rankingAnnotation option -> location -> fnDecl
 
 
 type predicate = {
@@ -150,6 +155,8 @@ val location_of_expr : expr -> location
 
 val location_of_lval : lval -> location
 
+val location_of_ranking_annotation : rankingAnnotation -> location  
+
 val id_of_varDecl : varDecl -> string
 
 val varDecl_of_identifier : identifier -> varDecl
@@ -176,4 +183,4 @@ val string_of_var_decl : varDecl -> string
 val string_of_stmt : stmt -> int -> string
 val string_of_decl : decl -> string
 val string_of_program : program -> string
-
+val string_of_ranking_annotation : rankingAnnotation -> string

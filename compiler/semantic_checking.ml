@@ -378,8 +378,8 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
   in
   cagrt_full e (is_top_level) ;;
 
-let check_ranking_annotation ra scope_stack errors = match ra with
-    Some (expr) ->
+let check_ranking_annotation ra_opt scope_stack errors = match ra_opt with
+    Some (ra) ->
       let check_ranking_expr e =
 	let my_type = check_and_get_return_type scope_stack e errors (false, true, true) in
 	if not (Ast.is_integral_type my_type) then
@@ -388,7 +388,7 @@ let check_ranking_annotation ra scope_stack errors = match ra with
             add_error SemanticError error_msg (location_of_expr e) errors;
 	  end;
       in
-      List.iter check_ranking_expr expr
+      List.iter check_ranking_expr ra.tuple
   | None -> () ;;
 
 let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
@@ -482,7 +482,7 @@ let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
   check_annotation func.preCondition s errors;
-  check_ranking_annotation func.rankingAnnotation s errors;
+  check_ranking_annotation func.fnRankingAnnotation s errors;
   Scope_stack.enter_scope s;
   (*add rv to scope*)
   begin

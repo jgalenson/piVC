@@ -33,10 +33,10 @@ test_parser.cmx: verify.cmx verification_conditions.cmx semantic_checking.cmx \
     parse_utils.cmx basic_paths.cmx ../language/ast.cmx test_parser.cmi 
 transform_yices.cmo: ../language/ast.cmi transform_yices.cmi 
 transform_yices.cmx: ../language/ast.cmx transform_yices.cmi 
-verification_conditions.cmo: expr_utils.cmi basic_paths.cmi \
-    ../language/ast.cmi verification_conditions.cmi 
-verification_conditions.cmx: expr_utils.cmx basic_paths.cmx \
-    ../language/ast.cmx verification_conditions.cmi 
+verification_conditions.cmo: ../utils/utils.cmi expr_utils.cmi \
+    basic_paths.cmi ../language/ast.cmi verification_conditions.cmi 
+verification_conditions.cmx: ../utils/utils.cmx expr_utils.cmx \
+    basic_paths.cmx ../language/ast.cmx verification_conditions.cmi 
 verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
     transform_yices.cmi semantic_checking.cmi ../language/parser.cmo \
     ../utils/net_utils.cmi expr_utils.cmi counterexamples.cmi \

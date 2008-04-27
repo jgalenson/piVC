@@ -10,6 +10,11 @@ let is_some opt =
     | Some (_) -> true
     | None -> false ;;
 
+let is_none opt =
+  match opt with
+    | Some (_) -> false 
+    | None -> true ;;
+
 let elem_from_opt opt = match opt with
     Some(something) -> something
   | None -> raise Option_Is_None ;;

@@ -6,11 +6,6 @@ open Ast
 
 exception InvalidPath of string ;;
 
-(* Gets the Ast.Expr out of a path node. *)
-let get_expr_from_path_node n = match n with
-  | Annotation (e, _) -> e
-  | _ -> raise (InvalidPath "No Annotation where expected in path") ;;  
-
 (* Converts all length() nodes to specially named idents.
    Adds a length assignment step to complement each array assignment step.
 *)
@@ -71,7 +66,8 @@ let convert_basic_path_to_acceptable_form path =
     match step with
         Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_with_var e)
       | Assume(e) -> Assume(replace_length_with_var e)
-      | Annotation(e,s) -> Annotation(replace_length_with_var e, s)          
+      | Annotation(e,s) -> Annotation(replace_length_with_var e, s)
+      | RankingAnnotation (ra) -> RankingAnnotation({ tuple = List.map (function e -> replace_length_with_var e) ra.tuple; location_ra = ra.location_ra })
   in
   let add_extra_node_for_length_if_necessary node =
       begin
@@ -152,14 +148,11 @@ let add_array_length_greater_than_0_to_expr expr =
 
 (* Gets a VC out of a basic path.
    Returns the VC as an Ast.Expr. *)
-let get_vc path_with_length_nodes =
-
+let get_vc bp =
+  let path_with_length_nodes = get_steps_from_path bp in
+  let is_termination_path = Basic_paths.is_termination_path bp in
   let path = convert_basic_path_to_acceptable_form path_with_length_nodes in
   let dummy_loc = Ast.get_dummy_location () in
-  let start_ann = get_expr_from_path_node (List.hd path) in
-  let rev_list = List.rev (List.tl path) in
-  let end_ann = get_expr_from_path_node (List.hd rev_list) in
-  let rev_instrs = List.tl rev_list in
 
   (* Weakest precondition on a list in reverse order: wp(formula, in; ...; i2; i1) *)
   let rec wp formula rev_instrs =
@@ -198,8 +191,52 @@ let get_vc path_with_length_nodes =
     else
       wp (single_wp formula (List.hd rev_instrs)) (List.tl rev_instrs)
   in
-  let vc_to_return = Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs) in
-    vc_to_return ;;
+
+  (* Make the VC itself. *)
+  let vc_to_return =
+    (* Gets the Ast.Expr out of a path node. *)
+    let get_expr_from_path_node n = match n with
+      | Annotation (e, _) -> e
+      | _ -> raise (InvalidPath "No Annotation where expected in path")
+    in
+    let start_ann = get_expr_from_path_node (List.hd path) in
+    (* Handle normal and runtime assertion basic paths. *)
+    if (not is_termination_path) then
+      let rev_list = List.rev (List.tl path) in
+      let rev_instrs = List.tl rev_list in
+      let end_ann = get_expr_from_path_node (List.hd rev_list) in
+      Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs)
+    else
+      (* Handle termination basic paths. *)
+      begin
+	let get_tuple n = match n with
+	  | RankingAnnotation (ra) -> ra.tuple
+	  | _ -> raise (InvalidPath "No RankingAnnotation where expected in path")
+	in
+	let start_tuple = get_tuple (List.hd (List.tl path)) in
+	let rev_list = List.rev (List.tl (List.tl path)) in
+	let end_tuple = get_tuple (List.hd rev_list) in
+	(* Get the Ast representation of < in the lexographic ordering of the two tuples. *)
+	let ordering_expr =
+	  let single_ordering (prev_lt_opt, prev_and_opt) cur_start cur_end =
+	    let cur_lt = Ast.LT (dummy_loc, cur_end, cur_start) in
+	    let cur_eq = Ast.EQ (dummy_loc, cur_end, cur_start) in
+	    if (Utils.is_none prev_lt_opt) then
+	      (Some (cur_lt), Some (cur_eq))
+	    else
+	      let prev_lt = Utils.elem_from_opt prev_lt_opt in
+	      let prev_and = Utils.elem_from_opt prev_and_opt in
+	      (Some (Ast.Or (dummy_loc, prev_lt, Ast.And (dummy_loc, prev_and, cur_lt))), Some (Ast.And (dummy_loc, prev_and, cur_eq)))
+	  in
+	  let (ordering_opt,_) = List.fold_left2 single_ordering (None, None) start_tuple end_tuple in
+	  assert (Utils.is_some ordering_opt);
+          Utils.elem_from_opt ordering_opt
+	in
+	let rev_instrs = List.tl rev_list in
+	Ast.Implies (dummy_loc, start_ann, wp ordering_expr rev_instrs)
+      end
+  in
+  vc_to_return ;;
 
 
 

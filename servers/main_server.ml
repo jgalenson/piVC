@@ -159,7 +159,8 @@ and xml_of_verified_program (all_valid, functions) =
         add_child (xml_of_basic_path basic_path) function_node in
         List.iter process_basic_path basic_paths;
         function_node
-  and xml_of_basic_path (nodes, vc, valid, counterexample) =
+  and xml_of_basic_path (path, vc, valid, counterexample) =
+    let nodes = Basic_paths.get_steps_from_path path in
     let basic_path_node = Xml_generator.create "basic_path" in
       add_attribute ("status", Verify.string_of_validity valid) basic_path_node;
       let path_node = Xml_generator.create "path" in
