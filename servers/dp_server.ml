@@ -10,28 +10,47 @@ let rec getresponse id =
     if b = "" then a else (a ^ "\n" ^ b)
   in
   try
+    (* Gets the counterexample by reading until we hit a newline. *)
+    let rec get_counterexample () = match (Ci_yices.recv id) with
+	| "" -> ""
+	| x -> append x (get_counterexample ())
+    in
+    (* Get (response, counterexample opt) from yices. *)
     let recv = Ci_yices.recv id in
       match recv with
-	| "sat" -> append "sat" (getresponse id)
-        | "unknown" -> "unknown"
-	| "unsat" -> "unsat"
+	| "sat" -> ("sat", Some (get_counterexample ()))
+        | "unknown" -> ("unknown", None)
+	| "unsat" -> ("unsat", None)
 	| "Logical context is inconsistent. Use (pop) to restore the previous state." -> assert false
 	| "ok" -> getresponse id
-	| "" -> ""
-	| x -> append x (getresponse id)
+	| "" -> ("", None)
+	| _ -> ("", None)
   with
     | End_of_file ->
 	assert false ;;
 
 let verify ic oc =
-  let input = get_input ic in
-  print_endline ("dp got input: " ^ Utils.truncate_for_printing input); (* input contains its own endline. *)
-  Ci_yices.init ();
-  let id = Ci_yices.new_context () in
-  Ci_yices.send id input;
-  Ci_yices.wait id;
-  let is_sat = getresponse id in
-  Ci_yices.delete_context id;
-  print_endline ("Got response: " ^ is_sat);
-  send_output oc is_sat;
-  flush oc;
+  begin
+    try
+      let input = get_input ic in
+      print_endline ("dp got input: " ^ Utils.truncate_for_printing input); (* input contains its own endline. *)
+      Ci_yices.init ();
+      let id = Ci_yices.new_context () in
+      Ci_yices.send id input;
+      Ci_yices.wait id;
+      let (response, counterexample_opt) = getresponse id in
+      Ci_yices.delete_context id;
+      assert ((response = "sat") = (Utils.is_some counterexample_opt));
+      print_endline ("Got response: " ^ response);
+      send_output oc response;
+      if (response = "sat") then
+        send_output oc (Utils.elem_from_opt counterexample_opt);
+    with
+	ex ->
+	  begin
+	    let error_str = Printexc.to_string ex in
+            send_output oc "error";
+            send_output oc error_str;
+	  end 
+  end;
+  flush oc ;;

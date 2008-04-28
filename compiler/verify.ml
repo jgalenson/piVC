@@ -8,6 +8,8 @@ open Utils ;;
 
 type validity = Valid | Invalid | Unknown;;
 
+exception Dp_server_exception of string ;;
+
 let string_of_validity v = match v with
   | Valid -> "valid"
   | Invalid -> "invalid"
@@ -169,8 +171,16 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
 	  (Valid, None)
         else if (response = "unknown") then
 	  (Unknown, None)
-        else if (String.sub response 0 3 = "sat") then
-	  (Invalid, Some (Counterexamples.parse_counterexamples response rev_var_names))
+        else if (response = "sat") then
+	  begin
+	    let counterexample = Net_utils.get_input inchan in
+	    (Invalid, Some (Counterexamples.parse_counterexamples counterexample rev_var_names))
+	  end
+	else if (response = "error") then
+	  begin
+	    let error_msg = Net_utils.get_input inchan in
+	    raise (Dp_server_exception error_msg)
+	  end
         else
 	  assert false
       in

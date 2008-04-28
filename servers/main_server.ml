@@ -87,7 +87,7 @@ let rec compile vc_cache_and_lock ic oc =
               
       in
         send_output oc get_output_to_return_to_client;
-        print_endline "Compliation completed. Response sent back to cient.";
+        print_endline "Compilation completed. Response sent back to client.";
     with
         ex -> 
           begin

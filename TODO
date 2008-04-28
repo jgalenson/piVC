@@ -21,7 +21,6 @@ Joel
 		Maybe -print yices;vc format
 		--truncate-lines
 		Maybe implement by making server framework use modules so we have locals.
-        Catch exceptions in dp server
 
 Both
 	Figure out how to display VCs in the GUI.
@@ -44,7 +43,7 @@ Week 4
 Week 5
 	Jason: Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
 	Joel: Proof of termination (see Aaron's original PiVC email)
-		Remaining: Check subbing idents in termination VC, prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?), prove non-negativity, add GUI support.
+		Remaining: prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?), prove non-negativity, add GUI support.
 
 Week 6
 	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
