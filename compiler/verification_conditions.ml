@@ -214,6 +214,17 @@ let get_vc bp =
 	  | _ -> raise (InvalidPath "No RankingAnnotation where expected in path")
 	in
 	let start_tuple = get_tuple (List.hd (List.tl path)) in
+	let replaced_start_tuple =
+	  let replace_expr e = 
+	    let rename_var ident =
+	      let loc = ident.location_id in
+	      let new_id = { name = "_" ^ ident.name ; location_id = loc ; decl = ident.decl ; is_length = ident.is_length } in
+	      Some (Ast.LValue (loc, NormLval (loc, new_id)))
+	    in
+	      Expr_utils.sub_idents e rename_var
+	  in
+	    List.map replace_expr start_tuple
+	in
 	let rev_list = List.rev (List.tl (List.tl path)) in
 	let end_tuple = get_tuple (List.hd rev_list) in
 	(* Get the Ast representation of < in the lexographic ordering of the two tuples. *)
@@ -228,12 +239,24 @@ let get_vc bp =
 	      let prev_and = Utils.elem_from_opt prev_and_opt in
 	      (Some (Ast.Or (dummy_loc, prev_lt, Ast.And (dummy_loc, prev_and, cur_lt))), Some (Ast.And (dummy_loc, prev_and, cur_eq)))
 	  in
-	  let (ordering_opt,_) = List.fold_left2 single_ordering (None, None) start_tuple end_tuple in
+	  let (ordering_opt,_) = List.fold_left2 single_ordering (None, None) replaced_start_tuple end_tuple in
 	  assert (Utils.is_some ordering_opt);
           Utils.elem_from_opt ordering_opt
 	in
 	let rev_instrs = List.tl rev_list in
-	Ast.Implies (dummy_loc, start_ann, wp ordering_expr rev_instrs)
+	let weakest_precon = wp ordering_expr rev_instrs in
+	let replaced_wp =
+	  let rename_var ident =
+	    if ident.name.[0] != '_' then
+	      None
+	    else
+	      let loc = ident.location_id in
+	      let new_id = { name = String.sub ident.name 1 ((String.length ident.name) - 1)  ; location_id = loc ; decl = ident.decl ; is_length = ident.is_length } in
+	      Some (Ast.LValue (loc, NormLval (loc, new_id)))
+	  in
+	    Expr_utils.sub_idents weakest_precon rename_var
+	in
+	Ast.Implies (dummy_loc, start_ann, replaced_wp)
       end
   in
   vc_to_return ;;

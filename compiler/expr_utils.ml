@@ -38,17 +38,8 @@ let rec array_write_to_array_update lhs rhs =
         end
     | _ -> assert(false) 
 
-let get_match_sub ident ident_subs = 
-  let sub_to_return = ref None in
-  let replacement_func possibility = match (String.compare (id_of_identifier ident) (id_of_identifier (fst possibility))) with
-      0 -> sub_to_return := Some(snd possibility)
-    | _ -> ignore ()
-  in
-    List.iter replacement_func ident_subs;
-    !sub_to_return
-
 (* Substitutes variable names, but does not substitue function/predicate names.*)
-let rec sub_idents_in_expr expr ident_subs = 
+(*let rec sub_idents_in_expr expr ident_subs = 
 (*  let rec get_new_ident_subs old_ident_subs decls = 
     match old_ident_subs with
         sub :: subs -> 
@@ -62,6 +53,15 @@ let rec sub_idents_in_expr expr ident_subs =
           end
       | _ -> []
   in*)
+  let get_match_sub ident ident_subs = 
+    let sub_to_return = ref None in
+    let replacement_func possibility = match (String.compare (id_of_identifier ident) (id_of_identifier (fst possibility))) with
+	0 -> sub_to_return := Some(snd possibility)
+      | _ -> ignore ()
+    in
+      List.iter replacement_func ident_subs;
+      !sub_to_return
+  in
   let rec sub_idents_in_expr_list expr_list = 
     match expr_list with 
         [] -> []
@@ -127,6 +127,64 @@ let rec sub_idents_in_expr expr ident_subs =
       | EmptyExpr  -> expr
   in 
     sub expr ;;
+*)
+
+let sub_idents expr fn =
+  let lval_of_expr e = match e with
+    | LValue (loc, l) -> l
+    | _ -> assert false
+  in
+  let rec sub expr = match expr with
+    | Assign (loc,l, e) -> Assign (loc, lval_of_expr (sub_lval l), sub e)
+    | Constant (loc,c) -> expr
+    | LValue (loc,l) -> sub_lval l
+    | Call (loc,s, el) -> Call(loc, s, List.map sub el)
+    | Plus (loc,t1, t2) -> Plus(loc, sub t1, sub t2)
+    | Minus (loc,t1, t2) -> Minus(loc, sub t1, sub t2)
+    | Times (loc,t1, t2) -> Times(loc, sub t1, sub t2)
+    | Div (loc,t1, t2) -> Div(loc, sub t1, sub t2)
+    | IDiv (loc,t1, t2) -> IDiv(loc, sub t1, sub t2)
+    | Mod (loc,t1, t2) -> Mod(loc, sub t1, sub t2) 
+    | UMinus (loc,t) -> UMinus(loc, sub t)
+    | ForAll (loc,decls,e) -> ForAll(loc, decls, sub e)
+    | Exists (loc,decls,e) -> Exists(loc, decls, sub e)
+    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc, sub expr, sub assign_to, sub assign_val)
+    | LT (loc,t1, t2) -> LT(loc, sub t1, sub t2)
+    | LE (loc,t1, t2) -> LE(loc, sub t1, sub t2)
+    | GT (loc,t1, t2) -> GT(loc, sub t1, sub t2)
+    | GE (loc,t1, t2) -> GE(loc, sub t1, sub t2)
+    | EQ (loc,t1, t2) -> EQ(loc, sub t1, sub t2)
+    | NE (loc,t1, t2) -> NE(loc, sub t1, sub t2)
+    | And (loc,t1, t2) -> And(loc, sub t1, sub t2)
+    | Or (loc,t1, t2) -> Or(loc, sub t1, sub t2)
+    | Not (loc,t) -> Not(loc, sub t)
+    | Iff (loc,t1, t2) -> Iff(loc, sub t1, sub t2)
+    | Implies (loc,t1, t2) -> Implies(loc, sub t1, sub t2)
+    | Length (loc, t) -> Length(loc, sub t)
+    | EmptyExpr  -> expr
+  and sub_lval lval = match lval with
+    | NormLval (loc, id) ->
+	begin
+	  let result = fn id in
+	    match result with
+	      | Some (e) -> e
+	      | None -> LValue (loc, NormLval (loc, id))
+	end
+    | ArrayLval (loc, arr, index) -> LValue (loc, ArrayLval (loc, sub arr, sub index))
+  in
+    sub expr ;;
+
+let rec sub_idents_in_expr expr ident_subs =
+  let get_new_ident ident =
+    try
+      let is_same (old, replace) =
+	((id_of_identifier ident) = (id_of_identifier old)) && (ident.name = old.name)
+      in
+      Some (snd (List.find is_same ident_subs))
+    with
+      Not_found -> None
+  in
+  sub_idents expr get_new_ident ;;
 
 (* returns a list of the identifier names of the function's arguments *)
 let get_idents_of_formals func = 
