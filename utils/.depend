@@ -1,10 +1,12 @@
 background.cmo: background.cmi 
 background.cmx: background.cmi 
+config.cmo: config.cmi 
+config.cmx: config.cmi 
 constants.cmo: constants.cmi 
 constants.cmx: constants.cmi 
 net_utils.cmo: net_utils.cmi 
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 
 scanner.cmx: scanner.cmi 
-utils.cmo: constants.cmi utils.cmi 
-utils.cmx: constants.cmx utils.cmi 
+utils.cmo: config.cmi utils.cmi 
+utils.cmx: config.cmx utils.cmi 

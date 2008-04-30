@@ -209,6 +209,6 @@ and xml_of_verified_program (all_valid, functions) =
 (* Wrapper for compile function that passes it the
    cache of VCs. *)
 let get_main_server_func () =
-  let vc_cache = Hashtbl.create Constants.num_cached_vcs in
+  let vc_cache = Hashtbl.create (Config.get_value_int "cache_size") in
   let cache_lock = Mutex.create () in
   compile (vc_cache, cache_lock)

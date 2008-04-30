@@ -1,9 +1,13 @@
 exception Option_Is_None ;;
 
 
-let get_absolute_path path_relative_to_dir_containing_executable = 
-  let path_of_executable = Sys.argv.(0) in
-    (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1))   ^ path_relative_to_dir_containing_executable ;;
+let get_absolute_path path = 
+  let first_char = String.get path 0 in
+    if first_char = '\\' then (*in this case, the path is already absolute*)
+        path
+    else (*otherwise we need to turn it into an absolute path*)
+        let path_of_executable = Sys.argv.(0) in
+          (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1)) ^ path 
 
 let is_some opt =
   match opt with
@@ -24,7 +28,7 @@ let queue_to_list q =
   Queue.fold (fun a b -> a @ [b]) [] q  ;;
 
 let truncate_for_printing str = 
-  if (String.length str) <= Constants.truncate_output_length then
+  if (String.length str) <= (Config.get_value_int "truncate_output_length") then
     str
   else
-    (Str.string_before str Constants.truncate_output_length) ^ ("... [tuncated]")
+    (Str.string_before str (Config.get_value_int "truncate_output_length")) ^ ("... [tuncated]")

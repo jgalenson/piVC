@@ -9,6 +9,8 @@ open Utils ;;
 type validity = Valid | Invalid | Unknown;;
 
 exception Dp_server_exception of string ;;
+exception Malformatted_DP_Server_Address;;
+
 
 let string_of_validity v = match v with
   | Valid -> "valid"
@@ -98,11 +100,11 @@ let evict_oldest_member vc_cache =
    we first evict the oldest element.
    You must already hold the cache lock when calling this. *)   
 let add_to_cache cache key result =
-  if Constants.num_cached_vcs = 0 then
+  if (Config.get_value_int "cache_size") = 0 then
     ()
   else
     begin
-      if (Hashtbl.length cache) = Constants.num_cached_vcs then
+      if (Hashtbl.length cache) = (Config.get_value_int "cache_size") then
 	begin
 	  evict_oldest_member cache
 	end;
@@ -155,39 +157,50 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
       let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
       let (sock, inchan, outchan) =
         let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-        let server_addr = Constants.dp_server_address in
-        Unix.connect sock (Unix.ADDR_INET(server_addr, Constants.dp_server_port));
-        let inchan = Unix.in_channel_of_descr sock in
-        let outchan = Unix.out_channel_of_descr sock in
-        (sock, inchan, outchan)
+        let server_addr_and_port = Config.get_value "dp_server_address" in
+          begin
+            try
+              let index_of_colon = String.index server_addr_and_port ':' in
+              let server_addr = String.sub server_addr_and_port 0 index_of_colon in
+              let server_port = int_of_string (String.sub server_addr_and_port (index_of_colon+1) ((String.length server_addr_and_port)-index_of_colon-1)) in
+                Unix.connect sock (Unix.ADDR_INET(Unix.inet_addr_of_string server_addr, server_port))
+            with
+                Invalid_argument(_) -> raise Malformatted_DP_Server_Address
+              | Not_found -> raise Malformatted_DP_Server_Address
+              | Failure("int_of_string") -> raise Malformatted_DP_Server_Address
+          end
+          ;
+          let inchan = Unix.in_channel_of_descr sock in
+          let outchan = Unix.out_channel_of_descr sock in
+            (sock, inchan, outchan)
       in
-      Net_utils.send_output outchan vc;
-      flush outchan;
-      let response = Net_utils.get_input inchan in  
-      Unix.close sock;
-      (* A VC is valid iff its negation is unsatisfiable. *)
-      let result =
-        if (response = "unsat") then
-	  (Valid, None)
-        else if (response = "unknown") then
-	  (Unknown, None)
-        else if (response = "sat") then
-	  begin
-	    let counterexample = Net_utils.get_input inchan in
-	    (Invalid, Some (Counterexamples.parse_counterexamples counterexample rev_var_names))
-	  end
-	else if (response = "error") then
-	  begin
-	    let error_msg = Net_utils.get_input inchan in
-	    raise (Dp_server_exception error_msg)
-	  end
-        else
-	  assert false
-      in
-        Mutex.lock cache_lock;
-        add_to_cache vc_cache unique_vc_str result;
-        Mutex.unlock cache_lock;
-        Normal (fst result, snd result)
+        Net_utils.send_output outchan vc;
+        flush outchan;
+        let response = Net_utils.get_input inchan in  
+          Unix.close sock;
+          (* A VC is valid iff its negation is unsatisfiable. *)
+          let result =
+            if (response = "unsat") then
+	      (Valid, None)
+            else if (response = "unknown") then
+	      (Unknown, None)
+            else if (response = "sat") then
+	      begin
+	        let counterexample = Net_utils.get_input inchan in
+	          (Invalid, Some (Counterexamples.parse_counterexamples counterexample rev_var_names))
+	      end
+	    else if (response = "error") then
+	      begin
+	        let error_msg = Net_utils.get_input inchan in
+	          raise (Dp_server_exception error_msg)
+	      end
+            else
+	      assert false
+          in
+            Mutex.lock cache_lock;
+            add_to_cache vc_cache unique_vc_str result;
+            Mutex.unlock cache_lock;
+            Normal (fst result, snd result)
       end
   with ex -> Exceptional (ex) ;;
 

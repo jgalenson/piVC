@@ -21,6 +21,7 @@ Joel
 		Maybe -print yices;vc format
 		--truncate-lines
 		Maybe implement by making server framework use modules so we have locals.
+        Bin directory structure for bin files
 
 Both
 	Figure out how to display VCs in the GUI.
@@ -30,7 +31,7 @@ Unassigned
 	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
-	Add support for warnings?  Asserts in Pi?
+	Add support for warnings?  Asserts in Pi? (Note from Jason: we already support Pi asserts, but maybe you mean something else.)
 
 -----------------------------
 Proposed High-level timetable

@@ -1,32 +1,36 @@
 main_server.cmi: ../compiler/verify.cmi ../compiler/counterexamples.cmi 
-both_servers.cmo: server_framework.cmi main_server.cmi dp_server.cmi \
-    ../utils/constants.cmi both_servers.cmi 
-both_servers.cmx: server_framework.cmx main_server.cmx dp_server.cmx \
-    ../utils/constants.cmx both_servers.cmi 
-ci_yices.cmo: ../utils/utils.cmi ../utils/constants.cmi ci_yices.cmi 
-ci_yices.cmx: ../utils/utils.cmx ../utils/constants.cmx ci_yices.cmi 
+both_servers.cmo: ../utils/utils.cmi server_framework.cmi main_server.cmi \
+    dp_server.cmi ../utils/constants.cmi ../utils/config.cmi both_servers.cmi 
+both_servers.cmx: ../utils/utils.cmx server_framework.cmx main_server.cmx \
+    dp_server.cmx ../utils/constants.cmx ../utils/config.cmx both_servers.cmi 
+ci_yices.cmo: ../utils/utils.cmi ../utils/config.cmi ci_yices.cmi 
+ci_yices.cmx: ../utils/utils.cmx ../utils/config.cmx ci_yices.cmi 
 dp_server.cmo: ../utils/utils.cmi server_framework.cmi ../utils/net_utils.cmi \
     ci_yices.cmi dp_server.cmi 
 dp_server.cmx: ../utils/utils.cmx server_framework.cmx ../utils/net_utils.cmx \
     ci_yices.cmx dp_server.cmi 
-dp_server_executable.cmo: server_framework.cmi dp_server.cmi \
-    ../utils/constants.cmi dp_server_executable.cmi 
-dp_server_executable.cmx: server_framework.cmx dp_server.cmx \
-    ../utils/constants.cmx dp_server_executable.cmi 
+dp_server_executable.cmo: ../utils/utils.cmi server_framework.cmi \
+    dp_server.cmi ../utils/constants.cmi ../utils/config.cmi \
+    dp_server_executable.cmi 
+dp_server_executable.cmx: ../utils/utils.cmx server_framework.cmx \
+    dp_server.cmx ../utils/constants.cmx ../utils/config.cmx \
+    dp_server_executable.cmi 
 main_server.cmo: xml_generator.cmi xml-light/xml.cmi ../compiler/verify.cmi \
     ../utils/utils.cmi server_framework.cmi ../compiler/semantic_checking.cmi \
     ../compiler/parse_utils.cmi ../utils/net_utils.cmi \
-    ../compiler/counterexamples.cmi ../utils/constants.cmi \
+    ../compiler/counterexamples.cmi ../utils/config.cmi \
     ../compiler/basic_paths.cmi ../language/ast.cmi main_server.cmi 
 main_server.cmx: xml_generator.cmx xml-light/xml.cmi ../compiler/verify.cmx \
     ../utils/utils.cmx server_framework.cmx ../compiler/semantic_checking.cmx \
     ../compiler/parse_utils.cmx ../utils/net_utils.cmx \
-    ../compiler/counterexamples.cmx ../utils/constants.cmx \
+    ../compiler/counterexamples.cmx ../utils/config.cmx \
     ../compiler/basic_paths.cmx ../language/ast.cmx main_server.cmi 
-main_server_executable.cmo: server_framework.cmi main_server.cmi \
-    ../utils/constants.cmi main_server_executable.cmi 
-main_server_executable.cmx: server_framework.cmx main_server.cmx \
-    ../utils/constants.cmx main_server_executable.cmi 
+main_server_executable.cmo: ../utils/utils.cmi server_framework.cmi \
+    main_server.cmi ../utils/constants.cmi ../utils/config.cmi \
+    main_server_executable.cmi 
+main_server_executable.cmx: ../utils/utils.cmx server_framework.cmx \
+    main_server.cmx ../utils/constants.cmx ../utils/config.cmx \
+    main_server_executable.cmi 
 server_framework.cmo: xml_generator.cmi ../utils/utils.cmi \
     ../compiler/semantic_checking.cmi ../language/ast.cmi \
     server_framework.cmi 
