@@ -4,6 +4,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -69,6 +71,28 @@ public class PiTree extends JPanel {
 		        	return;
 		        nodeSelected(obj);
 		    }
+		});
+		// Tree expansion listener
+		tree.addTreeExpansionListener(new TreeExpansionListener() {
+			public void treeExpanded(TreeExpansionEvent e) {
+				TreePath path = e.getPath();
+				DefaultMutableTreeNode expandedNode = (DefaultMutableTreeNode)path.getLastPathComponent();
+				Object expandedObj = expandedNode.getUserObject();
+				// If a Function has no termination arguments, automatically expand the "Correctness" node when we expand the function.
+				if (expandedObj instanceof Function && expandedNode.getChildCount() == 1) {
+					DefaultMutableTreeNode child = (DefaultMutableTreeNode)expandedNode.getChildAt(0);
+					tree.expandPath(new TreePath(child.getPath()));
+				}
+				// Automatically expand basic paths and nonnegative VCs.
+				else if (expandedObj instanceof BasicPath || expandedObj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
+					for (int i = 0; i < expandedNode.getChildCount(); i++) {
+						DefaultMutableTreeNode child = (DefaultMutableTreeNode)expandedNode.getChildAt(i);
+						tree.expandPath(new TreePath(child.getPath()));
+					}
+				}
+			}
+			// ignore collapsed messages.
+			public void treeCollapsed(TreeExpansionEvent e) {}
 		});
 		// Draw icons next to things
 		tree.setCellRenderer(new MyTreeCellRenderer());
