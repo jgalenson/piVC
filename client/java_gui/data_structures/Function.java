@@ -1,18 +1,18 @@
 package data_structures;
 
-import java.util.ArrayList;
-
 public class Function {
 	
 	private String name;
-	private int validity;
-	private ArrayList<BasicPath> basicPaths;
+	private VerificationResult.validityT validity;
+	private Correctness correctness;
+	private Termination termination;
 	private Location location;
 	
-	public Function(String name, int validity, ArrayList<BasicPath> basicPaths, Location location) {
+	public Function(String name, VerificationResult.validityT validity, Correctness correctness, Termination termination, Location location) {
 		this.name = name;
 		this.validity = validity;
-		this.basicPaths = basicPaths;
+		this.correctness = correctness;
+		this.termination = termination;
 		this.location = location;
 	}
 	
@@ -20,16 +20,16 @@ public class Function {
 		return name;
 	}
 	
-	public int getValidity() {
+	public VerificationResult.validityT getValidity() {
 		return validity;
 	}
 	
-	public int getNumBasicPaths() {
-		return basicPaths.size();
+	public Correctness getCorrectness() {
+		return correctness;
 	}
 	
-	public BasicPath getBasicPath(int index) {
-		return basicPaths.get(index);
+	public Termination getTermination() {
+		return termination;
 	}
 	
 	public Location getLocation() {

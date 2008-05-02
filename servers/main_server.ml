@@ -4,6 +4,7 @@ open Ast
 open Semantic_checking
 open Server_framework
 open Net_utils
+open Verify ;;
 
 exception InvalidXml of string ;;
 
@@ -150,14 +151,20 @@ and xml_of_errors errors =
 
 and xml_of_verified_program (all_valid, functions) = 
   (*Now we have the xml generation functions for the various levels*)
-  let rec xml_of_function (fn, all_valid, basic_paths) = 
+  let rec xml_of_function (fn, all_valid, (all_paths_valid, basic_paths), termination_info_opt) = 
     let function_node = Xml_generator.create "function" in
       add_attribute ("name", fn.fnName.name) function_node;
       add_attribute ("status", Verify.string_of_validity all_valid) function_node;
       add_child (xml_of_location fn.location_fd) function_node;
+      let correctness_node = Xml_generator.create "correctness" in
+      add_attribute ("status", Verify.string_of_validity all_paths_valid) correctness_node;
+      add_child correctness_node function_node;
       let process_basic_path basic_path = 
-        add_child (xml_of_basic_path basic_path) function_node in
+        add_child (xml_of_basic_path basic_path) correctness_node
+      in
         List.iter process_basic_path basic_paths;
+	if (Utils.is_some termination_info_opt) then
+	  add_child (xml_of_termination_info (Utils.elem_from_opt termination_info_opt)) function_node;
         function_node
   and xml_of_basic_path (path, vc, valid, counterexample) =
     let nodes = Basic_paths.get_steps_from_path path in
@@ -195,6 +202,39 @@ and xml_of_verified_program (all_valid, functions) =
     in
       List.iter process_var counterexample;
       counterexample_node
+  (* <termination> node *)
+  and xml_of_termination_info termination_info =
+    let termination_node = Xml_generator.create "termination" in
+    add_attribute ("status", Verify.string_of_validity termination_info.overall_validity) termination_node;
+      begin (* <decreasing> node *)
+      let decreasing_node = Xml_generator.create "decreasing" in
+	add_attribute ("status", Verify.string_of_validity (fst termination_info.decreasing_paths)) decreasing_node;
+	let process_basic_path basic_path = 
+          add_child (xml_of_basic_path basic_path) decreasing_node
+	in
+        List.iter process_basic_path (snd termination_info.decreasing_paths);    
+        add_child decreasing_node termination_node;
+    end;
+      begin (* <nonnegative> node *)
+      let nonnegative_node = Xml_generator.create "nonnegative" in
+	add_attribute ("status", Verify.string_of_validity (fst termination_info.nonnegative_vcs)) nonnegative_node;
+	let process_vc (vc, valid, counterexample) =
+	  let nonnegative_vc_node = Xml_generator.create "nonnegative_vc" in
+	  add_child (xml_of_location (Ast.location_of_expr vc)) nonnegative_vc_node;
+	  let vc_node = Xml_generator.create "vc" in
+          set_text (Ast.string_of_expr vc) vc_node;
+          add_child vc_node nonnegative_vc_node;
+	  add_attribute ("status", Verify.string_of_validity valid) nonnegative_vc_node;
+	  if (Utils.is_some counterexample) then
+	    begin
+	      add_child (xml_of_counterexample (Utils.elem_from_opt counterexample)) nonnegative_vc_node
+	    end;
+          add_child nonnegative_vc_node nonnegative_node;
+	in
+	  List.iter process_vc (snd termination_info.nonnegative_vcs); 
+	add_child nonnegative_node termination_node;
+    end;
+    termination_node
   (* Now we put together the root node *)
   and transmission_node = Xml_generator.create "piVC_transmission" in
     add_attribute ("type", "program_submission_response") transmission_node;
@@ -202,7 +242,8 @@ and xml_of_verified_program (all_valid, functions) =
       add_attribute ("status", Verify.string_of_validity all_valid) result_node;
       add_child result_node transmission_node;
       let process_function func = 
-        add_child (xml_of_function func) result_node in
+        add_child (xml_of_function func) result_node
+      in
         List.iter process_function functions;
         transmission_node ;;
 

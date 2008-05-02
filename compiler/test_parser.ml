@@ -6,7 +6,7 @@ open Ast
 open Verify
   
 let print_basic_paths_and_vcs all_info =
-  let print_paths_and_vcs (_, info) =
+  let print_paths_and_vcs (_, info, _, _) =
     let print_path_and_vc (path, vc) =
       Basic_paths.print_basic_path path;
       print_endline ("VC: " ^ Verification_conditions.string_of_vc vc) in

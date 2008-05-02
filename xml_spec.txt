@@ -42,34 +42,48 @@ Server no errors:
 <piVC_transmission type="program_submission_response" >
 	<result status="proved/unproved">
 		<function name="name">
-			<basic_path status="valid/invalid">
-				<step>
-					<node type="expr/assume/annotation">
-						<location>
-							<start row=foo col=bar />
-							<end row=bar col=foo />
-						</location>
-						<text>
-							cool++;
-						</text>
-					</node>
-					// more nodes as siblings
-				</step>
-				// more steps as siblings
-				<vc>
-					string goes here
-				</vc>
-				<counterexample>  // optional tag (only there if invalid)
-					<var text="var1 = val1">
-					     <location> ... </location>
-					</var>
-					<var text="var2 = val2">
-					     <location> ... </location>
-					</var>
-					// ...
-				</counterexample>
-			</basic_path>
-			// more basic paths as siblings
+			<correctness status="valid/invalid/unknown">
+  			        <basic_path status="valid/invalid/unknown">
+				        <step>
+					        <node type="expr/assume/annotation">
+						        <location>
+							        <start row=foo col=bar />
+							        <end row=bar col=foo />
+						        </location>
+						        <text>
+							        cool++;
+						        </text>
+					        </node>
+					        // more nodes as siblings
+				        </step>
+				        // more steps as siblings
+				        <vc>
+					        string goes here
+				        </vc>
+				        <counterexample>  // optional tag (only there if invalid)
+					        <var text="var1 = val1">
+					             <location> ... </location>
+					        </var>
+					        <var text="var2 = val2">
+					             <location> ... </location>
+					        </var>
+					        // ...
+				        </counterexample>
+			        </basic_path>
+			        // more basic paths as siblings
+			</correctness>
+			<termination status="valid/invalid/unknown">
+				<decreasing status="valid/invalid/unknown">
+			                // basic paths here are the same as the <basic_path> tags above.
+				</decreasing>
+				<nonnegative status="valid/invalid/unknown">
+				        <nonnegative_vc status="valid/invalid/unknown">
+					        <vc> vc </vc>
+						<counterexample> ... </counterexample> // optional
+					</nonnegative_vc>
+				</nonnegative>
+				TODO: Add something here about extra places required.
+			</termination>
 		</function>
 		// more functions as siblings
 	</result>

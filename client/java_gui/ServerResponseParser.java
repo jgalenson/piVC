@@ -9,11 +9,13 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import data_structures.BasicPath;
+import data_structures.Correctness;
 import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Location;
 import data_structures.PiError;
 import data_structures.Step;
+import data_structures.Termination;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
 
@@ -74,17 +76,17 @@ public class ServerResponseParser {
 			if ("function".equals(child.getNodeName()))  // Element node
 				functions.add(parseFunction(child));
 		}
-		VerificationResult verificationResult = new VerificationResult(filename, validityStringToInt(valid), functions);
+		VerificationResult verificationResult = new VerificationResult(filename, validityStringToValidity(valid), functions);
 		piGui.handleVerificationResult(verificationResult);
 	}
 
-	private int validityStringToInt(String validity){
+	private VerificationResult.validityT validityStringToValidity(String validity){
 		if(validity.equals("valid"))
-			return VerificationResult.VALID;
+			return VerificationResult.validityT.VALID;
 		else if (validity.equals("invalid"))
-			return VerificationResult.INVALID;
+			return VerificationResult.validityT.INVALID;
 		else if (validity.equals("unknown"))
-			return VerificationResult.UNKNOWN;
+			return VerificationResult.validityT.UNKNOWN;
 		else
 			throw new RuntimeException("Unrecognized validity type.");
 	}
@@ -95,19 +97,61 @@ public class ServerResponseParser {
 	private Function parseFunction(Node function) {
 		String name = function.getAttributes().getNamedItem("name").getTextContent();
 		String valid = function.getAttributes().getNamedItem("status").getTextContent();
-		ArrayList<BasicPath> basicPaths = new ArrayList<BasicPath>();
+		Correctness correctness = null;
+		Termination termination = null;
 		Location location = null;
 		NodeList children = function.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
-			if ("basic_path".equals(child.getNodeName()))
-				basicPaths.add(parseBasicPath(child));
+			if ("correctness".equals(child.getNodeName()))
+				correctness = parseCorrectness(child);
+			if ("termination".equals(child.getNodeName()))
+				termination = parseTermination(child);
 			if ("location".equals(child.getNodeName()))
 				location = parseLocation(child);
 		}
+		if (correctness == null || location == null)
+			throw new RuntimeException("Invalid function tag");
+		return new Function(name, validityStringToValidity(valid), correctness, termination, location);
+	}
+	
+	/**
+	 * Makes and returns a Correctness object from a <correctness> tag.
+	 */
+	private Correctness parseCorrectness(Node correctness) {
+		String valid = correctness.getAttributes().getNamedItem("status").getTextContent();
+		VerificationResult.validityT validity = validityStringToValidity(valid);
+		ArrayList<BasicPath> basicPaths = new ArrayList<BasicPath>();
+		NodeList children = correctness.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("basic_path".equals(child.getNodeName()))
+				basicPaths.add(parseBasicPath(child));
+		}
 		if (basicPaths.size() == 0)
 			throw new RuntimeException("Function has no basic paths");
-		return new Function(name, validityStringToInt(valid), basicPaths, location);
+		return new Correctness(validity, basicPaths);
+	}
+	
+	/**
+	 * Makes and returns a Correctness object from a <termination> tag.
+	 */
+	private Termination parseTermination(Node termination) {
+		String valid = termination.getAttributes().getNamedItem("status").getTextContent();
+		VerificationResult.validityT validity = validityStringToValidity(valid);
+		Termination.Decreasing decreasing = null;
+		Termination.Nonnegative nonnegative = null;
+		NodeList children = termination.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("decreasing".equals(child.getNodeName()))
+				decreasing = parseDecreasing(child);
+			if ("nonnegative".equals(child.getNodeName()))
+				nonnegative = parseNonnegative(child);
+		}
+		if (decreasing == null || nonnegative == null)
+			throw new RuntimeException("Invalid termination tag");
+		return new Termination(validity, decreasing, nonnegative);
 	}
 
 	/**
@@ -115,7 +159,7 @@ public class ServerResponseParser {
 	 */
 	private BasicPath parseBasicPath(Node basicPath) {
 		String valid = basicPath.getAttributes().getNamedItem("status").getTextContent();
-		int validity = validityStringToInt(valid);
+		VerificationResult.validityT validity = validityStringToValidity(valid);
 		ArrayList<Step> steps = null;
 		VerificationCondition vc = null;
 		Counterexample counterexample = null;
@@ -129,7 +173,7 @@ public class ServerResponseParser {
 			if ("counterexample".equals(child.getNodeName()))
 				counterexample = parseCounterexample(child);
 		}
-		if (steps == null || vc == null || (vc.getValidity()==VerificationResult.INVALID && counterexample == null))
+		if (steps == null || vc == null || (vc.getValidity() == VerificationResult.validityT.INVALID && counterexample == null))
 			throw new RuntimeException("Invalid basic_path tag");
 		return new BasicPath(steps, vc, validity, counterexample);
 	}
@@ -197,6 +241,65 @@ public class ServerResponseParser {
 		if (text == null || location == null)
 			throw new RuntimeException("Invalid var tag");
 		return new Counterexample.Variable(text, location);
+	}
+
+	/**
+	 * Makes and returns a Termination.Decreasing object from a <decreasing> tag.
+	 */
+	private Termination.Decreasing parseDecreasing(Node decreasing) {
+		String valid = decreasing.getAttributes().getNamedItem("status").getTextContent();
+		VerificationResult.validityT validity = validityStringToValidity(valid);
+		ArrayList<BasicPath> basicPaths = new ArrayList<BasicPath>();
+		NodeList children = decreasing.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("basic_path".equals(child.getNodeName()))
+				basicPaths.add(parseBasicPath(child));
+		}
+		if (basicPaths.size() == 0)
+			throw new RuntimeException("Decreasing node has no basic paths");
+		return new Termination.Decreasing(validity, basicPaths);
+	}
+
+	/**
+	 * Makes and returns a Termination.Decreasing object from a <decreasing> tag.
+	 */
+	private Termination.Nonnegative parseNonnegative(Node nonnegative) {
+		String valid = nonnegative.getAttributes().getNamedItem("status").getTextContent();
+		VerificationResult.validityT validity = validityStringToValidity(valid);
+		ArrayList<Termination.Nonnegative.NonnegativeVerificationCondition> nonnegativeVCs = new ArrayList<Termination.Nonnegative.NonnegativeVerificationCondition>();
+		NodeList children = nonnegative.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("nonnegative_vc".equals(child.getNodeName()))
+				nonnegativeVCs.add(parseNonnegativeVerificationCondition(child));
+		}
+		if (nonnegativeVCs.size() == 0)
+			throw new RuntimeException("Nonnegative node has no VCs");
+		return new Termination.Nonnegative(validity, nonnegativeVCs);
+	}
+	
+	/**
+	 * Makes and returns a Termination.Nonnegative.NonnegativeVerificationCondition object from a <nonnegative_vc> tag.
+	 */
+	private Termination.Nonnegative.NonnegativeVerificationCondition parseNonnegativeVerificationCondition(Node vcNode) {
+		VerificationResult.validityT validity = validityStringToValidity(vcNode.getAttributes().getNamedItem("status").getTextContent());
+		VerificationCondition vc = null;
+		Counterexample counterexample = null;
+		Location location = null;
+		NodeList children = vcNode.getChildNodes();
+		for (int i = 0; i < children.getLength(); i++) {
+			Node child = children.item(i);
+			if ("vc".equals(child.getNodeName()))
+				vc = new VerificationCondition(child.getTextContent(), validity);
+			if ("counterexample".equals(child.getNodeName()))
+				counterexample = parseCounterexample(child);
+			if ("location".equals(child.getNodeName()))
+				location = parseLocation(child);
+		}
+		if (vc == null || (validity == VerificationResult.validityT.INVALID && counterexample == null) || location == null)
+			throw new RuntimeException("Invalid nonnegative_vc tag");
+		return new Termination.Nonnegative.NonnegativeVerificationCondition(validity, vc, counterexample, location);
 	}
 
 	/**

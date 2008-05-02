@@ -41,7 +41,8 @@ let verify ic oc =
       let (response, counterexample_opt) = getresponse id in
       Ci_yices.delete_context id;
       assert ((response = "sat") = (Utils.is_some counterexample_opt));
-      print_endline ("Got response: " ^ response);
+      let response_str = response ^ (if (Utils.is_some counterexample_opt) then (" with " ^ (Utils.elem_from_opt counterexample_opt)) else "") in
+      print_endline ("Got response: " ^ response_str);
       send_output oc response;
       if (response = "sat") then
         send_output oc (Utils.elem_from_opt counterexample_opt);

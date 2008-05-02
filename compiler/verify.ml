@@ -11,12 +11,35 @@ type validity = Valid | Invalid | Unknown;;
 exception Dp_server_exception of string ;;
 exception Malformatted_DP_Server_Address;;
 
+type termination_result = {
+  overall_validity : validity;
+  decreasing_paths : validity * (Basic_paths.basic_path * Ast.expr * validity * Counterexamples.example list option) list;
+  nonnegative_vcs : validity * (Ast.expr * validity * Counterexamples.example list option) list;
+} ;;
+
+let create_termination_result ov paths nvcs =
+  { overall_validity = ov; decreasing_paths = paths; nonnegative_vcs = nvcs; } ;;
 
 let string_of_validity v = match v with
   | Valid -> "valid"
   | Invalid -> "invalid"
   | Unknown -> "unknown" ;;
 
+let is_valid v = match v with
+  | Valid -> true
+  | _ -> false ;;
+
+let is_unknown v = match v with
+  | Unknown -> true
+  | _ -> false ;;
+
+let overall_validity validities =
+  if (List.for_all is_valid validities) then
+    Valid
+  else if (List.exists is_unknown validities) then
+    Unknown
+  else
+    Invalid ;;
 
 let instantiate_predicates expr program = 
   let get_predicate pred_ident = 
@@ -186,8 +209,9 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
 	      (Unknown, None)
             else if (response = "sat") then
 	      begin
-	        let counterexample = Net_utils.get_input inchan in
-	          (Invalid, Some (Counterexamples.parse_counterexamples counterexample rev_var_names))
+	        let counterexample_str = Net_utils.get_input inchan in
+		let counterexample = Counterexamples.parse_counterexample counterexample_str rev_var_names in
+	        (Invalid, Some (counterexample))
 	      end
 	    else if (response = "error") then
 	      begin
@@ -211,9 +235,6 @@ let overall_validity_status list_of_things extraction_func =
     else Unknown
 ;;
 
-
-
-
 (* Returns (fn * bool * (Basic Path * VC * validity * example list option) list) list. *)
 let verify_program program_info program_ast vc_cache_and_lock =
 
@@ -221,39 +242,79 @@ let verify_program program_info program_ast vc_cache_and_lock =
      contains a Background process for each VC.
      That is, we start all the VC requests. *)
   let intermediate_info =
+    let get_vc_thread vc = Background.create verify_vc (vc, vc_cache_and_lock, program_ast) in
     let intermediate_basic_path (path, vc) =
-      let vc_thread = Background.create verify_vc (vc, vc_cache_and_lock, program_ast) in
+      let vc_thread = get_vc_thread vc in
       (path, vc, vc_thread)
     in
-    let intermediate_fn (fn, bp) =
-      let path = List.map intermediate_basic_path bp in
-      (fn, path)
+    let intermediate_nonnegative_vc nvc =
+      let vc_thread = get_vc_thread nvc in
+      (nvc, vc_thread)
+    in
+    (* Makes a data structure where we replace each VC expr with VC expr * VC background thread. *)
+    let intermediate_fn (fn, norm_bps, term_bps, nvcs) =
+      let norm_path = List.map intermediate_basic_path norm_bps in
+      let term_path = List.map intermediate_basic_path term_bps in
+      let nvc = List.map intermediate_nonnegative_vc nvcs in
+      (fn, norm_path, term_path, nvc)
     in
     List.map intermediate_fn program_info
   in
-  
-  let rec verify_function func = 
-    let verified_basic_paths = List.map verify_basic_path (snd func) in
-    let validity_of_path (path, vc, validity, count) = validity in
-    (fst func, overall_validity_status verified_basic_paths validity_of_path, verified_basic_paths)
 
-  and verify_basic_path (path, vc, vc_thread) =
-    let vc_result = Background.get_result vc_thread in
-    match vc_result with
-      | Normal (v, c) -> (path, vc, v, c)
-      | Exceptional (e) -> raise e
-  in 
+  (* Verify a function.
+     Takes in a tuple of its name, its normal basic paths, its
+     termination basic paths, and the non-negative VCs.
+     We first call the verify_* fns to start all the background VC requests.
+     We then get all of the results and get the overall validities. *)
+  let rec verify_function (fn, norm_paths, term_paths, nvcs) =
+    (* Gets the result of a thread and either returns it or
+       raises the exception that the thread raised. *)
+    let get_vc_result vc_thread = 
+      let vc_result = Background.get_result vc_thread in
+	match vc_result with
+	  | Normal (v, c) -> (v, c)
+	  | Exceptional (e) -> raise e
+    in
+    let verify_basic_path (path, vc, vc_thread) =
+      let (v, c) = get_vc_result vc_thread in
+      (path, vc, v, c) 
+    in
+    let verify_nonnegative_vc (nvc, vc_thread) =
+      let (v, c) = get_vc_result vc_thread in
+      (nvc, v, c)
+    in
+    let verified_norm_paths = List.map verify_basic_path norm_paths in
+    let verified_term_paths = List.map verify_basic_path term_paths in
+    let validity_of_path (path, vc, validity, count) = validity in
+    let overall_norm_path_status = overall_validity_status verified_norm_paths validity_of_path in
+    let overall_term_path_status = overall_validity_status verified_term_paths validity_of_path in
+    let norm_path_info = (overall_norm_path_status, verified_norm_paths) in
+    let (termination_result, overall_term_validity) =
+      if (List.length term_paths > 0) then
+	let term_path_info = (overall_term_path_status, verified_term_paths) in
+	let verified_nvcs = List.rev_map verify_nonnegative_vc nvcs in
+	let validity_of_nvc (nvc, validity, counterexample) = validity in
+	let overall_nvc_status = overall_validity_status verified_nvcs validity_of_nvc in
+	let overall_term_status = overall_validity [overall_term_path_status; overall_nvc_status] in
+        let termination_info = create_termination_result overall_term_status term_path_info (overall_nvc_status, verified_nvcs) in
+	(Some (termination_info), overall_term_status)
+      else
+	(None, Valid)
+    in
+    let overall_fn_status = overall_validity [overall_norm_path_status; overall_term_validity] in
+    (fn, overall_fn_status, norm_path_info, termination_result)
+  in
 
   let verified_functions = List.map verify_function intermediate_info in
-  let validity_of_function (name,validity,info) = validity in
+  let validity_of_function (name,validity,norm_bp_info,term_info) = validity in
     (overall_validity_status verified_functions validity_of_function, verified_functions)
 
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list
-   Returns (fn * (Basic Path * VC) list) list. *)
+   Returns (fn * (Normal Basic Path * VC) list * (Term basic path * VC list) * non-negative VC list) list. *)
 let get_all_info program gen_runtime_asserts =
   (* Returns a list of pairs of fnName and its basic path.
-     Returns (fn * path_node list list) list. *)
+     Returns (fn * (basic_path list * (norm_basic_path list, term_basic_path list))) list. *)
   let get_basic_paths program =
     let get_decl_paths_if_appropriate decl = 
       match decl with
@@ -270,9 +331,12 @@ let get_all_info program gen_runtime_asserts =
     in
       List.fold_left map_fn [] program.decls
   in
-  (* Add the VCs into the fnName + Basic path info. *)
-  let get_vcs (fnName, paths) =
-    (fnName, List.map (fun path -> (path, Verification_conditions.get_vc path)) paths)
+  (* Gets the VCs for each basic path. *)
+  let get_vcs (fnName, (normal_paths, termination_paths)) =
+    let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) normal_paths in
+    let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) termination_paths in
+    let nonneg_vcs = Termination.get_nonnegativity_vcs program in
+    (fnName, norm_vcs, term_vcs, nonneg_vcs)
   in
   let paths = get_basic_paths program in
   List.map get_vcs paths ;;

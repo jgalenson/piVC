@@ -3,9 +3,9 @@ package data_structures;
 public class VerificationCondition {
 	
 	private String vc;
-	private int validity;
+	private VerificationResult.validityT validity;
 	
-	public VerificationCondition(String vc, int validity) {
+	public VerificationCondition(String vc, VerificationResult.validityT validity) {
 		this.vc = vc;
 		this.validity = validity;
 	}
@@ -14,7 +14,7 @@ public class VerificationCondition {
 		return vc;
 	}
 	
-	public int getValidity() {
+	public VerificationResult.validityT getValidity() {
 		return validity;
 	}
 

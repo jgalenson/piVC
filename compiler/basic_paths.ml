@@ -95,7 +95,8 @@ let gen_func_postcondition_with_rv_substitution func rv_sub =
 (* CODE SECTION: GENERATING PATHS *)
 
 let generate_paths_for_func func program gen_runtime_asserts = 
-  let all_paths = Queue.create () in
+  let normal_paths = Queue.create () in
+  let termination_paths = Queue.create () in
   let func_pre_condition = Annotation(func.preCondition, "pre") in
   let func_post_condition = Annotation(func.postCondition, "post") in
   let temp_var_number = (ref 0) in
@@ -136,11 +137,11 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	  assert (not (is_not_ranking_annotation (List.nth p ((List.length p) - 1))));
 	in
 	check_termination_path termination_path;
-	Queue.add (make_basic_path (path_without_ranking_annotations)) all_paths;
-	Queue.add (TerminationPath (termination_path)) all_paths
+	Queue.add (make_basic_path (path_without_ranking_annotations)) normal_paths;
+	Queue.add (TerminationPath (termination_path)) termination_paths
       end
     else (* Has zero or one termination arguments, so we ignore them. *)
-      Queue.add (make_basic_path (path_without_ranking_annotations)) all_paths
+      Queue.add (make_basic_path (path_without_ranking_annotations)) normal_paths
   in
   let generate_steps_for_expr (curr_path:path_step list) expr = 
     let (new_steps:path_step list ref) = ref [] in
@@ -291,5 +292,5 @@ let generate_paths_for_func func program gen_runtime_asserts =
         | Ast.EmptyStmt -> generate_path curr_path remaining_stmts closing_scope_actions
 	)
   in generate_path ([func_pre_condition] @ (get_ranking_annotation func.fnRankingAnnotation)) (get_statement_list func.stmtBlock) [];
-    Utils.queue_to_list all_paths
+    (Utils.queue_to_list normal_paths, Utils.queue_to_list termination_paths)
 

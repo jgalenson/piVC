@@ -10,11 +10,13 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-
 import data_structures.BasicPath;
+import data_structures.BasicPathHolder;
+import data_structures.Correctness;
 import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Step;
+import data_structures.Termination;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
 
@@ -102,7 +104,16 @@ public class PiTree extends JPanel {
 			Function function = verificationResult.getFunction(i);
 			DefaultMutableTreeNode fnNode = new DefaultMutableTreeNode(function);
 			treeModel.insertNodeInto(fnNode, root, root.getChildCount());
-			addBasicPaths(function, fnNode);
+			Correctness correctness = function.getCorrectness();
+			DefaultMutableTreeNode correctnessNode = new DefaultMutableTreeNode(correctness);
+			treeModel.insertNodeInto(correctnessNode, fnNode, fnNode.getChildCount());
+			addBasicPaths(correctness, correctnessNode);
+			Termination termination = function.getTermination();
+			if (termination != null) {
+				DefaultMutableTreeNode terminationNode = new DefaultMutableTreeNode(termination);
+				treeModel.insertNodeInto(terminationNode, fnNode, fnNode.getChildCount());
+				addTermination(termination, terminationNode);
+			}
 			tree.makeVisible(new TreePath(fnNode.getPath()));
 		}
 	}
@@ -110,15 +121,15 @@ public class PiTree extends JPanel {
 	/**
 	 * Adds the basic paths and VCs inside a function to the tree as its children.
 	 */
-	private void addBasicPaths(Function function, DefaultMutableTreeNode fnNode) {
-		for (int i = 0; i < function.getNumBasicPaths(); i++) {
-			BasicPath basicPath = function.getBasicPath(i);
+	private void addBasicPaths(BasicPathHolder parent, DefaultMutableTreeNode parentNode) {
+		for (int i = 0; i < parent.getNumBasicPaths(); i++) {
+			BasicPath basicPath = parent.getBasicPath(i);
 			DefaultMutableTreeNode basicPathNode = new DefaultMutableTreeNode(basicPath);
-			treeModel.insertNodeInto(basicPathNode, fnNode, fnNode.getChildCount());
+			treeModel.insertNodeInto(basicPathNode, parentNode, parentNode.getChildCount());
 			DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(basicPath.getVC());
 			treeModel.insertNodeInto(vcNode, basicPathNode, basicPathNode.getChildCount());
 			addSteps(basicPath, basicPathNode);
-			if (basicPath.getValidity()==VerificationResult.INVALID)
+			if (basicPath.getValidity() == VerificationResult.validityT.INVALID)
 				addCounterexample(basicPath.getCounterexample(), basicPathNode);
 		}		
 	}
@@ -150,6 +161,25 @@ public class PiTree extends JPanel {
 		}		
 	}
 	
+	private void addTermination(Termination termination, DefaultMutableTreeNode terminationNode) {
+		Termination.Decreasing decreasing = termination.getDecreasing();
+		DefaultMutableTreeNode decreasingNode = new DefaultMutableTreeNode(decreasing);
+		treeModel.insertNodeInto(decreasingNode, terminationNode, terminationNode.getChildCount());
+		addBasicPaths(decreasing, decreasingNode);
+		Termination.Nonnegative nonnegative = termination.getNonnegative();
+		DefaultMutableTreeNode nonnegativeNode = new DefaultMutableTreeNode(nonnegative);
+		treeModel.insertNodeInto(nonnegativeNode, terminationNode, terminationNode.getChildCount());
+		for (int i = 0; i < nonnegative.getNumVCs(); i++) {
+			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = nonnegative.getNonnegativeVC(i);
+			DefaultMutableTreeNode nonnegativeVCNode = new DefaultMutableTreeNode(nonnegativeVC);
+			treeModel.insertNodeInto(nonnegativeVCNode, nonnegativeNode, nonnegativeNode.getChildCount());
+			DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(nonnegativeVC.getVC());
+			treeModel.insertNodeInto(vcNode, nonnegativeVCNode, nonnegativeVCNode.getChildCount());
+			if (nonnegativeVC.getCounterexample() != null)
+				addCounterexample(nonnegativeVC.getCounterexample(), nonnegativeVCNode);
+		}
+	}
+	
 	/**
 	 * When a node is selected, we highlight it
 	 * depending on what type of node it is.
@@ -167,10 +197,15 @@ public class PiTree extends JPanel {
 		} else if (obj instanceof Counterexample.Variable) {
 			Counterexample.Variable variable = (Counterexample.Variable)obj;
 			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
+		} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
+			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
+			piCode.highlight(nonnegativeVC.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof String) {
 			String str = (String)obj;
 			if ("Steps".equals(str))
 				nodeSelected(((DefaultMutableTreeNode)selectedNode.getParent()).getUserObject());
+			else
+				piCode.removeAllHighlights();
 		} else
 			piCode.removeAllHighlights();
 	}
@@ -218,12 +253,12 @@ public class PiTree extends JPanel {
 			unknown = new ImageIcon("images/unknown.jpg");
 		}
 		
-		private ImageIcon getProperIcon(int validity) {
-			if (validity==VerificationResult.VALID)
+		private ImageIcon getProperIcon(VerificationResult.validityT validity) {
+			if (validity == VerificationResult.validityT.VALID)
 				return valid;
-			else if (validity==VerificationResult.INVALID)
+			else if (validity == VerificationResult.validityT.INVALID)
 				return invalid;
-			else if (validity==VerificationResult.UNKNOWN)
+			else if (validity == VerificationResult.validityT.UNKNOWN)
 				return unknown;
 			else throw new RuntimeException("Unrecognized validity");
 		}
@@ -246,6 +281,14 @@ public class PiTree extends JPanel {
 				Function function = (Function)obj;
 				setIcon(getProperIcon(function.getValidity()));
 				setText(function.getName());
+			} else if (obj instanceof Correctness) {
+				Correctness correctness = (Correctness)obj;
+				setIcon(getProperIcon(correctness.getValidity()));
+				setText("Correctness");
+			} else if (obj instanceof Termination) {
+				Termination termination = (Termination)obj;
+				setIcon(getProperIcon(termination.getValidity()));
+				setText("Termination");
 			} else if (obj instanceof BasicPath) {
 				BasicPath basicPath = (BasicPath)obj;
 				setIcon(getProperIcon(basicPath.getValidity()));
@@ -262,6 +305,18 @@ public class PiTree extends JPanel {
 				Counterexample.Variable variable = (Counterexample.Variable)obj;
 				setIcon(null);
 				setText(variable.getText());
+			} else if (obj instanceof Termination.Decreasing) {
+				Termination.Decreasing decreasing = (Termination.Decreasing)obj;
+				setIcon(getProperIcon(decreasing.getValidity()));
+				setText("Decreasing");
+			} else if (obj instanceof Termination.Nonnegative) {
+				Termination.Nonnegative nonnegative = (Termination.Nonnegative)obj;
+				setIcon(getProperIcon(nonnegative.getValidity()));
+				setText("Nonnegative");
+			} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
+				Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
+				setIcon(getProperIcon(nonnegativeVC.getValidity()));
+				setText("Nonnegative VC");
 			} else if (obj instanceof String) {
 				setIcon(null);
 				setText((String)obj);

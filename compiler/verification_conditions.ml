@@ -214,6 +214,8 @@ let get_vc bp =
 	  | _ -> raise (InvalidPath "No RankingAnnotation where expected in path")
 	in
 	let start_tuple = get_tuple (List.hd (List.tl path)) in
+	(* Replaces all of the variable names in the start tuple with temp
+	   ones whose names start with an underscore. *)
 	let replaced_start_tuple =
 	  let replace_expr e = 
 	    let rename_var ident =
@@ -229,6 +231,9 @@ let get_vc bp =
 	let end_tuple = get_tuple (List.hd rev_list) in
 	(* Get the Ast representation of < in the lexographic ordering of the two tuples. *)
 	let ordering_expr =
+	  (* Gets a single end<start ordering and combine it with the prev ones
+	     so we can use List.fold_left to build up the full one.
+	     We need to both keep the previous < orderings and build up a large AND of equals. *)
 	  let single_ordering (prev_lt_opt, prev_and_opt) cur_start cur_end =
 	    let cur_lt = Ast.LT (dummy_loc, cur_end, cur_start) in
 	    let cur_eq = Ast.EQ (dummy_loc, cur_end, cur_start) in
@@ -244,7 +249,9 @@ let get_vc bp =
           Utils.elem_from_opt ordering_opt
 	in
 	let rev_instrs = List.tl rev_list in
+	(* Get the weakest precondition. *)
 	let weakest_precon = wp ordering_expr rev_instrs in
+	(* Rename all variables starting with an _ back to their original name. *)
 	let replaced_wp =
 	  let rename_var ident =
 	    if ident.name.[0] != '_' then
@@ -260,9 +267,6 @@ let get_vc bp =
       end
   in
   vc_to_return ;;
-
-
-
 
 let string_of_vc vc = Ast.string_of_expr vc ;;
 

@@ -6,10 +6,10 @@ public class BasicPath {
 	
 	private ArrayList<Step> steps;
 	private VerificationCondition vc;
-	private int validity;
+	private VerificationResult.validityT validity;
 	private Counterexample counterexample;
 	
-	public BasicPath(ArrayList<Step> steps, VerificationCondition vc, int validity, Counterexample counterexample) {
+	public BasicPath(ArrayList<Step> steps, VerificationCondition vc, VerificationResult.validityT validity, Counterexample counterexample) {
 		this.steps = steps;
 		this.vc = vc;
 		this.validity = validity;
@@ -24,7 +24,7 @@ public class BasicPath {
 		return steps.get(index);
 	}
 	
-	public int getValidity() {
+	public VerificationResult.validityT getValidity() {
 		return validity;
 	}
 	

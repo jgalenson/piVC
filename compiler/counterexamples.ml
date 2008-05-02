@@ -15,9 +15,9 @@ let rec variable_to_string v =
     | ArrayVar (v, s) -> (variable_to_string v) ^ "[" ^ s  ^ "]";;
 
 let example_to_string (lhs, rhs) =
-  (variable_to_string lhs) ^ "=" ^ rhs ;;
+  (variable_to_string lhs) ^ " = " ^ rhs ;;
 
-let counterexamples_to_string cx =
+let counterexample_to_string cx =
   let example_to_string prev ex =
     let new_part = example_to_string ex in
     if prev = "" then new_part else prev ^ "\n" ^ new_part
@@ -32,7 +32,7 @@ let location_of_example (var,_) =
   in
     location_of_variable var
 
-let parse_counterexamples str rev_var_names =
+let parse_counterexample str rev_var_names =
   
   let replace_name n =
     if (Hashtbl.mem rev_var_names n) then
@@ -60,7 +60,7 @@ let parse_counterexamples str rev_var_names =
       end
   in
       
-  let parts = List.tl (Str.split (Str.regexp "\n") str) in (* Ignore first part ("sat"). *)
+  let parts = Str.split (Str.regexp "\n") str in
   let map_fn s =
     let scan = Scanner.create s in
     assert (Scanner.next_token scan = "(");
