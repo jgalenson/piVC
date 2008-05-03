@@ -15,7 +15,7 @@ gui :
 
 	mkdir classes
 	mkdir classes/images
-	$(JAVAC) -classpath java_gui:java_gui/syntax.jar -d classes java_gui/data_structures/*.java java_gui/*.java
+	$(JAVAC) -classpath java_gui:../../include/java_gui/syntax.jar -d classes java_gui/data_structures/*.java java_gui/*.java
 	cp Manifest.txt classes
 	cd classes; jar cfm PiGui.jar Manifest.txt `find . -name "*.class"`
 	mv classes/PiGui.jar ../../bin/PiGui.jar
