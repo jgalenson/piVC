@@ -23,7 +23,7 @@ Joel
 		--truncate-lines
 		Maybe implement by making server framework use modules so we have locals.
         Bin directory structure for bin files
-		piVC/ has src/, bin/, conf/, resources/
+		piVC/ has src/, bin/, conf/, include/, samples/
 	Add exception/assert thing.
 
 Both
