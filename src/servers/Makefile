@@ -16,9 +16,9 @@ default :
 all : depend servers
 
 servers : $(SERVER_OBJS) main_server_executable.cmo dp_server_executable.cmo both_servers.cmo
-	$(OC) -o main_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) main_server_executable.cmo
-	$(OC) -o dp_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) dp_server_executable.cmo
-	$(OC) -o both_servers $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) both_servers.cmo
+	$(OC) -o ../../bin/main_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) main_server_executable.cmo
+	$(OC) -o ../../bin/dp_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) dp_server_executable.cmo
+	$(OC) -o ../../bin/both_servers $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) both_servers.cmo
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
@@ -30,9 +30,9 @@ servers : $(SERVER_OBJS) main_server_executable.cmo dp_server_executable.cmo bot
 
 clean :
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
-	rm main_server
-	rm dp_server
-	rm both_servers
+	rm ../../bin/main_server
+	rm ../../bin/dp_server
+	rm ../../bin/both_servers
 
 depend:
 	$(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend

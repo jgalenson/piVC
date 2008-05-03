@@ -16,7 +16,7 @@ default :
 all : depend compiler
 
 compiler : $(COMPILER_OBJS) test_parser.cmo
-	$(OC) -o test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
+	$(OC) -o ../../bin/test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
 
 %.cmo : %.ml %.cmi
 	$(OC) -c $<
@@ -26,7 +26,7 @@ compiler : $(COMPILER_OBJS) test_parser.cmo
 
 clean :
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
-	rm test_parser
+	rm ../../bin/test_parser
 
 depend:
 	$(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend
