@@ -1,0 +1,2 @@
+Main-Class: PiGui
+Class-Path: ../include/java_gui/syntax.jar
