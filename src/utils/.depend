@@ -4,6 +4,8 @@ config.cmo: config.cmi
 config.cmx: config.cmi 
 constants.cmo: constants.cmi 
 constants.cmx: constants.cmi 
+exceptions.cmo: exceptions.cmi 
+exceptions.cmx: exceptions.cmi 
 net_utils.cmo: net_utils.cmi 
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 

@@ -18,13 +18,15 @@ dp_server_executable.cmx: ../utils/utils.cmx server_framework.cmx \
 main_server.cmo: xml_generator.cmi xml-light/xml.cmi ../compiler/verify.cmi \
     ../utils/utils.cmi server_framework.cmi ../compiler/semantic_checking.cmi \
     ../compiler/parse_utils.cmi ../utils/net_utils.cmi \
-    ../compiler/counterexamples.cmi ../utils/config.cmi \
-    ../compiler/basic_paths.cmi ../language/ast.cmi main_server.cmi 
+    ../utils/exceptions.cmi ../compiler/counterexamples.cmi \
+    ../utils/config.cmi ../compiler/basic_paths.cmi ../language/ast.cmi \
+    main_server.cmi 
 main_server.cmx: xml_generator.cmx xml-light/xml.cmi ../compiler/verify.cmx \
     ../utils/utils.cmx server_framework.cmx ../compiler/semantic_checking.cmx \
     ../compiler/parse_utils.cmx ../utils/net_utils.cmx \
-    ../compiler/counterexamples.cmx ../utils/config.cmx \
-    ../compiler/basic_paths.cmx ../language/ast.cmx main_server.cmi 
+    ../utils/exceptions.cmx ../compiler/counterexamples.cmx \
+    ../utils/config.cmx ../compiler/basic_paths.cmx ../language/ast.cmx \
+    main_server.cmi 
 main_server_executable.cmo: ../utils/utils.cmi server_framework.cmi \
     main_server.cmi ../utils/constants.cmi ../utils/config.cmi \
     main_server_executable.cmi 

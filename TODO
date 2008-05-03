@@ -22,9 +22,6 @@ Joel
 		Maybe -print yices;vc format
 		--truncate-lines
 		Maybe implement by making server framework use modules so we have locals.
-        Bin directory structure for bin files
-		piVC/ has src/, bin/, conf/, include/, samples/
-	Add exception/assert thing.
 
 Both
 	Figure out how to display VCs in the GUI.

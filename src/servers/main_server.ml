@@ -71,7 +71,7 @@ let rec compile vc_cache_and_lock ic oc =
   in
   
   begin
-    try    
+    try
       let xml_str = get_input ic in
       let (code, (gen_runtime_asserts)) = parse_xml xml_str in
         (* print_endline code; *)
@@ -93,7 +93,7 @@ let rec compile vc_cache_and_lock ic oc =
         ex -> 
           begin
             send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
-            print_endline ("Caught compiler exception: " ^ (Printexc.to_string ex))
+            print_endline ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex))
           end
   end;
   flush stdout;
@@ -124,7 +124,7 @@ and xml_of_compiler_exception ex =
   let error_node = Xml_generator.create "error" in
     add_attribute ("type", "compiler_error") error_node;
   let message_node = Xml_generator.create "message" in
-    Xml_generator.set_text (Printexc.to_string ex) message_node;
+    Xml_generator.set_text (Exceptions.string_of_exception ex) message_node;
   add_child message_node error_node;
   add_child error_node result_node;
   add_child result_node transmission_node;

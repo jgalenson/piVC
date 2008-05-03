@@ -1,6 +1,5 @@
 exception Option_Is_None ;;
 
-
 let get_absolute_path path = 
   let first_char = String.get path 0 in
     if first_char = '\\' then (*in this case, the path is already absolute*)
@@ -31,4 +30,5 @@ let truncate_for_printing str =
   if (String.length str) <= (Config.get_value_int "truncate_output_length") then
     str
   else
-    (Str.string_before str (Config.get_value_int "truncate_output_length")) ^ ("... [tuncated]")
+    (Str.string_before str (Config.get_value_int "truncate_output_length")) ^ ("... [truncated]") ;;
+
