@@ -13,7 +13,11 @@ default : gui
 
 gui :
 
-	$(JAVAC) -classpath java_gui:java_gui/syntax.jar java_gui/data_structures/*.java java_gui/*.java; \
- 
+	mkdir classes
+	$(JAVAC) -classpath java_gui:java_gui/syntax.jar -d classes java_gui/data_structures/*.java java_gui/*.java;
+	cd classes; jar cfe pivc.jar PiGui `find . -name "*.class"`
+	mv classes/pivc.jar ../../bin/PiGui.jar
+	rm -rf classes
+
 clean :
-	rm $(PROJ_DIR:%=%/*.class)
+	rm ../../bin/PiGui.jar
