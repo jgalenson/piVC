@@ -1,6 +1,5 @@
 (* piVC *)
 
-open Parse_utils
 open Semantic_checking
 open Ast
 open Verify
@@ -36,7 +35,7 @@ let _ =
     with
         ex -> ignore()
     ;
-    let (program, errors) = parse_strings [("",!input)] in
+    let (program, errors) = Compile.parse_strings [("",!input)] in
       print_program program;
       let map_fn e = print_string (string_of_error e) in
         List.iter map_fn errors

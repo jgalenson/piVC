@@ -75,7 +75,7 @@ let rec compile vc_cache_and_lock ic oc =
       let xml_str = get_input ic in
       let (code, (gen_runtime_asserts)) = parse_xml xml_str in
         (* print_endline code; *)
-      let (program, errors) = Parse_utils.parse_strings [("user-file", code)] in
+      let (program, errors) = Compile.parse_strings [("user-file", code)] in
         
       let get_output_to_return_to_client = 
         match errors with
