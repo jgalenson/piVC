@@ -1,5 +1,10 @@
 exception Option_Is_None ;;
 
+(* Converts from Windows to UNIX line endings. *)
+let convert_line_endings str =
+  let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in
+    Str.global_replace (Str.regexp "\r") "\n" str
+
 let get_absolute_path path = 
   let first_char = String.get path 0 in
     if first_char = '\\' then (*in this case, the path is already absolute*)

@@ -33,9 +33,6 @@ let rec trim str =
     else
       trim (String.sub str start_index (end_index-start_index))
   
-
-(*This function assumes Unix line endings. Because it's also using a lot of other Unix-only
-  system calls, I think that the line endings requirement is not a problem.*)
 let read_from_file file_path = 
   let file = Unix.openfile file_path [Unix.O_RDONLY] 0o640 in
   let file_size = (Unix.fstat file).Unix.st_size in

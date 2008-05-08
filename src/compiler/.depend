@@ -30,10 +30,12 @@ semantic_checking.cmx: ../language/scope_stack.cmx ../language/ast.cmx \
     semantic_checking.cmi 
 termination.cmo: ../utils/utils.cmi ../language/ast.cmi termination.cmi 
 termination.cmx: ../utils/utils.cmx ../language/ast.cmx termination.cmi 
-test_parser.cmo: verify.cmi verification_conditions.cmi semantic_checking.cmi \
-    parse_utils.cmi basic_paths.cmi ../language/ast.cmi test_parser.cmi 
-test_parser.cmx: verify.cmx verification_conditions.cmx semantic_checking.cmx \
-    parse_utils.cmx basic_paths.cmx ../language/ast.cmx test_parser.cmi 
+test_parser.cmo: verify.cmi verification_conditions.cmi ../utils/utils.cmi \
+    semantic_checking.cmi parse_utils.cmi ../utils/constants.cmi \
+    ../utils/config.cmi basic_paths.cmi ../language/ast.cmi test_parser.cmi 
+test_parser.cmx: verify.cmx verification_conditions.cmx ../utils/utils.cmx \
+    semantic_checking.cmx parse_utils.cmx ../utils/constants.cmx \
+    ../utils/config.cmx basic_paths.cmx ../language/ast.cmx test_parser.cmi 
 transform_yices.cmo: ../language/ast.cmi transform_yices.cmi 
 transform_yices.cmx: ../language/ast.cmx transform_yices.cmi 
 verification_conditions.cmo: ../utils/utils.cmi expr_utils.cmi \

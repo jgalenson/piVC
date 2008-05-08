@@ -14,6 +14,13 @@ let count_character_occurences str char =
   let count c = if c = char then incr num_occurences in
     String.iter count str; !num_occurences
 ;;
+
+let get_curr_filename () =
+  match !files with
+      a :: b -> fst a
+    | [] -> ""
+;;
+
 (*
   Multi-line comments can contain newline characters, so we need to iterate
   over the entire token and look for all the newline characters.
@@ -24,14 +31,14 @@ let updateLocation lexbuf =
   let currPos = lexbuf.Lexing.lex_curr_p in
   let numNewLines = count_character_occurences tokenStr '\n' in
     actual_cnum := !actual_cnum + tokenLength;
-    if ((lexbuf.lex_curr_p.pos_cnum = snd (List.hd !files)) && ((List.length !files) > 1)) then
+    if (!actual_cnum) = (snd (List.hd !files))  then
      begin 
        actual_cnum := 0;
        files := List.tl !files;
        lexbuf.Lexing.lex_curr_p <- {	   
          Lexing.pos_lnum = 0;           
          Lexing.pos_bol = 0;
-         Lexing.pos_fname = fst (List.hd !files);
+         Lexing.pos_fname = get_curr_filename ();
          Lexing.pos_cnum = !actual_cnum;
        }
      end
@@ -39,7 +46,7 @@ let updateLocation lexbuf =
       begin
         lexbuf.Lexing.lex_curr_p <- {	   
 	  Lexing.pos_lnum = currPos.Lexing.pos_lnum + numNewLines;           
-	  Lexing.pos_bol = currPos.Lexing.pos_cnum - ((tokenLength-1) - (String.rindex tokenStr '\n'));
+	  Lexing.pos_bol = !actual_cnum - ((tokenLength-1) - (String.rindex tokenStr '\n'));
           Lexing.pos_fname = fst (List.hd !files);
           Lexing.pos_cnum = !actual_cnum;
         }
@@ -130,10 +137,6 @@ rule lang =  parse
   | '#'					 {updateLocation(lexbuf); T_Termination}
   | '|'					 {updateLocation(lexbuf); T_Bar}
   | '%'					 {updateLocation(lexbuf); T_Mod}
-  | eof					 {updateLocation(lexbuf); T_EOF}
+  | eof					 {T_EOF} (*if we update here, it's going to need the current filename, but there is none, because we're at eof*)
   | '\n'                                 {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
   | _ as token                           {updateLocation(lexbuf); print_endline ("read unknown token" ^ (Char.escaped token)); T_Unknown}
-
-
-
-

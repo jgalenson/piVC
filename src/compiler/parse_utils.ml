@@ -29,7 +29,19 @@ let parse_strings user_files =
       ignore (Unix.read file file_text 0 file_size);
       file_text
   in
-  let all_files = ("includes",includes_string) :: user_files in
+  let entries_with_length_ge_0 files = 
+    let is_ge_0 elem = 
+      String.length (snd elem) > 0
+    in
+      List.filter is_ge_0 files
+  in
+  let convert_line_endings files = 
+    let convert_line_endings_of_elem elem = 
+      (fst elem, Utils.convert_line_endings (snd elem))
+    in
+      List.map convert_line_endings_of_elem files
+  in
+  let all_files = entries_with_length_ge_0 (convert_line_endings (("includes",includes_string) :: user_files)) in
     
     
   let rec all_strings_concatenated elems = 
@@ -43,5 +55,6 @@ let parse_strings user_files =
       | [] -> []
   in
     Lexer.files := list_of_all_names_and_sizes all_files;
+    Lexer.actual_cnum := 0;
     let lexbuf = Lexing.from_string (all_strings_concatenated all_files) in
       parse lexbuf ;;
