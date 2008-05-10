@@ -6,11 +6,10 @@ Short-term TODOs
 Jason
 	Generate basic path names somehow.
 	Arrays DP: check remaining TODOs, don't run arrays DP on VCs not in the fragment, fix index set construction
-	Bug: Loop assertions require parens now.
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
-        Change lexer/parser to account for different types of line endings in a clean way - also change xml reading code to use this
 	Bug: Fix _v0 highlighting.
+        Package images into Jar (we don't want the client to have to download the images seperately)
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -32,6 +31,7 @@ Unassigned
 		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
 	Add support for warnings?  Asserts in Pi? (Note from Jason: we already support Pi asserts, but maybe you mean something else.)
+
 
 -----------------------------
 Proposed High-level timetable

@@ -31,7 +31,7 @@ let updateLocation lexbuf =
   let currPos = lexbuf.Lexing.lex_curr_p in
   let numNewLines = count_character_occurences tokenStr '\n' in
     actual_cnum := !actual_cnum + tokenLength;
-    if (!actual_cnum) = (snd (List.hd !files))  then
+    if ((!actual_cnum) = (snd (List.hd !files))) && (List.length !files) > 1  then
      begin 
        actual_cnum := 0;
        files := List.tl !files;
@@ -72,7 +72,7 @@ rule lang =  parse
   | digit+ '.' digit+ as num             {updateLocation(lexbuf); T_FloatConstant(float_of_string num)}
   | "/*" ([^'*']*('*'+ [^'/''*'])?)* '*'* "*/" {updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
   | "//"[^'\n']*'\n'			 {updateLocation(lexbuf); lang lexbuf (*skip single-line comments*)}
-  | [' ''\t''\n']			 {updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
+  | [' ''\t''\n']   			 {updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
   | "define"                  		 {updateLocation(lexbuf); T_Define}
   | "declare"				 {updateLocation(lexbuf); T_Declare}
   | "pre"				 {updateLocation(lexbuf); T_Pre}
@@ -138,5 +138,4 @@ rule lang =  parse
   | '|'					 {updateLocation(lexbuf); T_Bar}
   | '%'					 {updateLocation(lexbuf); T_Mod}
   | eof					 {T_EOF} (*if we update here, it's going to need the current filename, but there is none, because we're at eof*)
-  | '\n'                                 {updateLocation(lexbuf); lang lexbuf (*skip new lines*)}
   | _ as token                           {updateLocation(lexbuf); print_endline ("read unknown token" ^ (Char.escaped token)); T_Unknown}

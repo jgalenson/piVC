@@ -1,58 +1,10 @@
-int global;
-
-@pre true
-@post rv = 42
-int simpleFunction(){
-  int a;
-  a := 5;
-  c := a + b;
-  a + 5;
-  if (a > 5) {
-    a;
-    b := b - 5;
-  }
-  while @true
-    (a = b) {
-    foo();
-    if (x != y) {
-      bar();
-      foo();
-    } else {
-      meow();
-    }
-  }
-  @ a = 7;
-  for @true
-    (i := 0; i < 10; i := i + 1)
-    a := 5;
-  for @true
-    (joel := 42; joel >= 0; joel := joel / 2) {
-    meow();
-    code(pivc, joel, jason);
-  }
-  if (true)
-    a := 7;
-  float f;
-  f = 3.14159;
-  return a;
-  @ false;
-}
-
-@pre a = 7 && foobar = 42
-@post true
-void func2(int a, int foobar){
-  int[] foo;
-  if (|foo| = 10)
-    foo[0] := 42;
-  int b;
-  int c;
-  b := 42;
-  c := a div b;
-  c := a / b;
-  return;
-}
-
 @pre true
 @post true
-float jason(){
+void jason(){
+		int[] a;
+		a := a{1<-1};
+        while
+        @1+1
+        (true){
+		}
 }

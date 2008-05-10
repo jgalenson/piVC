@@ -178,7 +178,7 @@ and expr_from_temp_expr has_condition = function
 %token T_Unknown
 %token T_EOF
 
-
+%left VeryLowPrecedence
 %nonassoc T_Assign
 %nonassoc T_Iff T_Implies
 %left T_Or
@@ -193,6 +193,7 @@ and expr_from_temp_expr has_condition = function
 %left T_LParen
 
 
+
 %nonassoc T_If
 %nonassoc T_Else
 
@@ -201,6 +202,7 @@ and expr_from_temp_expr has_condition = function
 %type <Ast.program> main
 %type <temp_expr> Expr
 %type <temp_expr> OptionalExpr
+%type <temp_expr> AnnotationExpr
 %type <temp_expr> Annotation
 
 %%
@@ -233,8 +235,8 @@ Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_sta
 Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
 
 
-FnDecl    : OptionalTermination T_Pre Annotation T_Post Annotation Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $7 $9 $6 $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
-          | OptionalTermination T_Pre Annotation T_Post Annotation T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $7 $9 (Ast.Void (loc 5 5)) $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
+FnDecl    : OptionalTermination T_Pre AnnotationExpr T_Post AnnotationExpr Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $7 $9 $6 $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
+          | OptionalTermination T_Pre AnnotationExpr T_Post AnnotationExpr T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $7 $9 (Ast.Void (loc 5 5)) $11 (expr_from_temp_expr false $3) (expr_from_temp_expr false $5) $1 (loc 1 11) }
           ;
 
 Predicate : T_Predicate Identifier T_LParen FormalsOrEmpty T_RParen T_Assign Expr T_Semicolon { {predName=$2;formals_p=$4;expr=(expr_from_temp_expr false $7);location_p=(loc 1 7)} }
@@ -295,14 +297,14 @@ IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.I
              | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), expr_from_temp_expr false $3, condense_stmt_list $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While OptionalTermination T_Assert Annotation Stmt {
+WhileStmt  : T_While OptionalTermination T_Assert AnnotationExpr Stmt {
                let condition = List.nth (snd (condition_from_temp_expr $4)) 0 in
                Ast.WhileStmt ( loc 1 5, (condition), condense_stmt_list $5, expr_from_temp_expr true $4, $2)
 	   }
 
 ;
 
-ForStmt    : T_For OptionalTermination T_Assert Annotation Stmt {
+ForStmt    : T_For OptionalTermination T_Assert AnnotationExpr Stmt {
                let assign_stmt_and_for_components = condition_from_temp_expr $4 in
                let for_components = snd assign_stmt_and_for_components in
                let for_stmt = Ast.ForStmt ( loc 1 5, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $5, expr_from_temp_expr true $4, $2) in
@@ -331,7 +333,7 @@ OptionalExpr : Expr { $1 }
 BreakStmt : T_Break T_Semicolon { Ast.BreakStmt (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)) }
 ;
 
-AssertStmt : T_Assert Annotation T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), expr_from_temp_expr false $2) }
+AssertStmt : T_Assert AnnotationExpr T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), expr_from_temp_expr false $2) }
            ;
 
 /*All quantified variables are deemed integers*/
@@ -396,7 +398,50 @@ Constant : T_IntConstant    { ConstInt ((create_location (Parsing.rhs_start_pos 
          | T_False          { ConstBool ((create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 2)), false) }	     
 ;
 
-Annotation : Expr    %prec T_Period                            { $1 }
+
+Annotation     : AnnotationLValue T_Assign Annotation   { Assign(loc 1 3, $1, $3)}
+         | Constant               { Constant (loc 1 1, $1) }
+         | AnnotationLValue  %prec VeryLowPrecedence          { LValue (loc 1 1, $1) }
+         | AnnotationCall                   { $1 }
+         | T_LParen Annotation T_RParen { $2 }
+         | Annotation T_Plus Annotation       { Plus(loc 1 3, $1, $3) }
+         | Annotation T_Minus Annotation      { Minus(loc 1 3, $1, $3) }
+         | Annotation T_Star Annotation       { Times(loc 1 3, $1, $3) }
+         | Annotation T_Slash Annotation      { Div(loc 1 3, $1, $3) }
+         | Annotation T_Div Annotation        { IDiv(loc 1 3, $1, $3) }
+         | Annotation T_Mod Annotation        { Mod (loc 1 3, $1, $3) }
+         | T_Minus Annotation %prec UnaryMinus { UMinus (loc 1 2, $2) }
+         | T_ForAll CommaSeperatedListOfUniversalVarDecls T_Period Annotation %prec T_ForAll { ForAll(loc 1 4, $2,$4) }
+         | T_Exists CommaSeperatedListOfExistentialVarDecls T_Period Annotation %prec T_Exists { Exists(loc 1 4, $2,$4) }
+         | AnnotationLValue T_LCurlyBracket Annotation T_LeftArrow Annotation T_RCurlyBracket  { ArrayUpdate(loc 1 5, LValue(loc 1 1,$1), $3, $5) }
+         | Annotation T_Less Annotation       { LT (loc 1 3, $1, $3) }
+         | Annotation T_LessEqual Annotation  { LE (loc 1 3, $1, $3) }
+         | Annotation T_Greater Annotation    { GT (loc 1 3, $1, $3) }
+         | Annotation T_GreaterEqual Annotation { GE (loc 1 3,$1, $3) }
+         | Annotation T_Equal Annotation      { EQ (loc 1 3, $1, $3) }
+         | Annotation T_NotEqual Annotation   { NE (loc 1 3, $1, $3) }
+         | Annotation T_Iff Annotation        { Iff (loc 1 3, $1, $3) }
+         | Annotation T_Implies Annotation    { Implies (loc 1 3, $1, $3) }
+         | Annotation T_And Annotation        { And (loc 1 3,$1, $3) }
+         | Annotation T_Or Annotation         { Or (loc 1 3, $1, $3) }
+         | T_Not Annotation             { Not (loc 1 2, $2) }
+	 | T_Bar Annotation T_Bar       { Length (loc 1 3, $2) }
+	 | T_Length T_LParen Annotation T_RParen { Length (loc 1 3,$3) }
+;
+
+
+AnnotationLValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
+         | Annotation T_LSquareBracket Annotation T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
+;
+
+AnnotationCall     : Annotation T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
+         | Annotation T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
+         | Annotation T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
+;
+
+
+
+AnnotationExpr : Annotation    %prec T_Period                            { $1 }
 /*	   | Annotation T_And Annotation         { Ast.And ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | Annotation T_Or Annotation          { Ast.Or ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
            | Annotation T_Iff Annotation         { Ast.Iff ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), $1, $3) }
