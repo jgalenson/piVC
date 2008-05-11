@@ -272,9 +272,9 @@ public class PiTree extends JPanel {
 		private ImageIcon valid, invalid, unknown;
 		
 		public MyTreeCellRenderer() {
-			valid = new ImageIcon("../include/java_gui/images/valid.jpg");
-			invalid = new ImageIcon("../include/java_gui/images/invalid.jpg");
-			unknown = new ImageIcon("../include/java_gui/images/unknown.jpg");
+			valid = new ImageIcon(Utils.getURL("images/valid.jpg"));
+			invalid = new ImageIcon(Utils.getURL("images/invalid.jpg"));
+			unknown = new ImageIcon(Utils.getURL("images/unknown.jpg"));
 		}
 		
 		private ImageIcon getProperIcon(VerificationResult.validityT validity) {

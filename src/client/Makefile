@@ -13,13 +13,15 @@ default : gui
 
 gui :
 
-	mkdir classes
-	mkdir classes/images
-	$(JAVAC) -classpath java_gui:../../include/java_gui/syntax.jar -d classes java_gui/data_structures/*.java java_gui/*.java
-	cp Manifest.txt classes
-	cd classes; jar cfm PiGui.jar Manifest.txt `find . -name "*.class"`
-	mv classes/PiGui.jar ../../bin/PiGui.jar
-	rm -rf classes
+	mkdir temp_files_for_compilation
+	$(JAVAC) -d temp_files_for_compilation -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java
+	cd temp_files_for_compilation; jar xf ../java_gui/libraries/*
+	mkdir temp_files_for_compilation/images
+	cp java_gui/images/*.jpg temp_files_for_compilation/images
+	cp java_gui/MANIFEST.MF temp_files_for_compilation
+	cd temp_files_for_compilation; jar cfm PiGui.jar MANIFEST.MF `find . -name "*.class"` images
+	mv temp_files_for_compilation/PiGui.jar ../../bin/PiGui.jar
+	rm -rf temp_files_for_compilation
 
 clean :
 	rm ../../bin/PiGui.jar
