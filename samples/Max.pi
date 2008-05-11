@@ -1,10 +1,5 @@
-predicate FORALL(int ix, int low, int high, bool exp) := 
-forall ix. ((ix>=low && ix<=high) -> exp);
-
-int ix;
-
 @pre true
-@post FORALL(ix,0,|arr|-1,rv>=arr[ix])
+@post forall ix. ((ix>=0 && ix< |arr|) -> rv>=arr[ix])
 int max(int[] arr) {
 	int max := arr[0];
 	for @(forall j. ((j<i && j>=0) -> (max >= arr[j])))
