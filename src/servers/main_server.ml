@@ -252,4 +252,8 @@ and xml_of_verified_program (all_valid, functions) =
 let get_main_server_func () =
   let vc_cache = Hashtbl.create (Config.get_value_int "cache_size") in
   let cache_lock = Mutex.create () in
-  compile (vc_cache, cache_lock)
+  compile (vc_cache, cache_lock) ;;
+
+let start_main_server () =
+  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path);          
+  run_server (get_main_server_func ()) (Config.get_value_int "port") ;;

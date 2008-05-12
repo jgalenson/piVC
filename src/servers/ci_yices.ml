@@ -24,7 +24,6 @@ exception Done
 let create () =
   let ip, op = Unix.pipe () in
   let im, om = Unix.pipe () in
-    Unix.setsockopt im Unix.SO_REUSEADDR true;
     Unix.set_nonblock im;
     let pid = (Unix.create_process (Utils.get_absolute_path (Config.get_value "yices_path")) [|"yices"|] ip om log) in
       ignore(pid);(*doing this to supress unused variable warning*)
