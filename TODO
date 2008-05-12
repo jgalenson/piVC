@@ -8,8 +8,8 @@ Jason
 	Arrays DP: check remaining TODOs, don't run arrays DP on VCs not in the fragment, fix index set construction
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
-	Bug: Fix _v0 highlighting.
-        Buf: Fix general highting.
+	Bug: Fix _v0 highlighting (i.e. _v0 node in basic path has weird highlighting)
+        Bug: Fix general highting.
 
 Joel
 	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
@@ -33,7 +33,9 @@ Unassigned
 	Add support for warnings?  Asserts in Pi? (Note from Jason: we already support Pi asserts, but maybe you mean something else.)
         Nice error message if yices doesn't exist
         Look for yices on PATH environmental variable.
+        Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Log server error messages.  Also add command line option to change its directory.
+        Clean up samples directory
 
 
 -----------------------------
