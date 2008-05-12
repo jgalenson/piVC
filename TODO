@@ -17,11 +17,10 @@ Joel
 	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
 	Timeouts.
-	Command-line arg support for server for stuff like: --print-cache-info or --print-yices-output.
-		Maybe -print yices;vc format
-		--truncate-lines
-		Maybe implement by making server framework use modules so we have locals.
+	Command-line arg support for server
+		Maybe support -print yices;vc format
         ./PiGui doesn't work if a directory other than bin is the working directory. If it's not possible to harvest the working directory as args[0], then I think we should remove this invocation option and force people to use java -jar Pigui.jar (or, on Windows and possibly Mac, just double click the icon).
+	Compile xml-lite sourece.
 
 Both
 	Figure out how to display VCs in the GUI.
@@ -34,6 +33,7 @@ Unassigned
 	Add support for warnings?  Asserts in Pi? (Note from Jason: we already support Pi asserts, but maybe you mean something else.)
         Nice error message if yices doesn't exist
         Look for yices on PATH environmental variable.
+	Log server error messages.  Also add command line option to change its directory.
 
 
 -----------------------------

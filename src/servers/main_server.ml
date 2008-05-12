@@ -74,7 +74,7 @@ let rec compile vc_cache_and_lock ic oc =
     try
       let xml_str = get_input ic in
       let (code, (gen_runtime_asserts)) = parse_xml xml_str in
-        (* print_endline code; *)
+        (* Config.print_endline code; *)
       let (program, errors) = Compile.parse_strings [("user-file", code)] in
         
       let get_output_to_return_to_client = 
@@ -88,12 +88,12 @@ let rec compile vc_cache_and_lock ic oc =
               
       in
         send_output oc get_output_to_return_to_client;
-        print_endline "Compilation completed. Response sent back to client.";
+        Config.print "Compilation completed. Response sent back to client.";
     with
         ex -> 
           begin
             send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
-            print_endline ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex))
+            Config.print ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex))
           end
   end;
   flush stdout;
@@ -255,5 +255,5 @@ let get_main_server_func () =
   compile (vc_cache, cache_lock) ;;
 
 let start_main_server () =
-  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path);          
+  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path) Config.MainServer;          
   run_server (get_main_server_func ()) (Config.get_value_int "port") ;;

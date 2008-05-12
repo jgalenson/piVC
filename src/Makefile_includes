@@ -1,4 +1,4 @@
-UTILS_OBJS = net_utils.cmo constants.cmo scanner.cmo config.cmo utils.cmo background.cmo exceptions.cmo
+UTILS_OBJS = utils.cmo net_utils.cmo constants.cmo scanner.cmo config.cmo background.cmo exceptions.cmo
 LANGUAGE_COMPILE_OBJS = ast.cmo parser.ml lexer.ml scope_stack.cmo parser.cmi parser.cmo lexer.cmi lexer.cmo
 LANGUAGE_OBJS = ast.cmo parser.cmo lexer.cmo scope_stack.cmo
 SERVER_OBJS = xml_generator.cmo server_framework.cmo ci_yices.cmo main_server.cmo dp_server.cmo

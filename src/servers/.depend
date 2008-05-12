@@ -30,10 +30,10 @@ main_server_executable.cmo: server_framework.cmi main_server.cmi \
 main_server_executable.cmx: server_framework.cmx main_server.cmx \
     main_server_executable.cmi 
 server_framework.cmo: xml_generator.cmi ../utils/utils.cmi \
-    ../compiler/semantic_checking.cmi ../language/ast.cmi \
+    ../compiler/semantic_checking.cmi ../utils/config.cmi ../language/ast.cmi \
     server_framework.cmi 
 server_framework.cmx: xml_generator.cmx ../utils/utils.cmx \
-    ../compiler/semantic_checking.cmx ../language/ast.cmx \
+    ../compiler/semantic_checking.cmx ../utils/config.cmx ../language/ast.cmx \
     server_framework.cmi 
 xml_generator.cmo: xml_generator.cmi 
 xml_generator.cmx: xml_generator.cmi 

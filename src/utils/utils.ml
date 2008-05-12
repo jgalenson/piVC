@@ -30,10 +30,3 @@ let elem_from_opt opt = match opt with
 (* Converts a queue to a list. *)
 let queue_to_list q =
   Queue.fold (fun a b -> a @ [b]) [] q  ;;
-
-let truncate_for_printing str = 
-  if (String.length str) <= (Config.get_value_int "truncate_output_length") then
-    str
-  else
-    (Str.string_before str (Config.get_value_int "truncate_output_length")) ^ ("... [truncated]") ;;
-

@@ -116,7 +116,7 @@ let evict_oldest_member vc_cache =
       (prev_k, prev_t)
   in
   let (oldest_member,_) = Hashtbl.fold get_oldest_member vc_cache ("", Unix.time ()) in
-  print_endline ("VC cache is evicting " ^ Utils.truncate_for_printing oldest_member);
+  Config.print ("VC cache is evicting " ^ oldest_member);
   Hashtbl.remove vc_cache oldest_member ;;
 
 (* Adds this vc to the cache.  If the cache is full,
@@ -150,7 +150,7 @@ let verify_vc (vc_with_preds, (vc_cache, cache_lock), program) =
         let (result,_) = Hashtbl.find vc_cache unique_vc_str in
         Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
         Mutex.unlock cache_lock;
-        print_endline ("Loaded from cache: " ^ Utils.truncate_for_printing unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
+        Config.print ("Loaded from cache: " ^ unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
         Normal (fst result, snd result)
       end
     else

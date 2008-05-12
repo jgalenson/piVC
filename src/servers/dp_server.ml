@@ -33,7 +33,7 @@ let verify ic oc =
   begin
     try
       let input = get_input ic in
-      print_endline ("dp got input: " ^ Utils.truncate_for_printing input); (* input contains its own endline. *)
+      Config.print ("dp got input: " ^ input); (* input contains its own endline. *)
       Ci_yices.init ();
       let id = Ci_yices.new_context () in
       Ci_yices.send id input;
@@ -42,7 +42,7 @@ let verify ic oc =
       Ci_yices.delete_context id;
       assert ((response = "sat") = (Utils.is_some counterexample_opt));
       let response_str = response ^ (if (Utils.is_some counterexample_opt) then (" with " ^ (Utils.elem_from_opt counterexample_opt)) else "") in
-      print_endline ("Got response: " ^ response_str);
+      Config.print ("Got response: " ^ response_str);
       send_output oc response;
       if (response = "sat") then
         send_output oc (Utils.elem_from_opt counterexample_opt);
@@ -57,5 +57,5 @@ let verify ic oc =
   flush oc ;;
 
 let start_dp_server () =
-  Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path);          
+  Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path) Config.DPServer;          
   run_server verify (Config.get_value_int "port") ;;

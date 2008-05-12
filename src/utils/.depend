@@ -1,7 +1,7 @@
 background.cmo: background.cmi 
 background.cmx: background.cmi 
-config.cmo: config.cmi 
-config.cmx: config.cmi 
+config.cmo: utils.cmi config.cmi 
+config.cmx: utils.cmx config.cmi 
 constants.cmo: constants.cmi 
 constants.cmx: constants.cmi 
 exceptions.cmo: exceptions.cmi 
@@ -10,5 +10,5 @@ net_utils.cmo: net_utils.cmi
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 
 scanner.cmx: scanner.cmi 
-utils.cmo: config.cmi utils.cmi 
-utils.cmx: config.cmx utils.cmi 
+utils.cmo: utils.cmi 
+utils.cmx: utils.cmi 
