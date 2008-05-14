@@ -29,7 +29,7 @@ backend :
 
 frontend:
 	cd client; \
-	make; \
+	make all; \
 
 
 clean :

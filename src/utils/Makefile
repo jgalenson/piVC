@@ -13,9 +13,13 @@ default :
 	cd .. ;\
 	make backend; \
 
-all : depend netutils
+all : depend xmllight utils
 
-netutils : $(UTILS_OBJS)
+utils : $(UTILS_OBJS)
+
+xmllight:
+	cd xml-light; \
+	make xml-light.cma; \
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
@@ -26,6 +30,9 @@ netutils : $(UTILS_OBJS)
 	$(OC) -c $<
 
 clean :
+	cd xml-light; \
+	make clean; \
+
 	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
 
 depend:

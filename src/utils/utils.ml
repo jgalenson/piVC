@@ -10,8 +10,9 @@ let get_absolute_path path =
     if first_char = '\\' then (*in this case, the path is already absolute*)
         path
     else (*otherwise we need to turn it into an absolute path*)
-        let path_of_executable = Sys.argv.(0) in
-          (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1)) ^ path 
+      (* We could use Sys.argv.(0) here. *)
+      let path_of_executable = Sys.executable_name in
+        (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1)) ^ path 
 
 let is_some opt =
   match opt with

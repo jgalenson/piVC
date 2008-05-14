@@ -3,13 +3,19 @@ PROJ_DIR = java_gui java_gui/data_structures
 CCFLAGS =
 OCFLAGS =
 
-INCDIR = $(PROJ_DIR:%=-I %)
+INCDIR = -I ../utils
 
 CC = gcc $(CCFLAGS) $(INCDIR)
 OC = ocamlc $(OCFLAGS) $(INCDIR)
 JAVAC = javac
 
-default : gui
+include ../Makefile_includes
+
+default : 
+	cd .. ;\
+	make frontend; \
+
+all : gui executable
 
 #These comments should really be in the block of code below, but comments are printed out during compiliation and pollute the output.
 
@@ -19,7 +25,6 @@ default : gui
 #.svn directory and potentially other bad stuff.
 
 gui :
-
 	mkdir -p temp_files_for_compilation
 	$(JAVAC) -d temp_files_for_compilation -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java
 	cd temp_files_for_compilation; jar xf ../java_gui/libraries/*
@@ -30,5 +35,12 @@ gui :
 	mv temp_files_for_compilation/PiGui.jar ../../bin/PiGui.jar
 	rm -rf temp_files_for_compilation
 
+executable :
+	$(OC) -c pi_gui.ml
+	$(OC) -o ../../bin/pi_gui str.cma utils.cmo pi_gui.cmo
+
 clean :
+	rm pi_gui.cmi
+	rm pi_gui.cmo
+	rm ../../bin/pi_gui
 	rm ../../bin/PiGui.jar

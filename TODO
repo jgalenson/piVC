@@ -17,10 +17,8 @@ Joel
 	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
 	GUI tree usability improvements.
 	Timeouts.
-	Command-line arg support for server
+	More command-line arg support for server
 		Maybe support -print yices;vc format
-        ./PiGui doesn't work if a directory other than bin is the working directory. If it's not possible to harvest the working directory as args[0], then I think we should remove this invocation option and force people to use java -jar Pigui.jar (or, on Windows and possibly Mac, just double click the icon).
-	Compile xml-lite sourece.
 
 Both
 	Figure out how to display VCs in the GUI.
