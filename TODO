@@ -34,6 +34,8 @@ Unassigned
         Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Log server error messages.  Also add command line option to change its directory.
         Clean up samples directory
+    Bug: weird behavior if yices binary not present
+    Allow yices to be on PATH (i.e. don't have to specify actual location)
 
 
 -----------------------------
