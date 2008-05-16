@@ -1,1 +1,46 @@
-This is the README file.
+README for the complete piVC distribution (piVC main server, decision procedure server and client)
+
+About this Distribution
+-----------------------
+This distribution provides everything needed to use piVC. There are 3 components to the piVC system.
+1. Client: This is a light-weight Java application that allows users to edit files and send them to the main server for compilation. Note that the client does not do any compilation itself.
+2. Main server: This server compiles the programs, produces the verification conditions (VCs), and queries the DP server to determine whether the VCs are valid. It then returns this information to the client.
+3. DP server: This server receives VCs from the main server, applies a decision procedure to determine their validity, and returns this information to the main server. The DP server is a stand-alone binary so that it may be replaced with other, potentially proprietary decision procedures.
+
+Note that for most users, the distinction between the main server and DP server is not relevant. There is a binary "both_servers" that runs both.
+
+Intended Use of This Distribution
+---------------------------------
+The vast majority of piVC users should only need to download the client JAR file. The first time that a user compiles a program, he/she will be prompted to enter in a server address.
+
+A class instructor should setup a piVC server. He should give this server address and port to his/her students.
+
+Depending on demand and logistics, there may be free piVC servers available for public use. Check out the piVC website for more information on this.
+
+Requirements
+------------
+Server: *nix system (Linux, Unix, Mac, Cygwin, etc) with OCaml version 3.09 or above.
+Client: Sun Java 5.0 or above with support for a GUI.
+
+Installation Instructions
+-------------------------
+1. "make" from the src directory
+2. Do one of the following.
+   2a. Download the Yices binary from http://yices.csl.sri.com/. Put the binary into the "bin" directory of this piVC distribution.
+or
+   2b. If you already have Yices on your computer, edit the "yices_path" variable of conf/pivc-dp-server.conf to point to the location of yices. 
+
+Configuration Instructions
+--------------------------
+In general, the only configuration that is required is to set the clients to use the correct server address and port. This section provides more detailed configuration information.
+
+There are two configuration files in the conf directory. pivc-server.conf contains configuration settings for the main server, and pivc-dp-server.conf contains configuration settings for the DP server.
+
+The default ports are 4242 for the main server and 4243 for the DP server. If you want to change these defaults, edit the files conf/pivc-server.conf and conf/pivc-dp-server.conf. If you change the DP server's port, be sure to update both the "dp_server_address" variable in conf/pivc-server.conf AND the "port" variable in conf/pivc-dp-server.conf.
+
+If you want to run the DP server on a separate machine to the main server, then change the "dp_server_address" variable in conf/pivc-server.conf.
+
+Running Instructions
+--------------------
+Servers (main server and DP server combined): Run the binary "both_servers" (in the bin directory). If desired, you can also run the main server and DP server separately using the binaries "main_server" and "dp_server".
+Client: Launch PiGui.jar (in the bin directory). This is a standard Java JAR file. On some operating systems, double-clicking will run the program. If this does not work, the program can be launched by entering the command java -jar PiGui.jar into a terminal.
