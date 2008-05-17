@@ -4,20 +4,24 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import data_structures.BasicPath;
+import data_structures.Conjunct;
 import data_structures.Correctness;
 import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Location;
 import data_structures.PiError;
+import data_structures.RHSConjunct;
 import data_structures.Step;
 import data_structures.Termination;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
+import data_structures.VerificationResult.validityT;
 
 public class ServerResponseParser {
 	
@@ -154,6 +158,39 @@ public class ServerResponseParser {
 		return new Termination(validity, decreasing, nonnegative);
 	}
 
+	private VerificationCondition parseVerificationCondition(Node vc, VerificationResult.validityT validity){
+		NodeList impliesNodes = vc.getChildNodes();
+		ArrayList<Conjunct[]> implies = new ArrayList<Conjunct[]>();
+		for (int i = 0; i < impliesNodes.getLength(); i++) {
+			Node impliesNode = impliesNodes.item(i);
+			if(impliesNode.getNodeName().equals("implies")){
+				NodeList conjunctNodes = impliesNode.getChildNodes();
+				ArrayList<Conjunct> conjuncts = new ArrayList<Conjunct>();
+				for (int c = 0; c < conjunctNodes.getLength(); c++) {
+					Node conjunctNode = conjunctNodes.item(c);
+					//System.out.println(c + ": " + conjunctNode.getNodeName());
+					if(conjunctNode.getNodeName().equals("conjunct") || conjunctNode.getNodeName().equals("rhs_conjunct")){
+						NamedNodeMap attributes = conjunctNode.getAttributes();
+						Node textAttribute = attributes.getNamedItem("text");
+						String str = textAttribute.getNodeValue();
+						boolean inInductiveCore = Boolean.parseBoolean(attributes.getNamedItem("in_inductive_core").getNodeValue());
+						Conjunct curr;
+						if(conjunctNode.getNodeName().equals("rhs_conjunct")){
+							validityT status = VerificationResult.parseValidity(attributes.getNamedItem("status").getNodeValue());					
+							curr = new RHSConjunct(str,inInductiveCore,status);
+						}else{
+							curr = new Conjunct(str,inInductiveCore);
+						}
+						conjuncts.add(curr);
+					}
+				}
+				implies.add(conjuncts.toArray(new Conjunct[0]));
+			}
+		}
+		return new VerificationCondition(implies.toArray(new Conjunct[0][]),validity);
+	}
+	
+	
 	/**
 	 * Makes and returns a BasicPath object from a <basic_path> tag.
 	 */
@@ -169,7 +206,7 @@ public class ServerResponseParser {
 			if ("path".equals(child.getNodeName()))
 				steps = parsePath(child);
 			if ("vc".equals(child.getNodeName()))
-				vc = new VerificationCondition(child.getTextContent(), validity);
+				vc = parseVerificationCondition(child, validity);
 			if ("counterexample".equals(child.getNodeName()))
 				counterexample = parseCounterexample(child);
 		}
@@ -291,7 +328,7 @@ public class ServerResponseParser {
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
 			if ("vc".equals(child.getNodeName()))
-				vc = new VerificationCondition(child.getTextContent(), validity);
+				vc = parseVerificationCondition(child, validity);
 			if ("counterexample".equals(child.getNodeName()))
 				counterexample = parseCounterexample(child);
 			if ("location".equals(child.getNodeName()))

@@ -1,9 +1,24 @@
+open Lexing
 exception Option_Is_None ;;
 
 (* Converts from Windows to UNIX line endings. *)
 let convert_line_endings str =
   let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in
     Str.global_replace (Str.regexp "\r") "\n" str
+
+let compare_locs loc1 loc2 = 
+  let fname_compr = String.compare (loc1.pos_fname) (loc2.pos_fname) in
+  let lnum_compr = loc1.pos_lnum - loc2.pos_lnum in 
+  let bol_compr = loc1.pos_bol - loc2.pos_bol in 
+  let cnum_compr = loc1.pos_cnum - loc2.pos_cnum in 
+    if fname_compr != 0 then
+      fname_compr
+    else if lnum_compr != 0 then
+      lnum_compr
+    else if bol_compr != 0 then
+      bol_compr
+    else
+      cnum_compr
 
 let get_absolute_path path = 
   let first_char = String.get path 0 in

@@ -58,7 +58,14 @@ Server no errors:
 				        </step>
 				        // more steps as siblings
 				        <vc>
-					        string goes here
+					        <implies>
+                                                        <conjunct text="a||b" in_inductive_core="true">
+                                                        <conjunct text="c||d" in_inductive_core="true">
+                                                </implies>
+					        <implies>
+                                                        <rhs_conjunct text="a||b" valid="true" in_inductive_core="true">
+                                                        <rhs_conjunct text="c||d" valid="true" in_inductive_core="true">
+                                                </implies>
 				        </vc>
 				        <counterexample>  // optional tag (only there if invalid)
 					        <var text="var1 = val1">

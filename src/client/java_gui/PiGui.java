@@ -1,4 +1,5 @@
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -56,8 +57,9 @@ public class PiGui extends JFrame {
 	private JButton compileButton;
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
-	private Compiler curCompilation;
-
+	private Compiler curCompilation;	
+	private JTextPane vcPane;
+	
 	public PiGui() {
 		super(TITLE);
 		setLayout(new BorderLayout());
@@ -456,6 +458,10 @@ public class PiGui extends JFrame {
 		piCode.redo();
 	}
 	
+	public JTextPane getVCPane(){
+		return vcPane;
+	}
+	
 	/**
 	 * Called when a new node in the tree is selected.
 	 * We make sure to enable/disable any menu items
@@ -469,7 +475,7 @@ public class PiGui extends JFrame {
 	 * Display the selected basic path over time.
 	 */
 	public void displaySelectedBasicPath() {
-		BasicPath basicPath = (BasicPath)piTree.getSelectedObject();
+		BasicPath basicPath = (BasicPath)piTree.getSelectedObject();		
 		BasicPathHighlighter basicPathHighlighter = new BasicPathHighlighter(basicPath);
 		basicPathHighlighter.start();
 	}
@@ -509,6 +515,7 @@ public class PiGui extends JFrame {
 	 */
 	private void installMain() {
 		JPanel codePanel = new JPanel();
+
 		piCode = new PiCode(this);
 		JScrollPane codeScrollPane = new JScrollPane(piCode);
 		codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
@@ -519,33 +526,46 @@ public class PiGui extends JFrame {
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
 		
         rightTabbedPane = new JTabbedPane();
-        rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+        rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH/2, DEFAULT_HEIGHT));
+        
 		piTree = new PiTree(this, piCode);
-		piTree.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
-		//piTree.setLayout(new GridLayout(1, 1));
-		piTree.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Tree"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		piErrorOutput = new PiErrorOutput(piCode);
-		piErrorOutput.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Errors"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		piCompilerOutput = new PiCompilerOutput();
-		piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createTitledBorder("Compiler output"),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		rightTabbedPane.addTab("Tree", piTree.getTreeInScrollPane());
-		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_D);
-		rightTabbedPane.addTab("Errors", piErrorOutput.getErrorOutputInScrollPane());
-		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
-		rightTabbedPane.addTab("Compiler output", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
+		//piTree.setBorder(BorderFactory.createCompoundBorder(
+        //        BorderFactory.createTitledBorder("Verify"),
+        //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		vcPane = new JTextPane();
+		vcPane.setContentType("text/html");
+		vcPane.setBackground(Color.WHITE);
+		vcPane.setText("<i>Click on a basic path to display its verification condition</i>");
+		vcPane.setEditable(false);
+		JScrollPane vcPaneWithScrollBars = new JScrollPane(vcPane);		
+		vcPaneWithScrollBars.setBorder(BorderFactory.createTitledBorder("Verification Condition"));		
+		JSplitPane verify = new JSplitPane(JSplitPane.VERTICAL_SPLIT,piTree.getTreeInScrollPane(),vcPaneWithScrollBars);
+		verify.setOneTouchExpandable(true);
+		verify.setContinuousLayout(true);
+		verify.setDividerLocation(3*DEFAULT_HEIGHT/4);
 		
+		piErrorOutput = new PiErrorOutput(piCode);
+		//piErrorOutput.setBorder(BorderFactory.createCompoundBorder(
+        //        BorderFactory.createTitledBorder("Compilation Errors"),
+        //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		
+		piCompilerOutput = new PiCompilerOutput();
+		//piCompilerOutput.setBorder(BorderFactory.createCompoundBorder(
+        //        BorderFactory.createTitledBorder("Raw XML"),
+        //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
+		
+		rightTabbedPane.addTab("Verify", verify);
+		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_V);
+		rightTabbedPane.addTab("Compilation Errors", piErrorOutput.getErrorOutputInScrollPane());
+		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
+		rightTabbedPane.addTab("Raw XML", new JScrollPane(piCompilerOutput));
+		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
+		rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH/2, 3*DEFAULT_HEIGHT/4));
+		
+
 		JSplitPane sp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, codePanel, rightTabbedPane);
 		sp.setOneTouchExpandable(true);
-		sp.setContinuousLayout(true);
-		//sp.setDividerLocation(.5);
-		
+		sp.setContinuousLayout(true);		
 		add(sp);
 	}
 	

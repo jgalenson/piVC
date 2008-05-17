@@ -32,4 +32,18 @@ public class VerificationResult {
 		return functions.get(index);
 	}
 
+	public static validityT parseValidity(String str) {
+		if (str.equalsIgnoreCase("valid")){
+			return validityT.VALID;
+		}
+		else if(str.equalsIgnoreCase("invalid")){
+			return validityT.INVALID;
+		}
+		else if(str.equalsIgnoreCase("unknown")){
+			return validityT.UNKNOWN;
+		}else{
+			throw new RuntimeException("Unregonized validity: " + str);
+		}
+	}
+
 }

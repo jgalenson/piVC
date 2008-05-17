@@ -20,20 +20,24 @@ let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_en
 
 let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol)
 
-let location_union loc1 loc2 = {
-  loc_start = 
-    if loc1.loc_start.pos_cnum < loc2.loc_start.pos_cnum then
-      loc1.loc_start
-    else
-      loc2.loc_start
-    ;
-  loc_end = 
-    if loc1.loc_end.pos_cnum > loc2.loc_end.pos_cnum then
-      loc1.loc_end
-    else
-      loc2.loc_end
-    ;
-}
+let location_union loc1 loc2 =
+  if loc1==gdl() then loc2
+  else if loc2==gdl() then loc1
+  else
+      {
+      loc_start = 
+        if loc1.loc_start.pos_cnum < loc2.loc_start.pos_cnum then
+          loc1.loc_start
+        else
+          loc2.loc_start
+      ;
+      loc_end = 
+        if loc1.loc_end.pos_cnum > loc2.loc_end.pos_cnum then
+          loc1.loc_end
+        else
+          loc2.loc_end
+      ;
+      }
 
 type identifier = {
   name: string;

@@ -194,9 +194,9 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
     let lhsType = cagrt t1
     and rhsType = cagrt t2 in
     if not (is_boolean_type lhsType loc) then
-      add_error SemanticError (get_type_error_msg "Logical" lhsType "boolean") loc errors;
+      add_error SemanticError (get_type_error_msg "Logical" lhsType "bool") loc errors;
     if not (is_boolean_type rhsType loc) then
-      add_error SemanticError (get_type_error_msg "Logical" rhsType "boolean") loc errors;
+      add_error SemanticError (get_type_error_msg "Logical" rhsType "bool") loc errors;
     Bool(loc)
       
   and check_and_get_return_type_arithmetic loc t1 t2 =
@@ -361,7 +361,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
     | Not (loc,t) ->
 	let ltype = cagrt t in
 	if not (is_boolean_type ltype loc) then
-	  add_error SemanticError (get_type_error_msg "Logical not" ltype "boolean") loc errors;
+	  add_error SemanticError (get_type_error_msg "Logical not" ltype "bool") loc errors;
 	Bool(loc)
     | Iff (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
     | Implies (loc,t1, t2) -> check_and_get_return_type_logical loc t1 t2
