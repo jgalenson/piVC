@@ -42,6 +42,7 @@ public class PiGui extends JFrame {
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
 	private static final String TITLE = "PiVC";
+	private static final int SCROLL_BAR_BLOCK_INCREMENT = 12;
 	
 	private PiCode piCode;
 	private PiErrorOutput piErrorOutput;
@@ -58,7 +59,8 @@ public class PiGui extends JFrame {
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
-	private JTextPane vcPane;
+	private PiVCPane vcPane;
+	private JScrollPane vcPaneWithScrollBars;
 	
 	public PiGui() {
 		super(TITLE);
@@ -458,9 +460,13 @@ public class PiGui extends JFrame {
 		piCode.redo();
 	}
 	
-	public JTextPane getVCPane(){
+	public PiVCPane getVCPane(){
 		return vcPane;
 	}
+
+	public JScrollPane getVCPaneScrollPane(){
+		return vcPaneWithScrollBars;
+	}	
 	
 	/**
 	 * Called when a new node in the tree is selected.
@@ -518,6 +524,7 @@ public class PiGui extends JFrame {
 
 		piCode = new PiCode(this);
 		JScrollPane codeScrollPane = new JScrollPane(piCode);
+
 		codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
 		codePanel.setLayout(new GridLayout(1, 1));
 		codePanel.add(codeScrollPane);
@@ -532,12 +539,12 @@ public class PiGui extends JFrame {
 		//piTree.setBorder(BorderFactory.createCompoundBorder(
         //        BorderFactory.createTitledBorder("Verify"),
         //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		vcPane = new JTextPane();
-		vcPane.setContentType("text/html");
-		vcPane.setBackground(Color.WHITE);
-		vcPane.setText("<i>Click on a basic path to display its verification condition</i>");
-		vcPane.setEditable(false);
-		JScrollPane vcPaneWithScrollBars = new JScrollPane(vcPane);		
+		vcPane = new PiVCPane(this);
+
+		vcPaneWithScrollBars = new JScrollPane(vcPane);		
+
+		vcPaneWithScrollBars.getVerticalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
+		vcPaneWithScrollBars.getHorizontalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
 		vcPaneWithScrollBars.setBorder(BorderFactory.createTitledBorder("Verification Condition"));		
 		JSplitPane verify = new JSplitPane(JSplitPane.VERTICAL_SPLIT,piTree.getTreeInScrollPane(),vcPaneWithScrollBars);
 		verify.setOneTouchExpandable(true);

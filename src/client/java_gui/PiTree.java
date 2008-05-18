@@ -214,7 +214,7 @@ public class PiTree extends JPanel {
 			piCode.highlight(step.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof BasicPath) {
 			BasicPath basicPath = (BasicPath)obj;
-			piGui.getVCPane().setText(basicPath.getVC().toHTML());
+			piGui.getVCPane().setVC(basicPath.getVC());
 			piCode.highlight(basicPath.getLocations(), PiCode.yellowHP);
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
@@ -224,7 +224,7 @@ public class PiTree extends JPanel {
 			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
 			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
-			piGui.getVCPane().setText(nonnegativeVC.getVC().toHTML());
+			piGui.getVCPane().setVC(nonnegativeVC.getVC());
 			piCode.highlight(nonnegativeVC.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof String) {
 			String str = (String)obj;
