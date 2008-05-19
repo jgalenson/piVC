@@ -59,7 +59,7 @@ public class PiGui extends JFrame {
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
-	private PiVCPane2 vcPane;
+	private PiVCPane vcPane;
 	
 	public PiGui() {
 		super(TITLE);
@@ -459,7 +459,7 @@ public class PiGui extends JFrame {
 		piCode.redo();
 	}
 	
-	public PiVCPane2 getVCPane(){
+	public PiVCPane getVCPane(){
 		return vcPane;
 	}
 
@@ -535,7 +535,7 @@ public class PiGui extends JFrame {
 		//piTree.setBorder(BorderFactory.createCompoundBorder(
         //        BorderFactory.createTitledBorder("Verify"),
         //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		vcPane = new PiVCPane2(piCode);
+		vcPane = new PiVCPane(piCode);
 
 		//vcPaneWithScrollBars = new JScrollPane(vcPane);		
 
