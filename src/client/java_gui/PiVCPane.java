@@ -38,41 +38,25 @@ public class PiVCPane extends JPanel {
 	private void initList() {
 		list.setCellRenderer(new MyListCellRenderer());
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		// Catch selection clicks and clicks on selected object
-		list.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				if (e.getButton() != MouseEvent.BUTTON1)
-					return;
-				int index = list.locationToIndex(e.getPoint());
-				Object obj = list.getModel().getElementAt(index);
-				errorClicked(obj);
-			}
-		});
-		// Catch unselection
 		list.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
 					Object obj = list.getSelectedValue();
-					if (obj == null)
-						errorClicked(obj);
+					if (obj != null)
+						conjunctClicked(obj);
 				}
 			}
 		});
 	}
 	
-	/**
-	 * Handle selecting/unselecting an error.
-	 */
-	private void errorClicked(Object obj) {
+
+	private void conjunctClicked(Object obj) {
 		if (obj == null || !(obj instanceof Conjunct))  // unselecting
 			piCode.removeAllHighlights();
 		else {
 			Location loc = ((Conjunct)obj).getLocation();
 			if (loc != null) {  // Compiler errors don't have locations.
 				piCode.highlight(loc, PiCode.redHP);
-				piCode.setCaretPosition(loc.getStartByte());
-				piCode.requestFocusInWindow();
 			}
 		}	
 	}
@@ -81,7 +65,7 @@ public class PiVCPane extends JPanel {
 	 * Add the return of this into the tabbed pane:
 	 * do not add the PiErrorOutput object itself.
 	 */
-	public JScrollPane getErrorOutputInScrollPane() {
+	public JScrollPane getPiVCPaneInScrollPane() {
 		return new JScrollPane(list);
 	}
 	

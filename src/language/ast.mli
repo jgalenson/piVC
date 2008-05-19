@@ -143,6 +143,8 @@ type program = {
 }
 val create_program : decl list -> location -> program
 
+val replace_loc_of_expr : expr -> location -> expr
+
 val get_root_decl : program -> string -> decl option
 
 (*val identifier_of_lval : lval -> identifier*)

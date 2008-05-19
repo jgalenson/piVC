@@ -29,6 +29,12 @@ let add_child child node = match node.contents with
 
 (* PRINTING FUNCTIONS *)
 
+let rec gen_num_spaces num_spaces = 
+  if num_spaces <= 0 then
+    ""
+  else
+    " " ^ gen_num_spaces (num_spaces-1)
+
 let replace_bad_chars str = 
   let str1 = Str.global_replace (Str.regexp "&") "&amp;" str in
   let str2 = Str.global_replace (Str.regexp "<") "&lt;" str1 in
@@ -42,15 +48,24 @@ let rec string_of_attribute_list attribute_list = match attribute_list with
   | e :: l -> " " ^ replace_bad_chars (fst e) ^ "=\"" ^ replace_bad_chars (snd e) ^ "\"" ^ string_of_attribute_list l
 
 and string_of_xml_node node = 
-  "<" ^ replace_bad_chars node.name ^ (string_of_attribute_list node.attributes) ^ ">\n" ^
-    string_of_xml_node_content node.contents ^
-    "</" ^ node.name ^ ">\n"
+  string_of_xml_node_with_spacing node 0
 
-and string_of_xml_nodes nodes = match nodes with
+and string_of_xml_node_with_spacing node num_spaces = 
+  (gen_num_spaces num_spaces) ^ "<" ^ replace_bad_chars node.name ^ (string_of_attribute_list node.attributes) ^ ">" ^
+    begin
+      match node.contents with
+          Text(str) -> replace_bad_chars str
+        | Empty -> ""
+        | Children(nodes) -> "\n" ^ string_of_xml_nodes_with_spacing nodes (num_spaces + 2) ^ (gen_num_spaces num_spaces)
+    end
+    ^ "</" ^ node.name ^ ">" ^ "\n"
+
+and string_of_xml_nodes_with_spacing nodes num_spaces = match nodes with
     [] -> ""
-  | e :: l -> (string_of_xml_node e) ^ (string_of_xml_nodes l)
-
-and string_of_xml_node_content content = match content with
-    Text(str) -> replace_bad_chars str ^ "\n"
-  | Children(nodes) -> string_of_xml_nodes nodes
+  | e :: l -> (string_of_xml_node_with_spacing e num_spaces) ^ (string_of_xml_nodes_with_spacing l num_spaces)
+(*
+and string_of_xml_node_content_with_spacing content num_spaces = match content with
+    Text(str) -> replace_bad_chars str
+  | Children(nodes) -> string_of_xml_nodes_with_spacing nodes num_spaces
   | Empty -> ""
+*)

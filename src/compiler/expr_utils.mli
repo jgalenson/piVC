@@ -1,7 +1,7 @@
 open Ast ;;
 
 val nnf : expr -> expr
-val sub_idents_in_expr : expr -> (identifier * expr) list -> expr ;;
+val sub_idents_in_expr_while_preserving_original_location : expr -> (identifier * expr) list -> expr ;;
 val sub_idents : expr -> (identifier -> expr option) -> expr ;;
 val get_idents_of_formals : fnDecl -> identifier list
 val array_ident_from_lval : lval -> identifier

@@ -207,8 +207,11 @@ and xml_of_verified_program (fns) =
       let implies_node = Xml_generator.create "implies" in
       let xml_of_lhs_conjunct conj = 
         let conjunct_node = Xml_generator.create "conjunct" in
-          add_attribute ("text", string_of_expr conj.exp) conjunct_node;
+        let text_node = Xml_generator.create "text" in
+          set_text (string_of_expr conj.exp) text_node;
+          add_child text_node conjunct_node;
           add_attribute ("in_inductive_core", string_of_bool !(conj.in_inductive_core)) conjunct_node;
+          add_child (xml_of_location (location_of_expr conj.exp)) conjunct_node;
           conjunct_node
       in
       let add_conjunct_child conj = 
@@ -221,9 +224,12 @@ and xml_of_verified_program (fns) =
       let implies_node = Xml_generator.create "implies" in
       let xml_of_rhs_conjunct conj = 
         let conjunct_node = Xml_generator.create "rhs_conjunct" in
-          add_attribute ("text",string_of_expr conj.exp) conjunct_node;
+        let text_node = Xml_generator.create "text" in
+          set_text (string_of_expr conj.exp) text_node;
+          add_child text_node conjunct_node;
           add_attribute ("in_inductive_core", string_of_bool !(conj.in_inductive_core)) conjunct_node;
           add_attribute ("status", string_of_validity (elem_from_opt conj.valid_conjunct)) conjunct_node;
+          add_child (xml_of_location (location_of_expr conj.exp)) conjunct_node;
           conjunct_node
       in
       let add_conjunct_child conj = 

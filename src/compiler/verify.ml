@@ -107,7 +107,7 @@ let instantiate_predicates expr program =
             let get_replacement_pair decl arg = 
               (decl.varName,arg) in
             let replacement_pairs = List.map2 get_replacement_pair pred_decl.formals_p new_el in
-              Expr_utils.sub_idents_in_expr pred_decl.expr replacement_pairs
+              Expr_utils.sub_idents_in_expr_while_preserving_original_location pred_decl.expr replacement_pairs
           end
       | Plus (loc,t1, t2) -> Plus(loc,ip t1, ip t2)
       | Minus (loc,t1, t2) -> Minus(loc,ip t1, ip t2)
@@ -181,7 +181,7 @@ let add_to_cache cache key result =
 let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
   try
     let vc = instantiate_predicates vc_with_preds program in
-    (* Use cached version if we can. *)
+      (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
     Mutex.lock cache_lock;
     if (Hashtbl.mem vc_cache unique_vc_str) then
@@ -203,7 +203,6 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
       (*let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in*)
 
       let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
-
 
 (*  
   print_endline ("*********************************");
@@ -346,6 +345,7 @@ let rec overall_validity_of_vc_detailed_list vc_detailed_list =
     else Valid
 
 and vc_detailed_of_vc_detailed_temp vc_detailed_temp = 
+  (if (List.length vc_detailed_temp.vc_temp)==0 then assert(false));
   let elem_is_invalid elem = 
     (Utils.elem_from_opt elem.valid_conjunct) = Invalid
   in
@@ -388,12 +388,12 @@ and expr_of_conjunct_list conjunct_list core_only =
     | 1 ->
         begin
           let conjunct = (List.hd conjunct_list) in
-            if core_only || conjunct.in_inductive_core.contents then
+            if (not core_only) || conjunct.in_inductive_core.contents then
               conjunct.exp
             else
               Constant(gdl(), ConstBool(gdl(), true))
         end
-    | _ -> And(gdl(), (List.hd conjunct_list).exp, expr_of_conjunct_list (List.tl conjunct_list) core_only)
+    | _ -> And(gdl(), expr_of_conjunct_list [(List.hd conjunct_list)] core_only, expr_of_conjunct_list (List.tl conjunct_list) core_only)
 
 
 and vc_temp_of_expr expr func bp = 
@@ -412,6 +412,7 @@ and vc_temp_of_expr expr func bp =
 
 let verify_vc (vc,vc_cache_and_lock,program_ast,set_valid,set_in_core) =
   try
+    (if (List.length vc.vc_temp)==0 then assert(false));
     if not set_valid && not set_in_core then assert(false);
     let threads_of_vc vc =
       let expr_of_vc_advanced_replace_rhs vc new_rhs = 
@@ -534,14 +535,16 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock =
                 Implies(loc,e1,e2) -> Implies(loc,e1,get_new e2)
               | _ -> new_rhs
           in
-            get_new (expr_of_vc_detailed_temp_just_core vc)
+          let new_expr = get_new (expr_of_vc_detailed_temp_just_core vc) in
+            new_expr
         in
         let thread_of_conjunct conj = 
           let vc_expr = expr_of_vc_advanced_replace_rhs vc conj.exp in
             (conj, Background.create verify_vc_expr (vc_expr, vc_cache_and_lock, program_ast))
         in
-        let rhs = (List.nth vc.vc_temp ((List.length vc.vc_temp) - 1)) in
-          (vc,List.map thread_of_conjunct rhs)
+          (if (List.length vc.vc_temp)==0 then assert(false));
+          let rhs = (List.nth vc.vc_temp ((List.length vc.vc_temp) - 1)) in
+            (vc,List.map thread_of_conjunct rhs)
       in    
         List.map threads_of_vc vcs
     in

@@ -195,6 +195,38 @@ type predicate = {
   location_p : location;
 }
 
+
+let replace_loc_of_expr expr new_loc= 
+  match expr with
+    | Assign (loc,l, e) -> Assign(new_loc,l,e)
+    | Constant (loc,c) -> Constant(new_loc,c)
+    | LValue (loc,l) -> LValue(new_loc,l)
+    | Call (loc,s, el) -> Call(new_loc,s,el)
+    | Plus (loc,t1, t2) -> Plus(new_loc,t1,t2)
+    | Minus (loc,t1, t2) -> Minus(new_loc,t1,t2)
+    | Times (loc,t1, t2) -> Times(new_loc,t1,t2)
+    | Div (loc,t1, t2) -> Div(new_loc,t1,t2)
+    | IDiv (loc,t1, t2) -> IDiv(new_loc,t1,t2)
+    | Mod (loc,t1, t2) -> Mod(new_loc,t1,t2)
+    | UMinus (loc,t) -> UMinus(new_loc,t)
+    | ForAll (loc,decls,e) -> ForAll(new_loc,decls,e)
+    | Exists (loc,decls,e) -> Exists(new_loc,decls,e)
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(new_loc,exp,assign_to, assign_val)
+    | LT (loc,t1, t2) -> LT(new_loc,t1,t2)
+    | LE (loc,t1, t2) -> LE(new_loc,t1,t2)
+    | GT (loc,t1, t2) -> GT(new_loc,t1,t2)
+    | GE (loc,t1, t2) -> GE(new_loc,t1,t2)
+    | EQ (loc,t1, t2) -> EQ(new_loc,t1,t2)
+    | NE (loc,t1, t2) -> NE(new_loc,t1,t2)
+    | And (loc,t1, t2) -> And(new_loc,t1,t2)
+    | Or (loc,t1, t2) -> Or(new_loc,t1,t2)
+    | Not (loc,t) -> Not(new_loc,t)
+    | Length (loc, t) -> Length(new_loc,t)
+    | Iff (loc,t1, t2) -> Iff(new_loc,t1,t2)
+    | Implies (loc,t1, t2) -> Implies(new_loc,t1,t2)
+    | EmptyExpr -> assert(false)
+
+
 type decl = 
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl

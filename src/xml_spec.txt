@@ -47,8 +47,8 @@ Server no errors:
 				        <step>
 					        <node type="expr/assume/annotation">
 						        <location>
-							        <start row=foo col=bar />
-							        <end row=bar col=foo />
+							        <start row=foo col=bar byte=bar />
+							        <end row=bar col=foo byte=bar />
 						        </location>
 						        <text>
 							        cool++;
@@ -59,12 +59,24 @@ Server no errors:
 				        // more steps as siblings
 				        <vc>
 					        <implies>
-                                                        <conjunct text="a||b" in_inductive_core="true">
-                                                        <conjunct text="c||d" in_inductive_core="true">
+                                                        <conjunct in_inductive_core="true">
+                                                                  <text> ... </text>
+                                                                  <location> ... </location>
+                                                        </conjunct>
+                                                        <conjunct in_inductive_core="true">
+                                                                  <text> ... </text>
+                                                                  <location> ... </location>
+                                                        </conjunct>
                                                 </implies>
 					        <implies>
-                                                        <rhs_conjunct text="a||b" valid="true" in_inductive_core="true">
-                                                        <rhs_conjunct text="c||d" valid="true" in_inductive_core="true">
+                                                        <rhs_conjunct valid="true" in_inductive_core="true">
+                                                                  <text> ... </text>
+                                                                  <location> ... </location>
+                                                        </rhs_conjunct>
+                                                        <rhs_conjunct valid="true" in_inductive_core="true">
+                                                                  <text> ... </text>
+                                                                  <location> ... </location>
+                                                        </rhs_conjunct>
                                                 </implies>
 				        </vc>
 				        <counterexample>  // optional tag (only there if invalid)

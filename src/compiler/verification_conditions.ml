@@ -168,13 +168,13 @@ let get_vc bp =
 	      | Ast.Assign (_,l,e) ->
                   begin
                     match l with
-                        Ast.NormLval(loc,id) -> sub_idents_in_expr formula [(id, e)]
-                      | Ast.ArrayLval(loc,arr,index) -> (*sub_idents_in_expr formula [((array_ident_from_lval l),e)]*)
+                        Ast.NormLval(loc,id) -> sub_idents_in_expr_while_preserving_original_location formula [(id, e)]
+                      | Ast.ArrayLval(loc,arr,index) ->
                           begin
                             let array_ident = array_ident_from_lval l in
                             let array_update = array_write_to_array_update (Ast.LValue(Ast.get_dummy_location(),l)) e in
                               match array_update with
-                                  Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr formula [(array_ident,update_to)]
+                                  Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr_while_preserving_original_location formula [(array_ident,update_to)]
                                 | _ -> assert(false)
                           end
                   end

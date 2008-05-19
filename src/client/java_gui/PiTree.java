@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.ImageIcon;
@@ -36,7 +37,7 @@ public class PiTree extends JPanel {
 	    root = null;
 	    treeModel = new DefaultTreeModel(root);
 	    tree = new JTree(treeModel);
-	    this.piGui = piGui;
+		this.piGui = piGui;
 	    this.piCode = piCode;
 	    selectedNode = null;
 		initTree();
@@ -270,6 +271,16 @@ public class PiTree extends JPanel {
 	 * We can specify a node's text and image.
 	 */
 	private class MyTreeCellRenderer extends DefaultTreeCellRenderer {
+
+		@Override
+		public Color getBackgroundNonSelectionColor(){
+			return null;
+		}
+
+		@Override
+		public Color getBackground(){
+			return null;
+		}		
 		
 		private ImageIcon valid, invalid, unknown;
 		
@@ -277,6 +288,7 @@ public class PiTree extends JPanel {
 			valid = new ImageIcon(Utils.getURL("images/valid.jpg"));
 			invalid = new ImageIcon(Utils.getURL("images/invalid.jpg"));
 			unknown = new ImageIcon(Utils.getURL("images/unknown.jpg"));
+	        //setBackgroundNonSelectionColor(Color.WHITE);//this did the trick
 		}
 		
 		private ImageIcon getProperIcon(VerificationResult.validityT validity) {
@@ -348,6 +360,9 @@ public class PiTree extends JPanel {
 				setIcon(null);
 				setText((String)obj);
 			}
+			//setForeground(Color.PINK);
+			//setBackground(Color.BLUE);
+
 			return this;
 		}
 	}

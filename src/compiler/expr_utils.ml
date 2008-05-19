@@ -174,13 +174,14 @@ let sub_idents expr fn =
   in
     sub expr ;;
 
-let rec sub_idents_in_expr expr ident_subs =
+let rec sub_idents_in_expr_while_preserving_original_location expr ident_subs =
   let get_new_ident ident =
     try
       let is_same (old, replace) =
 	((id_of_identifier ident) = (id_of_identifier old)) && (ident.name = old.name)
       in
-      Some (snd (List.find is_same ident_subs))
+      Some (replace_loc_of_expr (snd (List.find is_same ident_subs)) ident.location_id)
+        (*we want to keep the old location, so we call replace_loc_of_expr*)
     with
       Not_found -> None
   in
@@ -207,7 +208,7 @@ let change_quantifier old_decls old_expr new_quant =
     (old_decl.varName,LValue(gdl(),NormLval(gdl(),{name = new_decl.varName.name; location_id = gdl(); decl = ref (Some(new_decl)); is_length = false;})))
   in
   let replacement_pairs = List.map2 get_replacement_pair old_decls new_decls in
-  let new_expr = sub_idents_in_expr old_expr replacement_pairs in
+  let new_expr = sub_idents_in_expr_while_preserving_original_location old_expr replacement_pairs in
     (new_decls,new_expr)
     
 
@@ -493,7 +494,7 @@ let remove_quantification_from_vc_with_array_dp exp_orig =
           let remove_one_decl decl exp =
             let convert_elem_in_index_set_to_term elem = 
               let sub = [(decl.varName, elem)] in
-                sub_idents_in_expr exp sub
+                sub_idents_in_expr_while_preserving_original_location exp sub
             in
             let rec make_conjuncts index_set_terms_remaining expr_so_far = 
               match index_set_terms_remaining with

@@ -48,7 +48,7 @@ public class PiErrorOutput extends JPanel {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
 					Object obj = list.getSelectedValue();
-					if (obj == null)
+					if (obj != null)
 						errorClicked(obj);
 				}
 			}
@@ -65,8 +65,8 @@ public class PiErrorOutput extends JPanel {
 			Location loc = ((PiError)obj).getLocation();
 			if (loc != null) {  // Compiler errors don't have locations.
 				piCode.highlight(loc, PiCode.redHP);
-				piCode.setCaretPosition(loc.getStartByte());
-				piCode.requestFocusInWindow();
+				//piCode.setCaretPosition(loc.getStartByte());
+				//piCode.requestFocusInWindow();
 			}
 		}	
 	}

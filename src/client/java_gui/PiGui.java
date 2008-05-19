@@ -543,7 +543,7 @@ public class PiGui extends JFrame {
 		//vcPaneWithScrollBars.getHorizontalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
 		
 		
-		JScrollPane vcPaneWithScrollBars = vcPane.getErrorOutputInScrollPane();
+		JScrollPane vcPaneWithScrollBars = vcPane.getPiVCPaneInScrollPane();
 
 		vcPaneWithScrollBars.setBorder(BorderFactory.createTitledBorder("Verification Condition"));		
 		

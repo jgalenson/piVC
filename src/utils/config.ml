@@ -138,16 +138,16 @@ let print msg =
     let should_truncate = get_value_bool "truncate_output" in
     let truncate_finish = " [...]" in
     let truncate_len = (get_value_int "truncate_output_length") - (String.length truncate_finish) in
-    if (should_truncate && (String.length msg) > truncate_len) then
-      (Str.string_before (msg) truncate_len) ^ truncate_finish
-    else
-      msg
+      if (should_truncate && (String.length msg) > truncate_len) then
+        (Str.string_before (msg) truncate_len) ^ truncate_finish
+      else
+        msg
   in
-  (* Prints the final msg created above if the config map
-     for key has value "true". *)
+    (* Prints the final msg created above if the config map
+       for key has value "true". *)
   let print_if_true key =
-    let print_fn =
-      if (String.length final_msg > 0 && msg.[String.length final_msg - 1] = '\n') then
+    let print_fn = 
+      if (String.length final_msg > 0 && final_msg.[String.length final_msg - 1] = '\n') then
 	print_string
       else
 	print_endline
@@ -161,5 +161,4 @@ let print msg =
     | MainServer -> print_if_true "print_main_server_info"
     | DPServer -> print_if_true "print_dp_server_info"
     | Parser -> print_endline msg ;;
-
 
