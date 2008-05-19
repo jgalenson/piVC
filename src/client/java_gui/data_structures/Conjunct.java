@@ -9,9 +9,23 @@ public class Conjunct{
 	public final String str;
 	public final boolean inInductiveCore;
 	public final Location loc;
+	private String displayHTML;
 	
 	@Override
 	public String toString(){
 		return str;
 	}
+
+	public String getDisplayHTML(){
+		return displayHTML;
+	}
+	
+	public void setDisplayHTML(String displayHTML){
+		this.displayHTML = displayHTML;
+	}
+	
+	public Location getLocation(){
+		return loc;
+	}
+	
 }

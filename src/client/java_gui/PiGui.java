@@ -59,8 +59,7 @@ public class PiGui extends JFrame {
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
-	private PiVCPane vcPane;
-	private JScrollPane vcPaneWithScrollBars;
+	private PiVCPane2 vcPane;
 	
 	public PiGui() {
 		super(TITLE);
@@ -460,13 +459,10 @@ public class PiGui extends JFrame {
 		piCode.redo();
 	}
 	
-	public PiVCPane getVCPane(){
+	public PiVCPane2 getVCPane(){
 		return vcPane;
 	}
 
-	public JScrollPane getVCPaneScrollPane(){
-		return vcPaneWithScrollBars;
-	}	
 	
 	/**
 	 * Called when a new node in the tree is selected.
@@ -539,13 +535,19 @@ public class PiGui extends JFrame {
 		//piTree.setBorder(BorderFactory.createCompoundBorder(
         //        BorderFactory.createTitledBorder("Verify"),
         //        BorderFactory.createEmptyBorder(5, 5, 5, 5)));
-		vcPane = new PiVCPane(this);
+		vcPane = new PiVCPane2(piCode);
 
-		vcPaneWithScrollBars = new JScrollPane(vcPane);		
+		//vcPaneWithScrollBars = new JScrollPane(vcPane);		
 
-		vcPaneWithScrollBars.getVerticalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
-		vcPaneWithScrollBars.getHorizontalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
+		//vcPaneWithScrollBars.getVerticalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
+		//vcPaneWithScrollBars.getHorizontalScrollBar().setUnitIncrement(SCROLL_BAR_BLOCK_INCREMENT);
+		
+		
+		JScrollPane vcPaneWithScrollBars = vcPane.getErrorOutputInScrollPane();
+
 		vcPaneWithScrollBars.setBorder(BorderFactory.createTitledBorder("Verification Condition"));		
+		
+		
 		JSplitPane verify = new JSplitPane(JSplitPane.VERTICAL_SPLIT,piTree.getTreeInScrollPane(),vcPaneWithScrollBars);
 		verify.setOneTouchExpandable(true);
 		verify.setContinuousLayout(true);

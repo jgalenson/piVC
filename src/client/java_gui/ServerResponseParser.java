@@ -168,18 +168,33 @@ public class ServerResponseParser {
 				ArrayList<Conjunct> conjuncts = new ArrayList<Conjunct>();
 				for (int c = 0; c < conjunctNodes.getLength(); c++) {
 					Node conjunctNode = conjunctNodes.item(c);
-					//System.out.println(c + ": " + conjunctNode.getNodeName());
 					if(conjunctNode.getNodeName().equals("conjunct") || conjunctNode.getNodeName().equals("rhs_conjunct")){
+						String str=null;
+						Location loc=null;
+						NodeList children = conjunctNode.getChildNodes();
+						for(int i2=0; i2<children.getLength(); ++i2){
+							Node child = children.item(i2);
+							if(child.getNodeName().equals("text")){
+								str = child.getTextContent();
+							}
+							if(child.getNodeName().equals("location")){
+								loc = parseLocation(child);
+							}
+						}
+						if(str==null){
+							throw new RuntimeException("No text node in VC conjunct xml");
+						}
+						if(loc==null){
+							throw new RuntimeException("No location node in VC conjunct xml");
+						}
 						NamedNodeMap attributes = conjunctNode.getAttributes();
-						Node textAttribute = attributes.getNamedItem("text");
-						String str = textAttribute.getNodeValue();
 						boolean inInductiveCore = Boolean.parseBoolean(attributes.getNamedItem("in_inductive_core").getNodeValue());
 						Conjunct curr;
 						if(conjunctNode.getNodeName().equals("rhs_conjunct")){
 							validityT status = VerificationResult.parseValidity(attributes.getNamedItem("status").getNodeValue());					
-							curr = new RHSConjunct(str,inInductiveCore,status);
+							curr = new RHSConjunct(str,inInductiveCore,loc,status);
 						}else{
-							curr = new Conjunct(str,inInductiveCore);
+							curr = new Conjunct(str,inInductiveCore,loc);
 						}
 						conjuncts.add(curr);
 					}
