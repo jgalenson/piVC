@@ -19,6 +19,7 @@ Joel
 	Timeouts.
 	More command-line arg support for server
 		Maybe support -print yices;vc format
+		Split options for two executables?  Remove double error msg on both_servers?
 
 Both
 	Figure out how to display VCs in the GUI.
@@ -34,8 +35,9 @@ Unassigned
         Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Log server error messages.  Also add command line option to change its directory.
         Clean up samples directory
-    Bug: weird behavior if yices binary not present
-    Allow yices to be on PATH (i.e. don't have to specify actual location)
+	Bug: weird behavior if yices binary not present
+	Allow yices to be on PATH (i.e. don't have to specify actual location)
+	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 
 
 -----------------------------
