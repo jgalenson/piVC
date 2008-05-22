@@ -2,7 +2,7 @@ PROJ_DIR = .
 
 OCFLAGS = -dtypes -thread
 
-INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../compiler -I xml-light
+INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../compiler -I ../utils/xml-light
 
 OC = ocamlc $(OCFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
