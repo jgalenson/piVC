@@ -9,7 +9,7 @@ type options = {
 (* Converts from Windows to UNIX line endings. *)
 let convert_line_endings str =
   let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in
-    Str.global_replace (Str.regexp "\r") "\n" str
+    Str.global_replace (Str.regexp "\r") "\n" str_temp
 
 let compare_locs loc1 loc2 = 
   let fname_compr = String.compare (loc1.pos_fname) (loc2.pos_fname) in
