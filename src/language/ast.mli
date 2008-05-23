@@ -12,6 +12,7 @@ type location = {
 }
 val gdl : unit -> location
 val get_dummy_location : unit -> location
+val is_dummy_location : location -> bool
 val create_location : Lexing.position -> Lexing.position -> location
 val col_number_of_position : Lexing.position -> int
 val location_union : location -> location -> location

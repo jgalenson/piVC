@@ -15,7 +15,9 @@ and get_dummy_location () = {
   loc_start={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
   loc_end={pos_fname="dummy"; pos_lnum=0; pos_bol=0; pos_cnum=0};
 }
-
+and is_dummy_location loc = 
+  loc.loc_start.pos_fname="dummy"
+  
 let create_location loc_start loc_end = {loc_start = loc_start; loc_end = loc_end}
 
 let col_number_of_position pos = (pos.pos_cnum - pos.pos_bol)

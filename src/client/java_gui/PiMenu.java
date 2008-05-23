@@ -18,14 +18,15 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem displayPath;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	private JCheckBoxMenuItem runtimeAssertions;
+	private JCheckBoxMenuItem findInductiveCore;
 	
-	public PiMenu(PiGui piGui, boolean generateRuntimeAssertions) {
+	public PiMenu(PiGui piGui) {
 		super();
 		this.piGui = piGui;
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
 		addEditMenu();
-		addCompileMenu(generateRuntimeAssertions);
+		addCompileMenu();
 		addAnalyzeMenu();
 		addSettingsMenu();
 	}
@@ -120,7 +121,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		add(editMenu);
 	}
 	
-	private void addCompileMenu(boolean generateRuntimeAssertions) {
+	private void addCompileMenu() {
 		JMenu compileMenu = new JMenu("Compile");
 		compileMenu.setMnemonic(KeyEvent.VK_O);
 		
@@ -150,9 +151,18 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 				Config.setBooleanValue("generate_runtime_assertions", runtimeAssertions.getState());
 			}
 		});
-		runtimeAssertions.setState(generateRuntimeAssertions);
+		runtimeAssertions.setState(Config.getBooleanValue("generate_runtime_assertions"));
 		compileMenu.add(runtimeAssertions);
-		
+
+		findInductiveCore = new JCheckBoxMenuItem("Find inductive core");
+		findInductiveCore.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Config.setBooleanValue("find_inductive_core", findInductiveCore.getState());
+			}
+		});
+		findInductiveCore.setState(Config.getBooleanValue("find_inductive_core"));
+		compileMenu.add(findInductiveCore);		
+				
 		add(compileMenu);
 	}
 	

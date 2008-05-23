@@ -4,7 +4,7 @@ Note:
 
 Program send:
 
-Client:
+Client -> Server
 <piVC_transmission type="program_submission_request" >
 	<code> code </code>
 	<options>  // required even if empty
@@ -13,17 +13,25 @@ Client:
 </piVC_transmission>
 
 
-Server exceptions:
+Server -> Client
 <piVC_transmission type="program_submission_response" >
+        <messages>//optional
+                <message>This is the worst attempt at verification I've ever seen. You should drop this class.</message>
+                <message>There can be more than one custom message.</message>
+        </messages>
+        //result node goes here
+</piVC_transmission>
+
+
+Result node: server exceptions:
 	<result status="compiler_error">
 		<error type="compiler_error">
 			Error!
 		</error>
 	</result>
-</piVC_transmission>
 
-Server errors with user program:
-<piVC_transmission type="program_submission_response" >
+
+Result node: server errors with user program:
 	<result status="error">
 		<error type="semantic_error/syntax_error">
 			<location>
@@ -38,8 +46,7 @@ Server errors with user program:
 	</result>
 </piVC_transmission>
 
-Server no errors:
-<piVC_transmission type="program_submission_response" >
+Result node: server no errors:
 	<result status="proved/unproved">
 		<function name="name">
 			<correctness status="valid/invalid/unknown">
@@ -69,15 +76,16 @@ Server no errors:
                                                         </conjunct>
                                                 </implies>
 					        <implies>
-                                                        <rhs_conjunct valid="true" in_inductive_core="true">
+                                                        <conjunct in_inductive_core="true" status="unknown">
                                                                   <text> ... </text>
                                                                   <location> ... </location>
-                                                        </rhs_conjunct>
-                                                        <rhs_conjunct valid="true" in_inductive_core="true">
+                                                        </conjunct>
+                                                        <conjunct in_inductive_core="true" status="valid">
                                                                   <text> ... </text>
                                                                   <location> ... </location>
-                                                        </rhs_conjunct>
+                                                        </conjunct>
                                                 </implies>
+
 				        </vc>
 				        <counterexample>  // optional tag (only there if invalid)
 					        <var text="var1 = val1">
@@ -106,4 +114,3 @@ Server no errors:
 		</function>
 		// more functions as siblings
 	</result>
-</piVC_transmission>

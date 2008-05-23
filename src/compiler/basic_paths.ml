@@ -12,19 +12,26 @@ type path_step =
   | RankingAnnotation of Ast.rankingAnnotation ;;
 
 type basic_path =
-  | NormalPath of path_step list
+  | NormalPath of path_step list * normal_path_ending
   | RuntimeAssertPath of path_step list
-  | TerminationPath of path_step list ;;
+  | TerminationPath of path_step list
+
+and normal_path_ending = 
+  | PostConditionEnding
+  | AssertEnding
+  | AnnotationEnding
+  | CallEnding
 
 type closing_scope_action = {
   post_condition: path_step;
+  ending: normal_path_ending option;
   post_ranking_annotation: path_step list;
   incr: path_step option;
   stmts: stmt list;
 }
 
 let is_termination_path path = match path with
-  | NormalPath (e) -> false
+  | NormalPath (e,p) -> false
   | RuntimeAssertPath (e) -> false
   | TerminationPath (e) -> true ;;
 
@@ -47,7 +54,7 @@ let string_of_path_step step = match step with
   | RankingAnnotation(ra) -> "#: " ^ Ast.string_of_ranking_annotation ra
 
 let get_steps_from_path path = match path with
-  | NormalPath (e) -> e
+  | NormalPath (e,p) -> e
   | RuntimeAssertPath (e) -> e
   | TerminationPath (e) -> e ;;
       
@@ -104,12 +111,12 @@ let generate_paths_for_func func program gen_runtime_asserts =
     | Some (ra) -> [RankingAnnotation (ra)]
     | None -> []
   in
-  let add_path cur_path is_runtime_assert =
+  let add_path cur_path is_runtime_assert ending =
     let make_basic_path p =
       if is_runtime_assert then
 	RuntimeAssertPath (p)
       else
-	NormalPath (p)
+	NormalPath (p, Utils.elem_from_opt ending)
     in
     let is_not_ranking_annotation ps = match ps with
       | RankingAnnotation (ra) -> false
@@ -155,7 +162,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
 		let low_node = Ast.GE(Ast.get_dummy_location (), index, constant_node) in
 		let length_node = Ast.Length(Ast.get_dummy_location (), arr) in
 		let up_node = Ast.LT(Ast.get_dummy_location (), index, length_node) in
-		add_path (List.append curr_path [Annotation(Ast.And(loc2, low_node, up_node), "runtime assert")]) true;
+		add_path (List.append curr_path [Annotation(Ast.And(loc2, low_node, up_node), "runtime assert")]) true None;
 	      end;
 	    ArrayLval(loc2, gnfe arr, gnfe index)
     and gnfe expr =
@@ -179,7 +186,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
                         decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
-                        add_path (List.append curr_path ([Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false;
+                        add_path (List.append curr_path ([Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false (Some(CallEnding));
                         new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )
@@ -192,14 +199,14 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true;
+	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true None;
 	  end;
 	Div(loc, gnfe t1, gnfe t2)
     | IDiv (loc,t1, t2) ->
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true;
+	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true None;
 	  end;
 	IDiv(loc, gnfe t1, gnfe t2)
     | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
@@ -237,12 +244,12 @@ let generate_paths_for_func func program gen_runtime_asserts =
 
     match List.length stmts with
 	0 -> (match List.length closing_scope_actions with
-                  0 -> add_path (List.append curr_path [func_post_condition]) false (*this means we're not inside a loop, so we just use the function post condition*)
+                  0 -> add_path (List.append curr_path [func_post_condition]) false (Some(PostConditionEnding)) (*this means we're not inside a loop, so we just use the function post condition*)
                 | _ -> (
                     let closing_scope_action = List.hd closing_scope_actions in
                     match closing_scope_action.incr with
-                        None -> add_path (List.append curr_path ([closing_scope_action.post_condition] @ closing_scope_action.post_ranking_annotation)) false
-                      | Some(incr) -> add_path (List.append curr_path ([incr;closing_scope_action.post_condition] @ closing_scope_action.post_ranking_annotation)) false
+                        None -> add_path (List.append curr_path ([closing_scope_action.post_condition] @ closing_scope_action.post_ranking_annotation)) false closing_scope_action.ending
+                      | Some(incr) -> add_path (List.append curr_path ([incr;closing_scope_action.post_condition] @ closing_scope_action.post_ranking_annotation)) false closing_scope_action.ending
                   )
 	     )
       | _ -> (
@@ -265,14 +272,14 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	  )
         | Ast.WhileStmt(loc, condition, block, annotation, ra) -> (
             let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
-              add_path (List.append curr_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra))) false;
-              generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); post_ranking_annotation = (get_ranking_annotation ra); incr = None; stmts = remaining_stmts}::closing_scope_actions);                       
+              add_path (List.append curr_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra))) false (Some(AnnotationEnding));
+              generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); post_ranking_annotation = (get_ranking_annotation ra); incr = None; stmts = remaining_stmts; ending=Some(AnnotationEnding);}::closing_scope_actions);                       
               generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(get_not new_condition (Ast.location_of_expr new_condition))]) remaining_stmts closing_scope_actions           
           )
         | Ast.ForStmt(loc, init, condition, incr, block, annotation, ra) -> (
             let (new_condition, new_steps) = generate_steps_for_expr curr_path condition in
-              add_path (List.append curr_path ([Expr(init);Annotation(annotation,"guard")] @ (get_ranking_annotation ra))) false;
-              generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); post_ranking_annotation = (get_ranking_annotation ra); incr = Some(Expr(incr)); stmts = remaining_stmts}::closing_scope_actions);                       
+              add_path (List.append curr_path ([Expr(init);Annotation(annotation,"guard")] @ (get_ranking_annotation ra))) false (Some(AnnotationEnding));
+              generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(new_condition)]) (get_statement_list block) ({post_condition = Annotation(annotation,"guard"); post_ranking_annotation = (get_ranking_annotation ra); incr = Some(Expr(incr)); stmts = remaining_stmts; ending=Some(AnnotationEnding);}::closing_scope_actions);                       
               generate_path ([Annotation(annotation,"guard")] @ (get_ranking_annotation ra) @ new_steps @ [Assume(get_not new_condition (Ast.location_of_expr new_condition))]) remaining_stmts closing_scope_actions          
           )
         | Ast.BreakStmt(loc) -> (
@@ -281,11 +288,11 @@ let generate_paths_for_func func program gen_runtime_asserts =
           )
         | Ast.ReturnStmt(loc, exp) -> (
             match func.returnType with
-                Void(loc) -> add_path (List.append curr_path [func_post_condition]) false
-              | _ -> add_path (List.append curr_path ((generate_steps_for_rv_expression exp func.returnType curr_path loc) @ [func_post_condition])) false
+                Void(loc) -> add_path (List.append curr_path [func_post_condition]) false (Some(PostConditionEnding))
+              | _ -> add_path (List.append curr_path ((generate_steps_for_rv_expression exp func.returnType curr_path loc) @ [func_post_condition])) false (Some(PostConditionEnding))
           )
         | Ast.AssertStmt(loc, exp) -> 
-            add_path (List.append curr_path [Annotation(exp,"assert")]) false;
+            add_path (List.append curr_path [Annotation(exp,"assert")]) false (Some(AssertEnding));
             generate_path curr_path remaining_stmts closing_scope_actions
 
         | Ast.StmtBlock(loc, stmts) -> generate_path curr_path (stmts @ remaining_stmts) closing_scope_actions

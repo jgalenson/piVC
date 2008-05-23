@@ -1,10 +1,4 @@
 @pre true
 @post true
 void jason(){
-		int[] a;
-		a := a{1<-1};
-        while
-        @1+1
-        (true){
-		}
 }

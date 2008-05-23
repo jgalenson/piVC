@@ -1,3 +1,8 @@
+type options = {
+  generate_runtime_assertions : bool;
+  find_inductive_core : bool;
+}
+
 val is_some : 'a option -> bool ;;
 val is_none : 'a option -> bool ;;
 val elem_from_opt : 'a option -> 'a ;;

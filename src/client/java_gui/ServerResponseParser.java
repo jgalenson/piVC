@@ -1,5 +1,8 @@
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -16,7 +19,6 @@ import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Location;
 import data_structures.PiError;
-import data_structures.RHSConjunct;
 import data_structures.Step;
 import data_structures.Termination;
 import data_structures.VerificationCondition;
@@ -44,7 +46,7 @@ public class ServerResponseParser {
 	 * @param filename the name of the currently-opened file
 	 * or null if it has no name.
 	 */
-	public void parse(String text, String filename) {
+	public String[] parse(String text, String filename) {
 		Document xml = null;
 		StringReader reader = new StringReader(text);
 		InputSource inputSource = new InputSource(reader);
@@ -54,17 +56,35 @@ public class ServerResponseParser {
 		} catch (Exception e) {
 			e.printStackTrace();
 			//JOptionPane.showMessageDialog(null, e.getMessage(), "Parsing error", JOptionPane.ERROR_MESSAGE);
-			return;
+			return null;
 		}
 		Node root = xml.getFirstChild();
-		Node result = root.getChildNodes().item(1);
+		NodeList children = root.getChildNodes();		
+		Node result = null;
+		String[] messages = null;
+		for(int i=0; i<children.getLength(); ++i){
+			Node child = children.item(i);
+			if (child.getNodeName().equals("result")){
+				result = child;
+			}
+			if (child.getNodeName().equals("messages")){
+				messages = parseMessages(child);
+			}			
+		}		
+		if(result==null){
+			throw new RuntimeException("Non-existant results tag");
+		}
 		String status = result.getAttributes().getNamedItem("status").getTextContent();
-		if (status.equals("valid") || status.equals("invalid") || status.equals("unknown"))
+		if (status.equals("valid") || status.equals("invalid") || status.equals("unknown")){
 			parseNormal(result, filename);
-		else if (status.equals("error"))
+		}
+		else if (status.equals("error")){
 			parseErrors(result);
-		else if (status.equals("compiler_error"))
+		}
+		else if (status.equals("compiler_error")){
 			parseCompilerError(result);
+		}
+		return messages;
 	}
 
 	/**
@@ -94,6 +114,22 @@ public class ServerResponseParser {
 		else
 			throw new RuntimeException("Unrecognized validity type.");
 	}
+	
+	
+	/**
+	 * Makes and returns a Function object from a <function> tag.
+	 */
+	private String[] parseMessages(Node messagesNode) {
+		List<String> messages = new ArrayList<String>();
+		NodeList children = messagesNode.getChildNodes();
+		for(int i=0; i<children.getLength(); ++i){
+			Node child = children.item(i);
+			if (child.getNodeName().equals("message")){
+				messages.add(child.getTextContent());
+			}		
+		}			
+		return messages.toArray(new String[0]);
+	}	
 	
 	/**
 	 * Makes and returns a Function object from a <function> tag.
@@ -168,9 +204,11 @@ public class ServerResponseParser {
 				ArrayList<Conjunct> conjuncts = new ArrayList<Conjunct>();
 				for (int c = 0; c < conjunctNodes.getLength(); c++) {
 					Node conjunctNode = conjunctNodes.item(c);
-					if(conjunctNode.getNodeName().equals("conjunct") || conjunctNode.getNodeName().equals("rhs_conjunct")){
+					if(conjunctNode.getNodeName().equals("conjunct")){
 						String str=null;
 						Location loc=null;
+						Boolean inInductiveCore=null;
+						validityT status=null;
 						NodeList children = conjunctNode.getChildNodes();
 						for(int i2=0; i2<children.getLength(); ++i2){
 							Node child = children.item(i2);
@@ -181,21 +219,24 @@ public class ServerResponseParser {
 								loc = parseLocation(child);
 							}
 						}
+						NamedNodeMap attributes = conjunctNode.getAttributes();
+						for(int i2=0; i2<attributes.getLength(); ++i2){
+							Node child = attributes.item(i2);
+							if(child.getNodeName().equals("status")){
+								status = VerificationResult.parseValidity(child.getNodeValue());
+							}
+							if(child.getNodeName().equals("in_inductive_core")){
+								inInductiveCore = new Boolean(Boolean.parseBoolean(child.getNodeValue()));
+							}
+						}						
+
 						if(str==null){
 							throw new RuntimeException("No text node in VC conjunct xml");
 						}
 						if(loc==null){
 							throw new RuntimeException("No location node in VC conjunct xml");
 						}
-						NamedNodeMap attributes = conjunctNode.getAttributes();
-						boolean inInductiveCore = Boolean.parseBoolean(attributes.getNamedItem("in_inductive_core").getNodeValue());
-						Conjunct curr;
-						if(conjunctNode.getNodeName().equals("rhs_conjunct")){
-							validityT status = VerificationResult.parseValidity(attributes.getNamedItem("status").getNodeValue());					
-							curr = new RHSConjunct(str,inInductiveCore,loc,status);
-						}else{
-							curr = new Conjunct(str,inInductiveCore,loc);
-						}
+						Conjunct curr = new Conjunct(str,status,inInductiveCore,loc);
 						conjuncts.add(curr);
 					}
 				}

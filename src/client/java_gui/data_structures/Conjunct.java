@@ -1,13 +1,17 @@
 package data_structures;
 
+import data_structures.VerificationResult.validityT;
+
 public class Conjunct{
-	public Conjunct(String str, boolean inInductiveCore, Location loc){
+	public Conjunct(String str,validityT status,Boolean inInductiveCore,Location loc){
 		this.str = str;
 		this.inInductiveCore = inInductiveCore;
+		this.status = status;
 		this.loc = loc;
 	}
 	public final String str;
-	public final boolean inInductiveCore;
+	public final Boolean inInductiveCore; //null if N/A
+	public final validityT status; //null if N/A
 	public final Location loc;
 	private String displayHTML;
 	

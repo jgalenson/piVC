@@ -1,6 +1,11 @@
 open Lexing
 exception Option_Is_None ;;
 
+type options = {
+  generate_runtime_assertions : bool;
+  find_inductive_core : bool;
+}
+
 (* Converts from Windows to UNIX line endings. *)
 let convert_line_endings str =
   let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in

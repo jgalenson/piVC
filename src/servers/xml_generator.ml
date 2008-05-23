@@ -6,25 +6,25 @@ type xml_node_content =
   | Empty
 
 and xml_node = {
-  mutable name: string;
-  mutable contents: xml_node_content;
-  mutable attributes: (string * string) list;
+  mutable node_name: string;
+  mutable node_contents: xml_node_content;
+  mutable node_attributes: (string * string) list;
 }
 
-let create node_name = {name = node_name; contents = Empty; attributes = []}
+let create node_name = {node_name = node_name; node_contents = Empty; node_attributes = []}
 
 let add_attribute attribute (node:xml_node) = 
-  node.attributes <- List.append node.attributes [attribute]
+  node.node_attributes <- List.append node.node_attributes [attribute]
 
-let set_text text node = match node.contents with
-    Text(str) -> node.contents <- Text(text)
+let set_text text node = match node.node_contents with
+    Text(str) -> node.node_contents <- Text(text)
   | Children(children) -> raise InvalidNodeType
-  | Empty -> node.contents <- Text(text)
+  | Empty -> node.node_contents <- Text(text)
 
-let add_child child node = match node.contents with
+let add_child child node = match node.node_contents with
     Text(str) -> raise InvalidNodeType
-  | Children(children) -> node.contents <- Children(List.append children [child])
-  | Empty -> node.contents <- Children([child])
+  | Children(children) -> node.node_contents <- Children(List.append children [child])
+  | Empty -> node.node_contents <- Children([child])
 
 
 (* PRINTING FUNCTIONS *)
@@ -51,21 +51,15 @@ and string_of_xml_node node =
   string_of_xml_node_with_spacing node 0
 
 and string_of_xml_node_with_spacing node num_spaces = 
-  (gen_num_spaces num_spaces) ^ "<" ^ replace_bad_chars node.name ^ (string_of_attribute_list node.attributes) ^ ">" ^
+  (gen_num_spaces num_spaces) ^ "<" ^ replace_bad_chars node.node_name ^ (string_of_attribute_list node.node_attributes) ^ ">" ^
     begin
-      match node.contents with
+      match node.node_contents with
           Text(str) -> replace_bad_chars str
         | Empty -> ""
         | Children(nodes) -> "\n" ^ string_of_xml_nodes_with_spacing nodes (num_spaces + 2) ^ (gen_num_spaces num_spaces)
     end
-    ^ "</" ^ node.name ^ ">" ^ "\n"
+    ^ "</" ^ node.node_name ^ ">" ^ "\n"
 
 and string_of_xml_nodes_with_spacing nodes num_spaces = match nodes with
     [] -> ""
   | e :: l -> (string_of_xml_node_with_spacing e num_spaces) ^ (string_of_xml_nodes_with_spacing l num_spaces)
-(*
-and string_of_xml_node_content_with_spacing content num_spaces = match content with
-    Text(str) -> replace_bad_chars str
-  | Children(nodes) -> string_of_xml_nodes_with_spacing nodes num_spaces
-  | Empty -> ""
-*)

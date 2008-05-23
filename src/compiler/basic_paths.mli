@@ -7,9 +7,16 @@ type path_step =
   | RankingAnnotation of Ast.rankingAnnotation ;;
 
 type basic_path =
-  | NormalPath of path_step list
+  | NormalPath of path_step list * normal_path_ending
   | RuntimeAssertPath of path_step list
-  | TerminationPath of path_step list ;;
+  | TerminationPath of path_step list 
+
+and normal_path_ending = 
+  | PostConditionEnding
+  | AssertEnding
+  | AnnotationEnding
+  | CallEnding
+
 
 val type_of_step : path_step -> string;;
 val location_of_path_step : path_step -> Ast.location;;

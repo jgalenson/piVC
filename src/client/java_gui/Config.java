@@ -12,8 +12,9 @@ public class Config {
 	private static final String[][] DEFAULTS = 	{
 								{"server_address","127.0.0.1:4242"},
 								{"pi_files_location","."},
-								{"generate_runtime_assertions", "false"}
-							};
+								{"generate_runtime_assertions", "false"},
+								{"find_inductive_core", "true"}
+	};
 	
 	private static Map<String,String> settings;
 	private static Set<String> validKeys;

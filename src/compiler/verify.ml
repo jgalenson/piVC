@@ -10,9 +10,29 @@ open Lexing
 exception Dp_server_exception of string ;;
 exception Malformatted_DP_Server_Address;;
 
+type verification_mode = Set_validity | Set_in_core
+
+(*Compares exprs based on their locations. So two exprs with the same locations
+  are deemed the same.*)
+module Expr_map = Map.Make (struct
+                              type t = expr
+                              let compare exp1 exp2 =
+                                let loc1 = (location_of_expr exp1).loc_start in
+                                let loc2 = (location_of_expr exp2).loc_start in
+                                  compare_locs loc1 loc2
+                            end)
+
+(*Compares functions based on their locations. So two functions with the same location
+  are deemed the same.*)
+module Fn_map = Map.Make (struct
+                              type t = fnDecl
+                              let compare fun1 fun2 =
+                                  compare_locs fun1.location_fd.loc_start fun2.location_fd.loc_start
+                            end)
+
+
 type validity = Valid | Invalid | Unknown
-
-
+        
 and termination_result = {
   overall_validity_t : validity;
   decreasing_paths_validity : validity;
@@ -39,7 +59,7 @@ and vc_conjunct = {
   exp : expr;
   valid_conjunct : validity option; (*non-rhs conjuncts don't have a validity*)
   counter_example_conjunct : Counterexamples.example list option;
-  in_inductive_core : bool ref;
+  in_inductive_core : (bool ref) option;
 }
 and function_validity_information = {
   fn : fnDecl;
@@ -279,7 +299,7 @@ let overall_validity_status list_of_things extraction_func =
 (* Gets all the info we need from a program.
    That is, for each method, its basic paths and VCs: (path_node list * expr).list
    Returns (fn * (Normal Basic Path * VC) list * (Term basic path * VC list) * non-negative VC list) list. *)
-let get_all_info program gen_runtime_asserts =
+let get_all_info program options =
   (* Returns a list of pairs of fnName and its basic path.
      Returns (fn * (basic_path list * (norm_basic_path list, term_basic_path list))) list. *)
   let get_basic_paths program =
@@ -287,7 +307,7 @@ let get_all_info program gen_runtime_asserts =
       match decl with
           VarDecl (loc, vd) -> None
         | Predicate (loc, p) -> None
-	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program gen_runtime_asserts))
+	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program options.generate_runtime_assertions))
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =
@@ -307,8 +327,6 @@ let get_all_info program gen_runtime_asserts =
   in
   let paths = get_basic_paths program in
   List.map get_vcs paths ;;
-
-
 
 
 
@@ -373,6 +391,9 @@ and vc_detailed_of_vc_detailed_temp vc_detailed_temp =
 and expr_of_vc_detailed_temp_just_core vc_detailed_temp = 
   expr_of_implies_list vc_detailed_temp.vc_temp true
 
+and expr_of_vc_detailed_temp vc_detailed_temp = 
+  expr_of_implies_list vc_detailed_temp.vc_temp false
+
 and expr_of_vc_detailed vc_detailed = 
   expr_of_implies_list vc_detailed.vc false
 
@@ -388,7 +409,7 @@ and expr_of_conjunct_list conjunct_list core_only =
     | 1 ->
         begin
           let conjunct = (List.hd conjunct_list) in
-            if (not core_only) || conjunct.in_inductive_core.contents then
+            if (not core_only) || (elem_from_opt conjunct.in_inductive_core).contents then
               conjunct.exp
             else
               Constant(gdl(), ConstBool(gdl(), true))
@@ -396,12 +417,42 @@ and expr_of_conjunct_list conjunct_list core_only =
     | _ -> And(gdl(), expr_of_conjunct_list [(List.hd conjunct_list)] core_only, expr_of_conjunct_list (List.tl conjunct_list) core_only)
 
 
+and vc_temp_of_expr_with_inductive_core expr func bp map_for_inductive_core = 
+  vc_temp_of_expr_helper expr func bp (Some(map_for_inductive_core))
+    
 and vc_temp_of_expr expr func bp = 
+  vc_temp_of_expr_helper expr func bp None
+    
+and vc_temp_of_expr_helper expr func bp map_for_inductive_core = 
   let rec get_implies_list expr = 
     let rec get_conjunct_list expr = 
       match expr with 
           And(loc,e1,e2) -> get_conjunct_list e1 @ get_conjunct_list e2
-        | _ -> [{exp=expr;valid_conjunct=None;in_inductive_core=ref true;counter_example_conjunct=None;}]
+        | _ ->
+            begin
+              let in_inductive_core = 
+                match map_for_inductive_core with
+                    Some(m) ->
+                      begin
+                        match is_dummy_location (location_of_expr expr) with
+                            true -> Some(ref true)
+                          | false -> 
+                              begin
+                                try
+                                  Some(Expr_map.find expr m.contents)
+                                with
+                                    Not_found ->
+                                      begin
+                                        let new_is_inductive_ref = ref true in
+                                          m := Expr_map.add expr new_is_inductive_ref !m;
+                                          Some(new_is_inductive_ref)
+                                      end
+                              end
+                      end
+                  | None -> None
+              in              
+                [{exp=expr;valid_conjunct=None;in_inductive_core=in_inductive_core;counter_example_conjunct=None;}]
+            end
     in
       match expr with
           Implies(loc,lhs,rhs) -> [get_conjunct_list lhs] @ get_implies_list rhs
@@ -410,10 +461,35 @@ and vc_temp_of_expr expr func bp =
     {vc_temp = get_implies_list expr; func_temp = func; bp_temp = bp}
       
 
-let verify_vc (vc,vc_cache_and_lock,program_ast,set_valid,set_in_core) =
+
+(*        let rec get_conjunct_list expr = 
+          match expr with 
+              And(loc,e1,e2) -> get_conjunct_list e1 @ get_conjunct_list e2
+            | _ ->
+                begin
+                  let is_inductive_ref = 
+                    try
+                      Expr_map.find expr !already_assigned
+                    with
+                        ex ->
+                          begin
+                            let new_is_inductive_ref = ref true in
+                              already_assigned := Expr_map.add expr new_is_inductive_ref !already_assigned;
+                              new_is_inductive_ref
+                          end
+                  in
+                    [{exp=expr;valid_conjunct=None;in_inductive_core=Some(is_inductive_ref);counter_example_conjunct=None;}]
+                end
+        in
+        let rec get_implies_list expr = 
+          match expr with
+              Implies(loc,lhs,rhs) -> [get_conjunct_list lhs] @ get_implies_list rhs
+            | _ -> [get_conjunct_list expr]
+*)  
+
+let verify_vc (vc,vc_cache_and_lock,program_ast,mode) =
   try
     (if (List.length vc.vc_temp)==0 then assert(false));
-    if not set_valid && not set_in_core then assert(false);
     let threads_of_vc vc =
       let expr_of_vc_advanced_replace_rhs vc new_rhs = 
         let rec get_new expr  = 
@@ -421,7 +497,9 @@ let verify_vc (vc,vc_cache_and_lock,program_ast,set_valid,set_in_core) =
               Implies(loc,e1,e2) -> Implies(loc,e1,get_new e2)
             | _ -> new_rhs
         in
-          get_new (expr_of_vc_detailed_temp_just_core vc)
+          match mode with
+              Set_in_core -> get_new (expr_of_vc_detailed_temp_just_core vc)
+            | Set_validity -> get_new (expr_of_vc_detailed_temp vc)
       in
       let thread_of_conjunct conj = 
         let vc_expr = expr_of_vc_advanced_replace_rhs vc conj.exp in
@@ -440,21 +518,15 @@ let verify_vc (vc,vc_cache_and_lock,program_ast,set_valid,set_in_core) =
 	      | Normal (v, c) -> (v, c)
 	      | Exceptional (e) -> raise e
         in
-        let valid_conjunct = 
-          if set_valid then
-            Some(fst vc_result)
+        let (valid_conjunct, counter_example_conjunct) = 
+          if mode=Set_validity then
+            (Some(fst vc_result),snd vc_result)
           else
-            old_conj.valid_conjunct
-        in
-        let counter_example_conjunct =
-          if set_valid then
-            snd vc_result
-          else
-            old_conj.counter_example_conjunct
+            (old_conj.valid_conjunct, old_conj.counter_example_conjunct)
         in
           begin
-            if fst vc_result != Valid && set_in_core then
-              old_conj.in_inductive_core := false
+            if fst vc_result != Valid && mode=Set_in_core then
+              elem_from_opt (old_conj.in_inductive_core) := false
           end;
           {exp=old_conj.exp; valid_conjunct=valid_conjunct; counter_example_conjunct=counter_example_conjunct; in_inductive_core=old_conj.in_inductive_core;}
       in
@@ -468,133 +540,53 @@ let verify_vc (vc,vc_cache_and_lock,program_ast,set_valid,set_in_core) =
   with ex -> Exceptional (ex) ;;
 
 
-        
-(*Compares exprs based on their locations. So two exprs with the same locations
-  are deemed the same.*)
-module Expr_map = Map.Make (struct
-                              type t = expr
-                              let compare exp1 exp2 =
-                                let loc1 = (location_of_expr exp1).loc_start in
-                                let loc2 = (location_of_expr exp2).loc_start in
-                                  compare_locs loc1 loc2
-                            end)
 
-(*Compares functions based on their locations. So two functions with the same location
-  are deemed the same.*)
-module Fn_map = Map.Make (struct
-                              type t = fnDecl
-                              let compare fun1 fun2 =
-                                  compare_locs fun1.location_fd.loc_start fun2.location_fd.loc_start
-                            end)
+let verify_vcs vcs vc_cache_and_lock program_ast mode = 
+  let threads_of_vcs vcs = 
+    let thread_of_vc vc =
+      Background.create verify_vc (vc,vc_cache_and_lock,program_ast,mode);
+    in
+      List.map thread_of_vc vcs
+  in
+  let make_new_vcs_from_threads threads = 
+    let make_new_vc_from_thread thread = 
+      match (Background.get_result thread) with
+	| Normal (v) -> v
+	| Exceptional (e) -> raise e
+    in
+      List.map make_new_vc_from_thread threads
+  in
+  let threads = threads_of_vcs vcs in
+    make_new_vcs_from_threads threads
 
-let verify_program_correctness program_info program_ast vc_cache_and_lock =  
+
+
+let verify_program_correctness program_info program_ast vc_cache_and_lock already_assigned options =  
   (*We begin by making a list of all the VCs and dividing them up into their conjuncts*)
   let detailed_vcs = 
-    let already_assigned = ref Expr_map.empty in
     let vcs = ref [] in
     let add_vcs_in_func (fn, norm_bps, term_bps, nvcs) =
       let add_vc_in_bp (bp,expr) = 
-        let rec get_conjunct_list expr = 
-          match expr with 
-              And(loc,e1,e2) -> get_conjunct_list e1 @ get_conjunct_list e2
-            | _ ->
-                begin
-                  let is_inductive_ref = 
-                    try
-                      Expr_map.find expr !already_assigned
-                    with
-                        ex ->
-                          begin
-                            let new_is_inductive_ref = ref true in
-                              already_assigned := Expr_map.add expr new_is_inductive_ref !already_assigned;
-                              new_is_inductive_ref
-                          end
-                  in
-                    [{exp=expr;valid_conjunct=None;in_inductive_core=is_inductive_ref;counter_example_conjunct=None;}]
-                end
+        let new_vc = 
+          if options.find_inductive_core then
+            vc_temp_of_expr_with_inductive_core expr fn (Some(bp)) already_assigned
+          else
+            vc_temp_of_expr expr fn (Some(bp))
         in
-        let rec get_implies_list expr = 
-          match expr with
-              Implies(loc,lhs,rhs) -> [get_conjunct_list lhs] @ get_implies_list rhs
-            | _ -> [get_conjunct_list expr]
-                
-        in vcs := !vcs @ [{vc_temp=(get_implies_list expr);func_temp = fn; bp_temp=Some(bp)}]
+          vcs := !vcs @ [new_vc]
       in
         List.iter add_vc_in_bp norm_bps
     in
       List.iter add_vcs_in_func program_info;
       !vcs
   in
-    (*Now we'll run Aaron's algorithm on those VCs*)
-  let iterate_aarons_algorithm_once vcs is_first_run = 
-    let threads_of_vcs vcs = 
-      let threads_of_vc vc =
-        let expr_of_vc_advanced_replace_rhs vc new_rhs = 
-          let rec get_new expr  = 
-            match expr with
-                Implies(loc,e1,e2) -> Implies(loc,e1,get_new e2)
-              | _ -> new_rhs
-          in
-          let new_expr = get_new (expr_of_vc_detailed_temp_just_core vc) in
-            new_expr
-        in
-        let thread_of_conjunct conj = 
-          let vc_expr = expr_of_vc_advanced_replace_rhs vc conj.exp in
-            (conj, Background.create verify_vc_expr (vc_expr, vc_cache_and_lock, program_ast))
-        in
-          (if (List.length vc.vc_temp)==0 then assert(false));
-          let rhs = (List.nth vc.vc_temp ((List.length vc.vc_temp) - 1)) in
-            (vc,List.map thread_of_conjunct rhs)
-      in    
-        List.map threads_of_vc vcs
-    in
-    let make_new_vcs_from_threads threads = 
-      let make_new_vc_from_threads vc_and_threads = 
-        let old_vc = fst vc_and_threads in
-        let threads = snd vc_and_threads in
-        let new_conjunct_of_thread conj_and_thread = 
-          let old_conj = fst conj_and_thread in
-          let thread = snd conj_and_thread in
-          let vc_result =
-            let vc_result_tmp = Background.get_result thread in
-	      match vc_result_tmp with
-	        | Normal (v, c) -> (v, c)
-	        | Exceptional (e) -> raise e
-          in
-          let valid_conjunct = 
-            if is_first_run then
-              Some(fst vc_result)
-            else
-              old_conj.valid_conjunct
-          in
-          let counter_example_conjunct =
-            if is_first_run then
-              snd vc_result
-            else
-              old_conj.counter_example_conjunct
-          in
-            begin
-              if fst vc_result != Valid then
-                old_conj.in_inductive_core := false
-            end;
-            {exp=old_conj.exp; valid_conjunct=valid_conjunct; counter_example_conjunct=counter_example_conjunct; in_inductive_core=old_conj.in_inductive_core;}
-        in
-        let new_rhs = List.map new_conjunct_of_thread threads in
-        let new_imples_conjs = (List.rev (List.tl (List.rev old_vc.vc_temp))) (*i.e. everything but the first elem*) @ [new_rhs] in
-          {vc_temp = new_imples_conjs;func_temp = old_vc.func_temp;bp_temp = old_vc.bp_temp}          
-      in
-        List.map make_new_vc_from_threads threads
-    in
-    let threads = threads_of_vcs vcs in
-      make_new_vcs_from_threads threads
-  in
   let iterate_aarons_algorithm_until_convergence vcs = 
-    let rec iterate_aarons_algorithm_until_convergence_rec vcs = 
+    let rec iterate_aarons_algorithm_until_convergence_rounds_2_onwards vcs = 
       let grab_absolute_ref_pairs_from_vcs vcs = 
         let grab_absolute_ref_pairs_from_vc vc = 
           let grab_absolute_ref_pairs_from_conjunct_list conj_list = 
             let grab_absolute_ref_pairs_from_conjunct conj = 
-              (conj.in_inductive_core.contents,conj.in_inductive_core)
+              ((elem_from_opt (conj.in_inductive_core)).contents, elem_from_opt (conj.in_inductive_core))
             in
               List.map grab_absolute_ref_pairs_from_conjunct conj_list
           in
@@ -603,7 +595,7 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock =
           List.flatten (List.map grab_absolute_ref_pairs_from_vc vcs)
       in
       let backup_bools = grab_absolute_ref_pairs_from_vcs vcs in
-      let new_vcs = iterate_aarons_algorithm_once vcs false in
+      let new_vcs = verify_vcs vcs vc_cache_and_lock program_ast Set_in_core in
       let change_has_occured = 
         let is_different (a,b) =
           a!=b.contents
@@ -611,12 +603,12 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock =
           List.exists is_different backup_bools
       in
         if change_has_occured then
-          iterate_aarons_algorithm_until_convergence_rec new_vcs
+          iterate_aarons_algorithm_until_convergence_rounds_2_onwards new_vcs
         else
           new_vcs
     in
-    let vcs_after_first_round = iterate_aarons_algorithm_once vcs true in
-      iterate_aarons_algorithm_until_convergence_rec vcs_after_first_round
+    let vcs_with_validity = verify_vcs vcs vc_cache_and_lock program_ast Set_validity in
+      iterate_aarons_algorithm_until_convergence_rounds_2_onwards vcs_with_validity
   in
   let group_vcs_by_function_and_make_non_temp vcs = 
     let func_map = ref Fn_map.empty in
@@ -636,7 +628,10 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock =
       Fn_map.iter deal_with_key_value !func_map;
       !grouped_vcs
   in
-  let new_vcs = iterate_aarons_algorithm_until_convergence detailed_vcs in
+  let new_vcs = 
+    if options.find_inductive_core then iterate_aarons_algorithm_until_convergence detailed_vcs
+    else verify_vcs detailed_vcs vc_cache_and_lock program_ast Set_validity
+  in
   let grouped_non_temp_vcs = group_vcs_by_function_and_make_non_temp new_vcs in
   let fn_correctness_result_pair_of_fn_vc_list_pair (fn, vcs) = 
     let overall_validity_c = overall_validity_of_vc_detailed_list vcs in
@@ -646,21 +641,37 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock =
       
 
 
-let rec verify_program_termination program_info program_ast vc_cache_and_lock =
+let rec verify_program_termination program_info program_ast vc_cache_and_lock already_assigned options =
   (* First, build an intermediate structure that
      contains a Background process for each VC.
      That is, we start all the VC requests. *)
+
+
+  let get_vc_with_validity_and_core_set vc = 
+    let vc_with_validity = verify_vc (vc,vc_cache_and_lock,program_ast,Set_validity) in
+      match vc_with_validity with
+          Normal(vc) -> 
+            begin
+              if options.find_inductive_core then
+                let vc_with_validity_and_core_set = verify_vc (vc,vc_cache_and_lock,program_ast,Set_in_core) in
+                  match vc_with_validity_and_core_set with
+                      Normal(vc) -> Normal(vc)
+                    | Exceptional(e) -> Exceptional(e)
+              else Normal(vc)
+            end
+        | Exceptional(e) -> Exceptional(e)
+  in
   let intermediate_info =
     (* Makes a data structure where we replace each VC expr with VC expr * VC background thread. *)
     let intermediate_fn (fn, norm_bps, term_bps, nvcs) =
-      let get_vc_thread vc = Background.create verify_vc (vc,vc_cache_and_lock,program_ast,true,false) in
+      let get_vc_thread vc = Background.create get_vc_with_validity_and_core_set vc (*verify_vc (vc,vc_cache_and_lock,program_ast,Set_validity)*) in
       let intermediate_basic_path (path,vc) =
-        let vc_temp = vc_temp_of_expr vc fn (Some(path)) in
+        let vc_temp = vc_temp_of_expr_with_inductive_core vc fn (Some(path)) already_assigned in
         let vc_thread = get_vc_thread vc_temp in
           vc_thread
       in
       let intermediate_nonnegative_vc nvc =
-        let vc_temp = vc_temp_of_expr nvc fn None in
+        let vc_temp = vc_temp_of_expr_with_inductive_core nvc fn None already_assigned in
         let vc_thread = get_vc_thread vc_temp in
           vc_thread
       in
@@ -697,32 +708,11 @@ let rec verify_program_termination program_info program_ast vc_cache_and_lock =
       
     let termination_result =
       if (List.length term_paths > 0) then
-        begin
-(*
-          let detailed_vc_of_verfied_term_path (bp,vc,valid,counter_example) =
-            {vc = [[{exp=vc;valid_conjunct=Some(valid);counter_example_conjunct=counter_example;in_inductive_core=ref true;}]];
-             bp = Some(bp);
-             valid = valid;
-             counter_example = counter_example;
-            }
-          in
-            
-          let detailed_vc_of_non_negative_vc (vc,valid,counter_example) =
-            {vc = [[{exp=vc;valid_conjunct=Some(valid);counter_example_conjunct=counter_example;in_inductive_core=ref true}]];
-             bp = None;
-             valid = valid;
-             counter_example = counter_example;
-            }
-          in
-*)            
+        begin           
 	  let verified_nvcs = List.map verify_nonnegative_vc nvcs in
 	  let validity_of_nvc nvc = nvc.valid in
 	  let overall_nvc_status = overall_validity_status verified_nvcs validity_of_nvc in
-	  let overall_validity = overall_validity [overall_term_path_status; overall_nvc_status] in
-
-(*          let decreasing_paths = List.map detailed_vc_of_verfied_term_path verified_term_paths in
-            let nonnegative_vcs = List.map detailed_vc_of_non_negative_vc verified_nvcs in
-*)            
+	  let overall_validity = overall_validity [overall_term_path_status; overall_nvc_status] in          
           let termination_info = {
             overall_validity_t = overall_validity;
             decreasing_paths_validity = overall_term_path_status;
@@ -742,14 +732,10 @@ let rec verify_program_termination program_info program_ast vc_cache_and_lock =
 
 
 
-(*TODO-J: finish this*)
-(*let create_termination_result ov paths nvcs =
-  { overall_validity_t = ov; decreasing_paths = paths; nonnegative_vcs = nvcs; decreasing_paths_validity = Unknown; nonnegative_vcs_validity = Unknown;  } ;;
-*)
-
-and verify_program program_info program_ast vc_cache_and_lock =
-  let correctness_results = verify_program_correctness program_info program_ast vc_cache_and_lock in
-  let termination_results = verify_program_termination program_info program_ast vc_cache_and_lock in
+and verify_program program_info program_ast vc_cache_and_lock options =
+  let already_assigned = ref Expr_map.empty in
+  let correctness_results = verify_program_correctness program_info program_ast vc_cache_and_lock already_assigned options in
+  let termination_results = verify_program_termination program_info program_ast vc_cache_and_lock already_assigned options in
   let func_map = ref Fn_map.empty in
   let add_func_to_map (func,_,_,_) = 
     func_map := Fn_map.add func (ref None, ref None) !func_map
@@ -794,3 +780,38 @@ and verify_program program_info program_ast vc_cache_and_lock =
     list_of_map !func_map
 
 
+
+let inductive_core_good_enough function_validity_information_list =
+  let important_vc_implies_all_rhs_conjuncts_in_inductive_core vc = 
+    let rhs_all_in_core vc = 
+      let rhs = List.nth vc (List.length vc - 1) in
+      let elem_is_in_core elem = 
+        (elem_from_opt (elem.in_inductive_core)).contents
+      in
+        List.for_all elem_is_in_core rhs
+    in
+      match elem_from_opt vc.bp with
+          Basic_paths.NormalPath(p,e) ->
+            begin
+              match e with
+                  Basic_paths.PostConditionEnding -> rhs_all_in_core vc.vc
+                | Basic_paths.AssertEnding -> rhs_all_in_core vc.vc
+                | Basic_paths.AnnotationEnding -> true
+                | Basic_paths.CallEnding -> true
+            end
+        | Basic_paths.RuntimeAssertPath(p) -> rhs_all_in_core vc.vc
+        | Basic_paths.TerminationPath(p) -> rhs_all_in_core vc.vc
+  in
+  let inductive_core_good_enough_for_function function_validity_information = 
+    List.for_all important_vc_implies_all_rhs_conjuncts_in_inductive_core function_validity_information.correctness_result.vcs &&
+      begin
+        match function_validity_information.termination_result with
+            None -> true
+          | Some(t) ->
+              begin
+                List.for_all important_vc_implies_all_rhs_conjuncts_in_inductive_core t.decreasing_paths &&                
+                  List.for_all important_vc_implies_all_rhs_conjuncts_in_inductive_core t.nonnegative_vcs               
+              end
+      end
+  in
+    List.for_all inductive_core_good_enough_for_function function_validity_information_list

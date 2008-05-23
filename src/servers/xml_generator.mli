@@ -4,9 +4,9 @@ type xml_node_content =
   | Empty
 
 and xml_node = {
-  mutable name: string;
-  mutable contents: xml_node_content;
-  mutable attributes: (string * string) list;
+  mutable node_name: string;
+  mutable node_contents: xml_node_content;
+  mutable node_attributes: (string * string) list;
 } ;;
 
 val create : string -> xml_node ;;

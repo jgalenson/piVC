@@ -139,7 +139,7 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
          */
         private volatile int lastPosition = -1;
         
-        private volatile boolean asleep = false;
+        //private volatile boolean asleep = false;
 
 
         /**

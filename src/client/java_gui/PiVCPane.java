@@ -1,23 +1,10 @@
 import java.awt.Component;
-import java.awt.Font;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
 
-import javax.swing.DefaultListCellRenderer;
-import javax.swing.DefaultListModel;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.*;
+import javax.swing.event.*;
 
 import data_structures.Conjunct;
 import data_structures.Location;
-import data_structures.PiError;
-import data_structures.RHSConjunct;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult.validityT;
 
@@ -33,6 +20,11 @@ public class PiVCPane extends JPanel {
 		model = new DefaultListModel();
 		list = new JList(model);
 		initList();
+	}
+	
+	public void setNothing(){
+		clear();
+		model.addElement("<html><i>Use the above pane to select a VC</i></html>");
 	}
 	
 	private void initList() {
@@ -56,7 +48,7 @@ public class PiVCPane extends JPanel {
 		else {
 			Location loc = ((Conjunct)obj).getLocation();
 			if (loc != null) {  // Compiler errors don't have locations.
-				piCode.highlight(loc, PiCode.redHP);
+				piCode.highlight(loc, PiCode.yellowHP);
 			}
 		}	
 	}
@@ -81,12 +73,11 @@ public class PiVCPane extends JPanel {
 				Conjunct curr = conjs[implies][conj];
 				String str = sanitizeHTML(curr.str);
 				String color = "black";
-				if(curr instanceof RHSConjunct){
-					RHSConjunct currRHS = (RHSConjunct)curr;
-					if(currRHS.status==validityT.VALID){
+				if(curr.status!=null){
+					if(curr.status.equals(validityT.VALID)){
 						color = "green";
 					}
-					else if(currRHS.status==validityT.INVALID){
+					else if(curr.status.equals(validityT.INVALID)){
 						color = "red";
 					}
 					else{
@@ -94,9 +85,12 @@ public class PiVCPane extends JPanel {
 					}
 				}
 				str = "<font color='"+color+"'>" + str + "</font>";
-				if(curr.inInductiveCore){
-					str = "<b>" + str + "</b>";
+				if(curr.inInductiveCore!=null && !curr.inInductiveCore.booleanValue()){
+					str = "<i>" + str + "</i>";
 				}
+				if(curr.inInductiveCore!=null && curr.inInductiveCore.booleanValue()){
+					str = "<b>" + str + "</b>";
+				}				
 				if(conj!=conjs[implies].length-1){
 					str = str + " &&";
 				}				

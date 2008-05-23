@@ -6,8 +6,8 @@ semantic_checking.cmi: ../language/scope_stack.cmi ../language/ast.cmi
 termination.cmi: ../language/ast.cmi 
 transform_yices.cmi: ../language/ast.cmi 
 verification_conditions.cmi: basic_paths.cmi ../language/ast.cmi 
-verify.cmi: semantic_checking.cmi counterexamples.cmi basic_paths.cmi \
-    ../language/ast.cmi 
+verify.cmi: ../utils/utils.cmi semantic_checking.cmi counterexamples.cmi \
+    basic_paths.cmi ../language/ast.cmi 
 verify_correctness.cmi: verify.cmi semantic_checking.cmi counterexamples.cmi \
     basic_paths.cmi ../language/ast.cmi 
 basic_paths.cmo: ../utils/utils.cmi expr_utils.cmi ../language/ast.cmi \

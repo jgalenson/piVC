@@ -1,5 +1,4 @@
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -42,7 +41,6 @@ public class PiGui extends JFrame {
 	private static final int DEFAULT_WIDTH = 800;
 	private static final int DEFAULT_HEIGHT = 800;
 	private static final String TITLE = "PiVC";
-	private static final int SCROLL_BAR_BLOCK_INCREMENT = 12;
 	
 	private PiCode piCode;
 	private PiErrorOutput piErrorOutput;
@@ -249,7 +247,8 @@ public class PiGui extends JFrame {
 	public void doCompile() {
 		String code = piCode.getText();
 		boolean shouldGenerateRuntimeAssertions = Config.getBooleanValue("generate_runtime_assertions");
-		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions);
+		boolean shouldFindInductiveCore = Config.getBooleanValue("find_inductive_core");
+		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions, shouldFindInductiveCore, this);
 		compileStarted();
 		curCompilation.start();
 	}
@@ -296,11 +295,14 @@ public class PiGui extends JFrame {
 	private class Compiler extends Thread {
 		
 		private String code;  // Store the code since we can't get it from piCode.
-		private boolean shouldGenerateRuntimeAssertions;
+		private boolean shouldGenerateRuntimeAssertions, shouldFindInductiveCore;
+		private PiGui gui;
 		
-		public Compiler(String code, boolean shouldGenerateRuntimeAssertions) {
+		public Compiler(String code, boolean shouldGenerateRuntimeAssertions, boolean shouldFindInductiveCore, PiGui gui) {
 			this.code = code;
 			this.shouldGenerateRuntimeAssertions = shouldGenerateRuntimeAssertions;
+			this.shouldFindInductiveCore = shouldFindInductiveCore;
+			this.gui = gui;
 		}
 		
 		@Override
@@ -327,7 +329,7 @@ public class PiGui extends JFrame {
 					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
 							compileEnded();
-							JOptionPane.showMessageDialog(null, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error.", JOptionPane.ERROR_MESSAGE);
+							JOptionPane.showMessageDialog(gui, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error", JOptionPane.ERROR_MESSAGE);
 						}
 					});
 				} catch (Exception ex) {
@@ -354,6 +356,10 @@ public class PiGui extends JFrame {
 	            	Element runtimeAssertionNode = doc.createElement("generate_runtime_assertions");
 	            	optionNode.appendChild(runtimeAssertionNode);
 	            }
+	            if (shouldFindInductiveCore) {
+	            	Element inductiveCoreNode = doc.createElement("find_inductive_core");
+	            	optionNode.appendChild(inductiveCoreNode);
+	            }	            
             	rootNode.appendChild(optionNode);
 	            
 	            // Convert the node into a string
@@ -365,7 +371,7 @@ public class PiGui extends JFrame {
 	            return sw.toString();
 			} catch (Exception e) {
 				e.printStackTrace();
-				JOptionPane.showMessageDialog(null, e.getMessage(), "XML building error error", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(gui, e.getMessage(), "XML building error error", JOptionPane.ERROR_MESSAGE);
 				throw new RuntimeException("Xml building error: " + e.getMessage());
 			}
 		}
@@ -378,14 +384,20 @@ public class PiGui extends JFrame {
 	 * Swing thread.
 	 */
 	private void handleServerResponse(final String text) {
+		final PiGui gui = this; //this is so we can get the gui in the run() method
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				piTree.clear();
 				piErrorOutput.clear();
 				piCompilerOutput.setText(text);
-				serverResponseParser.parse(text, getCurFilename());
+				String[] messages = serverResponseParser.parse(text, getCurFilename());
 				rightTabbedPane.repaint();
 				compileEnded();
+				if(messages!=null){
+					for(String message:messages){
+						JOptionPane.showMessageDialog(gui,message,"Message",JOptionPane.INFORMATION_MESSAGE);
+					}
+				}
 			}
 		});
 	}
@@ -401,6 +413,7 @@ public class PiGui extends JFrame {
 		setStatusBarLabel();
 		statusProgressBar.setIndeterminate(false);
 		statusProgressBar.setVisible(false);
+		vcPane.setNothing();
 	}
 	
 	public void cancelCompile() {
@@ -582,7 +595,7 @@ public class PiGui extends JFrame {
 	 * Creates the menu.
 	 */
 	private void installMenu() {
-		piMenu = new PiMenu(this, Config.getBooleanValue("generate_runtime_assertions"));
+		piMenu = new PiMenu(this);
 		setJMenuBar(piMenu);
 	}
 	

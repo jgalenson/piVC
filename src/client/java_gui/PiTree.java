@@ -12,6 +12,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import data_structures.BasicPath;
 import data_structures.BasicPathHolder;
@@ -210,12 +211,18 @@ public class PiTree extends JPanel {
 	 * depending on what type of node it is.
 	 */
 	private void nodeSelected(Object obj) {
+		VerificationCondition currVC = getCorrespondingVC();
+		if(currVC==null){
+			piGui.getVCPane().setNothing();
+		}else{
+			piGui.getVCPane().setVC(currVC);			
+		}
+		
 		if (obj instanceof Step) {
 			Step step = (Step)obj;
 			piCode.highlight(step.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof BasicPath) {
 			BasicPath basicPath = (BasicPath)obj;
-			piGui.getVCPane().setVC(basicPath.getVC());
 			piCode.highlight(basicPath.getLocations(), PiCode.yellowHP);
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
@@ -225,7 +232,6 @@ public class PiTree extends JPanel {
 			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
 			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
-			piGui.getVCPane().setVC(nonnegativeVC.getVC());
 			piCode.highlight(nonnegativeVC.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof String) {
 			String str = (String)obj;
@@ -235,6 +241,25 @@ public class PiTree extends JPanel {
 				piCode.removeAllHighlights();
 		} else
 			piCode.removeAllHighlights();
+	}
+	
+	private VerificationCondition getCorrespondingVC(){
+		DefaultMutableTreeNode curr = selectedNode;
+		while(true){
+			if(curr==null){
+				return null;
+			}
+			Object obj = curr.getUserObject();
+			if(obj instanceof BasicPath){
+				return ((BasicPath)obj).getVC();
+			}
+			else if(obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition){
+				return ((Termination.Nonnegative.NonnegativeVerificationCondition)obj).getVC();
+			}
+			else{
+				curr=(DefaultMutableTreeNode)curr.getParent();
+			}
+		}
 	}
 	
 	/**

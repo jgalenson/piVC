@@ -20,5 +20,21 @@ public class Location {
 	public int getEndByte() {
 		return endByte;
 	}
+	
+	public int getStartRow() {
+		return startRow;
+	}
+	
+	public int getEndRow() {
+		return endRow;
+	}
+	
+	public int getStartCol() {
+		return startCol;
+	}
+	
+	public int getEndCol() {
+		return endCol;
+	}	
 
 }

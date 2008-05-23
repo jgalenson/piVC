@@ -65,7 +65,8 @@ let rec compile vc_cache_and_lock ic oc =
     let options =
       let option_node = get_child_node "options" xml in
       let should_generate_runtime_assertions = has_child "generate_runtime_assertions" option_node in
-	(should_generate_runtime_assertions)
+      let should_find_inductive_core = has_child "find_inductive_core" option_node in
+	{generate_runtime_assertions = should_generate_runtime_assertions; find_inductive_core = should_find_inductive_core;}
     in
     (code, options)
   in
@@ -73,16 +74,16 @@ let rec compile vc_cache_and_lock ic oc =
   begin
     try
       let xml_str = get_input ic in
-      let (code, (gen_runtime_asserts)) = parse_xml xml_str in
+      let (code, options) = parse_xml xml_str in
         (* Config.print_endline code; *)
       let (program, errors) = Compile.parse_strings [("user-file", code)] in
         
       let get_output_to_return_to_client = 
         match errors with
             [] -> (
-              let program_info = Verify.get_all_info (Utils.elem_from_opt program) gen_runtime_asserts in
-              let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock in
-                Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info)
+              let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
+              let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
+                Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options)
             )
           | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
               
@@ -149,7 +150,7 @@ and xml_of_errors errors =
 
 
 
-and xml_of_verified_program (fns) = 
+and xml_of_verified_program fns options = 
   (*Now we have the xml generation functions for the various levels*)
   let rec xml_of_function (fn) = 
     let function_node = Xml_generator.create "function" in
@@ -197,52 +198,37 @@ and xml_of_verified_program (fns) =
           nonnegative_vc_node
 
   and xml_of_vc vc_conjunct_list_list =
-    let vc_node = Xml_generator.create "vc" in
-    let (lhs_list, rhs) = 
-      let rev_list = List.rev vc_conjunct_list_list in
-        (List.rev (List.tl rev_list), List.hd rev_list)
-    in
-      
-    let xml_of_lhs_implies conjunct_list = 
+    let vc_node = Xml_generator.create "vc" in      
+    let xml_of_conjunct_list conjunct_list = 
       let implies_node = Xml_generator.create "implies" in
-      let xml_of_lhs_conjunct conj = 
+      let xml_of_conjunct conj = 
         let conjunct_node = Xml_generator.create "conjunct" in
         let text_node = Xml_generator.create "text" in
           set_text (string_of_expr conj.exp) text_node;
           add_child text_node conjunct_node;
-          add_attribute ("in_inductive_core", string_of_bool !(conj.in_inductive_core)) conjunct_node;
+          begin
+            match conj.in_inductive_core with
+                Some(c) -> add_attribute ("in_inductive_core", string_of_bool c.contents) conjunct_node
+              | _ -> ignore()
+          end;
+          begin
+            match conj.valid_conjunct with
+                Some(v) -> add_attribute ("status", string_of_validity v) conjunct_node
+              | _ -> ignore()
+          end;
           add_child (xml_of_location (location_of_expr conj.exp)) conjunct_node;
           conjunct_node
       in
       let add_conjunct_child conj = 
-        add_child (xml_of_lhs_conjunct conj) implies_node
-      in
-        List.iter add_conjunct_child conjunct_list;
-        implies_node
-    in
-    let xml_of_rhs_implies conjunct_list =
-      let implies_node = Xml_generator.create "implies" in
-      let xml_of_rhs_conjunct conj = 
-        let conjunct_node = Xml_generator.create "rhs_conjunct" in
-        let text_node = Xml_generator.create "text" in
-          set_text (string_of_expr conj.exp) text_node;
-          add_child text_node conjunct_node;
-          add_attribute ("in_inductive_core", string_of_bool !(conj.in_inductive_core)) conjunct_node;
-          add_attribute ("status", string_of_validity (elem_from_opt conj.valid_conjunct)) conjunct_node;
-          add_child (xml_of_location (location_of_expr conj.exp)) conjunct_node;
-          conjunct_node
-      in
-      let add_conjunct_child conj = 
-        add_child (xml_of_rhs_conjunct conj) implies_node
+        add_child (xml_of_conjunct conj) implies_node
       in
         List.iter add_conjunct_child conjunct_list;
         implies_node
     in
     let add_implies imp = 
-      add_child (xml_of_lhs_implies imp) vc_node
+      add_child (xml_of_conjunct_list imp) vc_node
     in
-      List.iter add_implies lhs_list;
-      add_child (xml_of_rhs_implies rhs) vc_node;
+      List.iter add_implies vc_conjunct_list_list;
       vc_node
   and xml_of_step step = 
     let step_node = Xml_generator.create "step" in
@@ -301,11 +287,28 @@ and xml_of_verified_program (fns) =
 	    add_child nonnegative_node termination_node;
       end;
       termination_node
+  and xml_of_message message = 
+    let message_node = Xml_generator.create "message" in
+      set_text message message_node;
+      message_node
+        
   (* Now we put together the root node *)
   and transmission_node = Xml_generator.create "piVC_transmission" in
+  let overall_validity = (Verify.overall_validity_of_function_validity_information_list fns) in
     add_attribute ("type", "program_submission_response") transmission_node;
+
+    begin
+      let messages_node = Xml_generator.create "messages" in
+        begin
+          if (overall_validity != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough fns then
+            add_child (xml_of_message Constants.inductive_core_message) messages_node
+        end
+        ;
+        add_child messages_node transmission_node
+    end;
+
     let result_node = Xml_generator.create "result" in
-      add_attribute ("status", Verify.string_of_validity (Verify.overall_validity_of_function_validity_information_list fns)) result_node;
+      add_attribute ("status", Verify.string_of_validity overall_validity) result_node;
       add_child result_node transmission_node;
       let process_function func = 
         add_child (xml_of_function func) result_node

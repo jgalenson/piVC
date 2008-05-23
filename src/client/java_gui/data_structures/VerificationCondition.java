@@ -1,7 +1,5 @@
 package data_structures;
 
-import data_structures.VerificationResult.validityT;
-
 public class VerificationCondition {
 	
 	private Conjunct[][] conjuncts;
@@ -29,20 +27,25 @@ public class VerificationCondition {
 		return html;
 	}
 	
+/*	DEPRECATED. MAY NOT WORK. THIS SHOULD BE REMOVED. IT'S JUST BEING KEPT FOR A COUPLE OF DAYS
 	public String toHTML(){
 		String html = "";
 		for(int implies = 0; implies < conjuncts.length; ++implies){
 			for(int conjunct = 0; conjunct < conjuncts[implies].length; ++conjunct){
 				Conjunct curr = conjuncts[implies][conjunct];
 				html+="&nbsp;&nbsp;&nbsp;&nbsp;";
-				if(!curr.inInductiveCore){
-					html+="<i>";
+				
+				boolean markAsNotInCore = false;
+				if(curr.inInductiveCore!=null && !curr.inInductiveCore.booleanValue()){
+					markAsNotInCore = true;
+				}				
+				if(markAsNotInCore){
+					html+="<del>";
 				}
-				if(curr instanceof RHSConjunct){
-					RHSConjunct currRHS = (RHSConjunct)curr;
-					if(currRHS.status == validityT.VALID){
+				if(curr.status!=null){
+					if(curr.status.equals(validityT.VALID)){
 						html+="<font color='green'>";
-					}else if(currRHS.status == validityT.INVALID){
+					}else if(curr.status.equals(validityT.INVALID)){
 						html+="<font color='red'>";						
 					}
 					else{
@@ -52,8 +55,8 @@ public class VerificationCondition {
 					html+="<font color='black'>";											
 				}
 				html+=sanitizeHTML(curr.str);				
-				if(!curr.inInductiveCore){
-					html+="</i>";
+				if(markAsNotInCore){
+					html+="</del>";
 				}				
 				html += "</font>";
 				if(conjunct!=conjuncts[implies].length-1){
@@ -67,4 +70,5 @@ public class VerificationCondition {
 		html+="</html>";
 		return html;
 	}
+	*/
 }
