@@ -13,7 +13,8 @@ public class Config {
 								{"server_address","127.0.0.1:4242"},
 								{"pi_files_location","."},
 								{"generate_runtime_assertions", "false"},
-								{"find_inductive_core", "true"}
+								{"find_inductive_core", "true"},
+								{"show_raw_xml", "false"}
 	};
 	
 	private static Map<String,String> settings;

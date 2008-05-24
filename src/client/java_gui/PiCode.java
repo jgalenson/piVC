@@ -1,9 +1,13 @@
 import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
 
 
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.UndoableEditEvent;
@@ -32,7 +36,7 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		justLoaded = false;
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
-		addUndoableEditListener();
+		initCodePane();
 	}
 	
 	/**
@@ -46,9 +50,10 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 	}
 	
 	/**
-	 * Listen for edits for undo.
+	 * Initializes the text pane.
 	 */
-	private void addUndoableEditListener() {
+	private void initCodePane() {
+		// Listen for edits for undo.
 		getDocument().addUndoableEditListener(new UndoableEditListener() {
 		    public void undoableEditHappened(UndoableEditEvent e) {
 		    	//style changes are done automatically by the text pane. it doesn't make sense to undo them
@@ -57,6 +62,26 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		    		piGui.undoChangeHappened(undo);
 		    	}
 		    }
+		});
+		// Listen for selection changes so we can enable/disable cut/copy/paste.
+		addCaretListener(new CaretListener() {
+			public void caretUpdate(CaretEvent e) {
+			    int dot = e.getDot();
+			    int mark = e.getMark();
+			    if (dot == mark) // no selection
+			    	piGui.codeIsSelected(false);
+			    else // selection
+			    	piGui.codeIsSelected(true);
+			}
+		});
+		// Listen for clicks so we can remove highlighting.
+		addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getButton() != MouseEvent.BUTTON1)
+					return;
+				removeAllHighlights();
+			}
 		});
 	}
 	

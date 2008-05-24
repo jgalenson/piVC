@@ -15,10 +15,12 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private PiGui piGui;
 	private JMenuItem save;
 	private JMenuItem undo, redo;
+	private JMenuItem cut, copy, paste;
 	private JMenuItem displayPath;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	private JCheckBoxMenuItem runtimeAssertions;
 	private JCheckBoxMenuItem findInductiveCore;
+	private JCheckBoxMenuItem showRawXml;
 	
 	public PiMenu(PiGui piGui) {
 		super();
@@ -105,8 +107,6 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		undo.setEnabled(false);
 		editMenu.add(undo);
 		
-
-		
 		redo = new JMenuItem("Redo");
 		redo.setMnemonic(KeyEvent.VK_R);
 		redo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Y, ActionEvent.CTRL_MASK));
@@ -117,6 +117,40 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		});
 		redo.setEnabled(false);
 		editMenu.add(redo);
+		
+		editMenu.addSeparator();
+		
+		cut = new JMenuItem("Cut");
+		cut.setMnemonic(KeyEvent.VK_T);
+		cut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+		cut.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.cut();
+			}
+		});
+		cut.setEnabled(false);
+		editMenu.add(cut);
+		
+		copy = new JMenuItem("Copy");
+		copy.setMnemonic(KeyEvent.VK_C);
+		copy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+		copy.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.copy();
+			}
+		});
+		copy.setEnabled(false);
+		editMenu.add(copy);
+		
+		paste = new JMenuItem("Paste");
+		paste.setMnemonic(KeyEvent.VK_P);
+		paste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+		paste.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.paste();
+			}
+		});
+		editMenu.add(paste);
 		
 		add(editMenu);
 	}
@@ -189,6 +223,15 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		
 		settingsMenu.addSeparator();
 		
+		showRawXml = new JCheckBoxMenuItem("Show raw XML");
+		showRawXml.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.showHideRawXml(showRawXml.getState());
+			}
+		});
+		showRawXml.setState(Config.getBooleanValue("show_raw_xml"));
+		settingsMenu.add(showRawXml);	
+		
 		JMenuItem serverAddress = new JMenuItem("Change server address");
 		serverAddress.setMnemonic(KeyEvent.VK_S);
 		serverAddress.addActionListener(new ActionListener() {
@@ -244,6 +287,18 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	public void isCompiling(boolean isCompiling) {
 		compileMenuItem.setEnabled(!isCompiling);
 		cancelCompileMenuItem.setEnabled(isCompiling);
+	}
+	
+	/**
+	 * Called when we select or unselect code.
+	 * We use this to enable/disable the cut/copy
+	 * menu items.
+	 * @ isSelected - true if something is selected
+	 * (i.e. we can cut/copy); false otherwise.
+	 */
+	public void codeIsSelected(boolean isSelected) {
+		cut.setEnabled(isSelected);
+		copy.setEnabled(isSelected);
 	}
 	
 }

@@ -1,5 +1,8 @@
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Rectangle;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -45,23 +48,31 @@ public class PiTree extends JPanel {
 	}
 	
 	private void initTree() {
-		// Listen to clicks
-		/*tree.addMouseListener(new MouseAdapter() {
+		// Listen to clicks for selection and unselection
+		tree.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				if (e.getButton() != MouseEvent.BUTTON1)
 					return;
-				int selRow = tree.getRowForLocation(e.getX(), e.getY());
-				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-				if(selRow != -1) {
-					if(e.getClickCount() == 1) {
-						DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
-						nodeSelected(node.getUserObject());
-					} else if(e.getClickCount() == 2)
-						;// do something?
+				int closestRow = tree.getClosestRowForLocation(e.getX(), e.getY());
+				if (closestRow == -1) // nothing in tree
+					return;
+				Rectangle bounds = tree.getRowBounds(closestRow);
+				// If they clicked on something already selected, we re-highlight if necessary
+				if (bounds.contains(e.getPoint())) {  // Clicked on something
+			        DefaultMutableTreeNode node = (DefaultMutableTreeNode)tree.getPathForLocation(e.getX(), e.getY()).getLastPathComponent();
+			        if (node == selectedNode)
+			        	nodeSelected(node.getUserObject());
+				}
+				// If they clicked elsewhere, we unselect and unhighlight.
+				else if (e.getX() > bounds.getMaxX() || e.getY() > bounds.getMaxY() || e.getX() < bounds.getMinX() - 15) {
+					selectedNode = null;
+					tree.clearSelection();
+					nodeSelected(null);
+					piGui.nodeSelected(null);
 				}
 			}
-		});*/
+		});
 		// Selecting something highlights it.
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent e) {
@@ -209,15 +220,9 @@ public class PiTree extends JPanel {
 	/**
 	 * When a node is selected, we highlight it
 	 * depending on what type of node it is.
+	 * We also highlight the corresponding VC.
 	 */
 	private void nodeSelected(Object obj) {
-		VerificationCondition currVC = getCorrespondingVC();
-		if(currVC==null){
-			piGui.getVCPane().setNothing();
-		}else{
-			piGui.getVCPane().setVC(currVC);			
-		}
-		
 		if (obj instanceof Step) {
 			Step step = (Step)obj;
 			piCode.highlight(step.getLocation(), PiCode.yellowHP);
@@ -241,6 +246,12 @@ public class PiTree extends JPanel {
 				piCode.removeAllHighlights();
 		} else
 			piCode.removeAllHighlights();
+		// highlight vc
+		VerificationCondition currVC = getCorrespondingVC();
+		if (currVC == null)
+			piGui.getVCPane().setNothing();
+		else
+			piGui.getVCPane().setVC(currVC);
 	}
 	
 	private VerificationCondition getCorrespondingVC(){

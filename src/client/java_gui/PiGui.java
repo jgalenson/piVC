@@ -473,11 +473,42 @@ public class PiGui extends JFrame {
 	public void redo() {
 		piCode.redo();
 	}
+
+	/**
+	 * Cuts text from the code pane.
+	 */
+	public void cut() {
+		piCode.cut();
+	}
+
+	/**
+	 * Copies text from the code pane.
+	 */
+	public void copy() {
+		piCode.copy();
+	}
+
+	/**
+	 * Pastes text into the code pane.
+	 */
+	public void paste() {
+		piCode.paste();
+	}
+	
+	/**
+	 * Called when we select or unselect code.
+	 * We use this to enable/disable the cut/copy
+	 * menu items.
+	 * @ isSelected - true if something is selected
+	 * (i.e. we can cut/copy); false otherwise.
+	 */
+	public void codeIsSelected(boolean isSelected) {
+		piMenu.codeIsSelected(isSelected);
+	}
 	
 	public PiVCPane getVCPane(){
 		return vcPane;
 	}
-
 	
 	/**
 	 * Called when a new node in the tree is selected.
@@ -495,6 +526,19 @@ public class PiGui extends JFrame {
 		BasicPath basicPath = (BasicPath)piTree.getSelectedObject();		
 		BasicPathHighlighter basicPathHighlighter = new BasicPathHighlighter(basicPath);
 		basicPathHighlighter.start();
+	}
+	
+	/**
+	 * Show or hide the raw xml tab of the JTabbedPane
+	 * on the right.
+	 */
+	public void showHideRawXml(boolean show) {
+		Config.setBooleanValue("show_raw_xml", show);
+		if (show) {
+			rightTabbedPane.addTab("Raw XML", new JScrollPane(piCompilerOutput));
+			rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
+		} else
+			rightTabbedPane.removeTabAt(2);
 	}
 
 	/**
@@ -582,8 +626,6 @@ public class PiGui extends JFrame {
 		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_V);
 		rightTabbedPane.addTab("Compilation Errors", piErrorOutput.getErrorOutputInScrollPane());
 		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
-		rightTabbedPane.addTab("Raw XML", new JScrollPane(piCompilerOutput));
-		rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
 		rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH/2, 3*DEFAULT_HEIGHT/4));
 		
 
