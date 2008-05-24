@@ -1,82 +1,54 @@
-
-----------------
-Short-term TODOs
-----------------
+-----
+TODOs
+-----
 
 Jason
-	Generate basic path names somehow.
+	Classes
+	defines and typedefs (see Aaron's first email 1/23/08)
+	
 	Arrays DP: check remaining TODOs, don't run arrays DP on VCs not in the fragment, fix index set construction
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
 	Bug: Fix _v0 highlighting (i.e. _v0 node in basic path has weird highlighting)
+	Email stuff.
+        Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
+	Refactor xml, ocaml/java data structures from basic path/vc to verification_atom.
+	Log server error messages.  Also add command line option to change its directory.
+	Server on startup should ensure yices, included.pi, etc. are there and fail if not.
+	Put filename into xml and ocaml data structures.
+	Bug: Remove stupid a,b counterexample nodes (look for filename field in the location)
+	Allow termination arguments after annotation, not just before.
+
 
 Joel
-	Maybe typedef stuff like path (in bp, vc, etc) to make types more readable.
-		VC: expr * validity * Counterexamples.example list option.  See verify.mli
-	Maybe turn servers (main, dp) into modules so we can give them "methods" (e.g. print accepted message differently (name, extra space)).
+	Proof of termination (see Aaron's original PiVC email)
+		Remaining: prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?)
+		Verdict: make both compile errors
+	Static analysis API
+	
+        Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
+	Clicking on tree or code pane or vc pane undoes its respective highlighting.
+	Bug: Horizontal scroll pane.
 	Timeouts.
 	More command-line arg support for server
 		Maybe support -print yices;vc format
 		Split options for two executables?  Remove double error msg on both_servers?
-
-Both
-	Figure out how to display VCs in the GUI.
-		One idea: pretty-print the VC (using http://caml.inria.fr/resources/doc/guides/format.html perhaps?) and put in the GUI tree on multiple lines (e.g. by conjuncts).
-
-Unassigned
-	Make the ast to_string functions more paren aware.  So they only put parens if they're needed (e.g. if a child is a compound type).
-		Note that if we pretty-print VCs to display in the GUI, that can incorporate this.
-	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
-	Add support for warnings?  Asserts in Pi? (Note from Jason: we already support Pi asserts, but maybe you mean something else.)
-        Nice error message if yices doesn't exist
-        Look for yices on PATH environmental variable.
-        Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
-	Log server error messages.  Also add command line option to change its directory.
-        Bug: weird behavior if yices binary not present
-        Allow yices to be on PATH (i.e. don't have to specify actual location)
-        Email submission
-        Path names generation
-        Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones
+        Allow yices to be on PATH (config variable always has something; if "yices" use PATH else use relative path) and display error message and fail if it doesn't exist.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
-	Bug: weird behavior if yices binary not present
-	Allow yices to be on PATH (i.e. don't have to specify actual location)
-
-
------------------------------
-Proposed High-level timetable
------------------------------
-
-Week 4
-	Jason: Config files (ports to bind to, IP/ports to connect to, saved files dir, max connections, num cached vcs)
-	Both: Equivalent in functionality to Aaron's version, with no remaining bugs
-
-Week 5
-	Jason: Run "Aaron's algorithm" of static analysis (see Aaron's email 1/27/08)
-	Joel: Proof of termination (see Aaron's original PiVC email)
-		Remaining: prove that you have termination args everywhere you need them, check that all ranking annotations are of the same size (in semantic checking or in vc generation?)
-
-Week 6
-	Jason: defines, structs and typedefs (see Aaron's first email 1/23/08)
-
-Week 7
-	Joel: Static analysis API
-	At least one of hashtables, sets, multisets (see Aaron's email 12/6/07)
-
-Week 8
-	Both: Fully-working version, only polishing is necessary
-	Jason: Email stuff.
-
-Week 9
-	Convert to C++ and run.
-	Finished, ready-to-go
-
-Week 10
-	Party time!
-
+	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
+        Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones
+	Menu option in Settings to hide/show Raw Xml (hidden by default).
+	Add cut/copy/paste to edit menu.
+	Move two compile settings to Settings.
+	Bug: Clear vc pane on file load (call VCPane.clear() whenever I clear the tree)
+	Bug: Clicking on empty compilation errors pane generates assertion.
+	
 --------------------
 Possible later TODOs
 --------------------
 
 Auto-indent in GUI (especially for assertions).
 Better syntax highlighting?
+Add support for warnings?  Asserts in Pi?
+Running code/debugging.
