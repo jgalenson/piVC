@@ -40,8 +40,6 @@ Joel
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones
 	Menu option in Settings to hide/show Raw Xml (hidden by default).
 	Add cut/copy/paste to edit menu.
-	Move two compile settings to Settings.
-	Bug: Clear vc pane on file load (call VCPane.clear() whenever I clear the tree)
 	
 --------------------
 Possible later TODOs

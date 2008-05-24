@@ -141,27 +141,8 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 				piGui.cancelCompile();
 			}
 		});
-		compileMenu.add(cancelCompileMenuItem);
-		
-		compileMenu.addSeparator();
-		
-		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
-		runtimeAssertions.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Config.setBooleanValue("generate_runtime_assertions", runtimeAssertions.getState());
-			}
-		});
-		runtimeAssertions.setState(Config.getBooleanValue("generate_runtime_assertions"));
-		compileMenu.add(runtimeAssertions);
-
-		findInductiveCore = new JCheckBoxMenuItem("Find inductive core");
-		findInductiveCore.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				Config.setBooleanValue("find_inductive_core", findInductiveCore.getState());
-			}
-		});
-		findInductiveCore.setState(Config.getBooleanValue("find_inductive_core"));
-		compileMenu.add(findInductiveCore);		
+		cancelCompileMenuItem.setEnabled(false);
+		compileMenu.add(cancelCompileMenuItem);	
 				
 		add(compileMenu);
 	}
@@ -187,6 +168,26 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private void addSettingsMenu() {
 		JMenu settingsMenu = new JMenu("Settings");
 		settingsMenu.setMnemonic(KeyEvent.VK_S);
+		
+		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
+		runtimeAssertions.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Config.setBooleanValue("generate_runtime_assertions", runtimeAssertions.getState());
+			}
+		});
+		runtimeAssertions.setState(Config.getBooleanValue("generate_runtime_assertions"));
+		settingsMenu.add(runtimeAssertions);
+
+		findInductiveCore = new JCheckBoxMenuItem("Find inductive core");
+		findInductiveCore.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Config.setBooleanValue("find_inductive_core", findInductiveCore.getState());
+			}
+		});
+		findInductiveCore.setState(Config.getBooleanValue("find_inductive_core"));
+		settingsMenu.add(findInductiveCore);	
+		
+		settingsMenu.addSeparator();
 		
 		JMenuItem serverAddress = new JMenuItem("Change server address");
 		serverAddress.setMnemonic(KeyEvent.VK_S);
