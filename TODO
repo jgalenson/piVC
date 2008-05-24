@@ -11,7 +11,7 @@ Jason
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
 	Bug: Fix _v0 highlighting (i.e. _v0 node in basic path has weird highlighting)
 	Email stuff.
-        Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
+	Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Refactor xml, ocaml/java data structures from basic path/vc to verification_atom.
 	Log server error messages.  Also add command line option to change its directory.
 	Server on startup should ensure yices, included.pi, etc. are there and fail if not.
@@ -26,7 +26,7 @@ Joel
 		Verdict: make both compile errors
 	Static analysis API
 	
-        Path names generation (L1 -> assume this -> assume that -> L2)
+	Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
 	Clicking on tree or code pane or vc pane undoes its respective highlighting.
 	Bug: Horizontal scroll pane.
@@ -34,15 +34,14 @@ Joel
 	More command-line arg support for server
 		Maybe support -print yices;vc format
 		Split options for two executables?  Remove double error msg on both_servers?
-        Allow yices to be on PATH (config variable always has something; if "yices" use PATH else use relative path) and display error message and fail if it doesn't exist.
+	Allow yices to be on PATH (config variable always has something; if "yices" use PATH else use relative path) and display error message and fail if it doesn't exist.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
-        Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones
+	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones
 	Menu option in Settings to hide/show Raw Xml (hidden by default).
 	Add cut/copy/paste to edit menu.
 	Move two compile settings to Settings.
 	Bug: Clear vc pane on file load (call VCPane.clear() whenever I clear the tree)
-	Bug: Clicking on empty compilation errors pane generates assertion.
 	
 --------------------
 Possible later TODOs

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
+import javax.swing.DefaultListSelectionModel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -20,12 +21,14 @@ public class PiErrorOutput extends JPanel {
 	private JList list;
 	private DefaultListModel model;
 	private PiCode piCode;
+	private ListSelector selectionModel;
 	
 	public PiErrorOutput(PiCode pC) {
 		super();
 		this.piCode = pC;
 		model = new DefaultListModel();
 		list = new JList(model);
+		selectionModel = new ListSelector();
 		initList();
 	}
 	
@@ -39,20 +42,42 @@ public class PiErrorOutput extends JPanel {
 				if (e.getButton() != MouseEvent.BUTTON1)
 					return;
 				int index = list.locationToIndex(e.getPoint());
-				Object obj = list.getModel().getElementAt(index);
-				errorClicked(obj);
-			}
-		});
-		// Catch unselection
-		list.addListSelectionListener(new ListSelectionListener() {
-			public void valueChanged(ListSelectionEvent e) {
-				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
-					Object obj = list.getSelectedValue();
-					if (obj != null)
-						errorClicked(obj);
+				if (index != -1 && list.getCellBounds(index, index).contains(e.getPoint())) {
+					selectionModel.select(index);
+					errorClicked(list.getModel().getElementAt(index));
+				} else {
+					selectionModel.clearSelection();
+					errorClicked(null);
 				}
 			}
 		});
+		// Catch unselection
+		/*list.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
+					int index = list.getSelectedIndex();
+					Object obj = list.getSelectedValue();
+					if ()
+						errorClicked(obj);
+				}
+			}
+		});*/
+		list.setSelectionModel(selectionModel);
+	}
+	
+	class ListSelector extends DefaultListSelectionModel {
+	    
+		/* Ignore default selection events because they
+		 * get triggered when you click below the last element.
+		 */
+	    @Override
+		public void setSelectionInterval(int index0, int index1) {
+	    }
+	    
+	    public void select(int index) {
+	    	super.setSelectionInterval(index, index);
+	    }
+	    
 	}
 	
 	/**
