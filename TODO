@@ -28,7 +28,6 @@ Joel
 	
 	Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
-	Bug: Horizontal scroll pane.
 	Timeouts.
 	More command-line arg support for server
 		Maybe support -print yices;vc format

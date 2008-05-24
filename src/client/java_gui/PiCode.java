@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -221,6 +222,25 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 	 */
 	private void removeDocumentChangeListener() {
 		getDocument().removeDocumentListener(this);
+	}
+	
+	/**
+	 * Disable line wrapping.
+	 */
+	@Override
+	public boolean getScrollableTracksViewportWidth() {
+		return false;
+	}
+	
+	/**
+	 * Fixes ugly bug with an empty text pane and no line wrapping.
+	 */
+	@Override
+	public void setSize(Dimension d)
+	{
+		if (d.width < getParent().getSize().width)
+			d.width = getParent().getSize().width;
+		super.setSize(d);
 	}
 
 }
