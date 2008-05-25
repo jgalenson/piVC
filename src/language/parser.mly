@@ -297,19 +297,20 @@ IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.I
              | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), expr_from_temp_expr false $3, condense_stmt_list $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While OptionalTermination T_Assert LocationOpt AnnotationExpr Stmt {
-               let condition = List.nth (snd (condition_from_temp_expr $5)) 0 in
-	       let ann = create_annotation (expr_from_temp_expr true $5) $4 in
-               Ast.WhileStmt ( loc 1 6, (condition), condense_stmt_list $6, ann, $2)
+WhileStmt  : T_While OptionalTermination AnnotationWithLabel Stmt {
+               let condition = List.nth (snd (condition_from_temp_expr (fst $3))) 0 in
+	       let ann = create_annotation (expr_from_temp_expr true (fst $3)) (snd $3) in
+               Ast.WhileStmt ( loc 1 4, (condition), condense_stmt_list $4, ann, $2)
 	   }
 
 ;
 
-ForStmt    : T_For OptionalTermination T_Assert LocationOpt AnnotationExpr Stmt {
-               let assign_stmt_and_for_components = condition_from_temp_expr $5 in
+ForStmt   /* : T_For OptionalTermination T_Assert LocationOpt AnnotationExpr Stmt {*/
+           : T_For OptionalTermination AnnotationWithLabel Stmt {
+               let assign_stmt_and_for_components = condition_from_temp_expr (fst $3) in
                let for_components = snd assign_stmt_and_for_components in
-	       let ann = create_annotation (expr_from_temp_expr true $5) $4 in
-               let for_stmt = Ast.ForStmt ( loc 1 6, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $6, ann, $2) in
+	       let ann = create_annotation (expr_from_temp_expr true (fst $3)) (snd $3) in
+               let for_stmt = Ast.ForStmt ( loc 1 4, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $4, ann, $2) in
                let assign_stmt = fst assign_stmt_and_for_components in
                  match assign_stmt with
                      None -> for_stmt
@@ -335,7 +336,7 @@ OptionalExpr : Expr { $1 }
 BreakStmt : T_Break T_Semicolon { Ast.BreakStmt (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)) }
 ;
 
-AssertStmt : T_Assert LocationOpt AnnotationExpr T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 3)), create_annotation (expr_from_temp_expr false $3) $2) }
+AssertStmt : AnnotationWithLabel T_Semicolon { Ast.AssertStmt ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2)), create_annotation (expr_from_temp_expr false (fst $1)) (snd $1)) }
            ;
 
 /*All quantified variables are deemed integers*/
@@ -453,8 +454,12 @@ AnnotationExpr : Annotation    %prec T_Period                            { $1 }
 */
 	   ;
 
+AnnotationWithLabel : T_Assert Identifier T_Colon AnnotationExpr {($4, Some($2))}
+           | T_Assert AnnotationExpr {($2, None)}
+
+/*
 LocationOpt : Identifier T_Colon { Some $1 }
 	   | T_Colon { None }
 ;
-
+*/
 %%
