@@ -50,9 +50,9 @@ Result node: server no errors:
 	<result status="proved/unproved">
 		<function name="name">
 			<correctness status="valid/invalid/unknown">
-  			        <basic_path status="valid/invalid/unknown">
-				        <step>
-					        <node type="expr/assume/annotation">
+  			        <verification_atom status="valid/invalid/unknown">
+				        <basic_path>
+					        <step type="expr/assume/annotation">
 						        <location>
 							        <start row=foo col=bar byte=bar />
 							        <end row=bar col=foo byte=bar />
@@ -60,10 +60,9 @@ Result node: server no errors:
 						        <text>
 							        cool++;
 						        </text>
-					        </node>
-					        // more nodes as siblings
-				        </step>
-				        // more steps as siblings
+					        </step>
+					        // more steps as siblings
+				        </basic_path>
 				        <vc>
 					        <implies>
                                                         <conjunct in_inductive_core="true">
@@ -96,18 +95,15 @@ Result node: server no errors:
 					        </var>
 					        // ...
 				        </counterexample>
-			        </basic_path>
-			        // more basic paths as siblings
+			        </verification_atom>
+			        // more verification_atoms as siblings
 			</correctness>
 			<termination status="valid/invalid/unknown">
 				<decreasing status="valid/invalid/unknown">
-			                // basic paths here are the same as the <basic_path> tags above.
+			                // verification_atoms here are the same as the <verification_atom> tags above.
 				</decreasing>
 				<nonnegative status="valid/invalid/unknown">
-				        <nonnegative_vc status="valid/invalid/unknown">
-					        <vc> vc </vc>
-						<counterexample> ... </counterexample> // optional
-					</nonnegative_vc>
+			                // verification atoms here are the same as the <verification_atom> tags above, but without basic paths
 				</nonnegative>
 				TODO: Add something here about extra places required.
 			</termination>

@@ -37,20 +37,20 @@ and termination_result = {
   overall_validity_t : validity;
   decreasing_paths_validity : validity;
   nonnegative_vcs_validity : validity;
-  decreasing_paths : vc_detailed list;
-  nonnegative_vcs : vc_detailed list;
+  decreasing_paths : verification_atom list;
+  nonnegative_vcs : verification_atom list;
 }
 and correctness_result = {
   overall_validity_c : validity;
-  vcs : vc_detailed list;
+  vcs : verification_atom list;
 } 
-and vc_detailed = {
+and verification_atom = {
   vc : vc_conjunct list list;
   bp : Basic_paths.basic_path option; (*nonnegative_vcs don't have basic paths*)
   valid : validity;
   counter_example : Counterexamples.example list option;
 }
-and vc_temp = {
+and verification_atom_temp = {
   func_temp: fnDecl;
   vc_temp : vc_conjunct list list;
   bp_temp : Basic_paths.basic_path option;

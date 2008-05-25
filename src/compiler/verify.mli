@@ -9,14 +9,14 @@ and termination_result = {
   overall_validity_t : validity;
   decreasing_paths_validity : validity;
   nonnegative_vcs_validity : validity;
-  decreasing_paths : vc_detailed list;
-  nonnegative_vcs : vc_detailed list;
+  decreasing_paths : verification_atom list;
+  nonnegative_vcs : verification_atom list;
 }
 and correctness_result = {
   overall_validity_c : validity;
-  vcs : vc_detailed list;
+  vcs : verification_atom list;
 } 
-and vc_detailed = {
+and verification_atom = {
   vc : vc_conjunct list list;
   bp : Basic_paths.basic_path option; (*Nonnegative VCs don't have basic paths*)
   valid : validity;
@@ -34,7 +34,7 @@ and function_validity_information = {
   correctness_result : correctness_result;
   overall_validity : validity;
 }
-and vc_temp = {
+and verification_atom_temp = {
   func_temp: fnDecl;
   vc_temp : vc_conjunct list list;
   bp_temp : Basic_paths.basic_path option;
@@ -52,7 +52,7 @@ val verify_program : (Ast.fnDecl * (Basic_paths.basic_path * expr) list  * (Basi
 
 val inductive_core_good_enough : function_validity_information list -> bool
 
-val overall_validity_of_vc_detailed_list : vc_detailed list -> validity
+val overall_validity_of_vc_detailed_list : verification_atom list -> validity
 
 val location_of_vc_conjunct_list_list : vc_conjunct list list -> location
 
@@ -67,10 +67,10 @@ val verify_vc_expr :
   Ast.program -> (validity * Counterexamples.example list option) thread_response
 
 
-val verify_vc : vc_temp *
+val verify_vc : verification_atom_temp *
   ((string, (validity * Counterexamples.example list option) * float)
      Hashtbl.t * Mutex.t) *
-  Ast.program * verification_mode -> vc_temp thread_response
+  Ast.program * verification_mode -> verification_atom_temp thread_response
     
 
 val overall_validity_of_function_validity_information_list : function_validity_information list -> validity ;;

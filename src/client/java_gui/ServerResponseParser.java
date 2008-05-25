@@ -165,8 +165,8 @@ public class ServerResponseParser {
 		NodeList children = correctness.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
-			if ("basic_path".equals(child.getNodeName()))
-				basicPaths.add(parseBasicPath(child));
+			if ("verification_atom".equals(child.getNodeName()))
+				basicPaths.add(parseVerificationAtom(child));
 		}
 		if (basicPaths.size() == 0)
 			throw new RuntimeException("Function has no basic paths");
@@ -248,9 +248,9 @@ public class ServerResponseParser {
 	
 	
 	/**
-	 * Makes and returns a BasicPath object from a <basic_path> tag.
+	 * Makes and returns a BasicPath object from a <verification_atom> tag.
 	 */
-	private BasicPath parseBasicPath(Node basicPath) {
+	private BasicPath parseVerificationAtom(Node basicPath) {
 		String valid = basicPath.getAttributes().getNamedItem("status").getTextContent();
 		VerificationResult.validityT validity = validityStringToValidity(valid);
 		ArrayList<Step> steps = null;
@@ -259,7 +259,7 @@ public class ServerResponseParser {
 		NodeList children = basicPath.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
-			if ("path".equals(child.getNodeName()))
+			if ("basic_path".equals(child.getNodeName()))
 				steps = parsePath(child);
 			if ("vc".equals(child.getNodeName()))
 				vc = parseVerificationCondition(child, validity);
@@ -346,8 +346,8 @@ public class ServerResponseParser {
 		NodeList children = decreasing.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
-			if ("basic_path".equals(child.getNodeName()))
-				basicPaths.add(parseBasicPath(child));
+			if ("verification_atom".equals(child.getNodeName()))
+				basicPaths.add(parseVerificationAtom(child));
 		}
 		if (basicPaths.size() == 0)
 			throw new RuntimeException("Decreasing node has no basic paths");
@@ -364,7 +364,7 @@ public class ServerResponseParser {
 		NodeList children = nonnegative.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
-			if ("nonnegative_vc".equals(child.getNodeName()))
+			if ("verification_atom".equals(child.getNodeName()))
 				nonnegativeVCs.add(parseNonnegativeVerificationCondition(child));
 		}
 		if (nonnegativeVCs.size() == 0)

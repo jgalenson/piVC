@@ -33,7 +33,8 @@ Joel
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
-	
+        Bug: "show raw xml" pane doesn't appear on launch, even if the show raw xml option is enabled	
+
 --------------------
 Possible later TODOs
 --------------------
