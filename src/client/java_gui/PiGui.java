@@ -537,7 +537,7 @@ public class PiGui extends JFrame {
 		if (show) {
 			rightTabbedPane.addTab("Raw XML", new JScrollPane(piCompilerOutput));
 			rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
-		} else
+		} else if (rightTabbedPane.getTabCount() >= 3)
 			rightTabbedPane.removeTabAt(2);
 	}
 
@@ -626,6 +626,7 @@ public class PiGui extends JFrame {
 		rightTabbedPane.setMnemonicAt(0, KeyEvent.VK_V);
 		rightTabbedPane.addTab("Compilation Errors", piErrorOutput.getErrorOutputInScrollPane());
 		rightTabbedPane.setMnemonicAt(1, KeyEvent.VK_E);
+		showHideRawXml(Config.getBooleanValue("show_raw_xml"));
 		rightTabbedPane.setPreferredSize(new Dimension(DEFAULT_WIDTH/2, 3*DEFAULT_HEIGHT/4));
 		
 
