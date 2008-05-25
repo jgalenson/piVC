@@ -29,9 +29,6 @@ Joel
 	Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
 	Timeouts.
-	More command-line arg support for server
-		Maybe support -print yices;vc format
-		Split options for two executables?  Remove double error msg on both_servers?
 	Allow yices to be on PATH (config variable always has something; if "yices" use PATH else use relative path) and display error message and fail if it doesn't exist.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.

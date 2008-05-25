@@ -84,51 +84,76 @@ let read_from_file file_path =
 type server_type =
   | MainServer
   | DPServer
+  | BothServers
   | Parser ;;
 
+(* Global to store the currently-running server-type. *)
 let server_type = ref None ;;
-
-let is_main_server () =
-  server_type := Some MainServer ;;
-
-let is_dp_server () =
-  server_type := Some DPServer ;;
 
 (* Code to parse command-line arguments. *)
 
-let add_to_map key value () =
-  key_value_map := String_map.add key value !key_value_map ;;
+let cmd_line_arg_map = ref String_map.empty ;;
 
-(* The command-line arguments we accept. *)
-let speclist = [
+let add_to_map key value () =
+  cmd_line_arg_map := String_map.add key value !cmd_line_arg_map ;;
+
+(* The command-line arguments we accept for each type of server. *)
+let both_servers_args = [
   "--print-main-server-info",Arg.Unit (add_to_map "print_main_server_info" "true"),"Print debug info in main server.";
   "--no-print-main-server-info", Arg.Unit (add_to_map "print_main_server_info" "false"), "Do not print debug info in main server.";
   "--print-dp-server-info", Arg.Unit (add_to_map "print_dp_server_info" "true"), "Print debug info in dp server.";
   "--no-print-dp-server-info", Arg.Unit (add_to_map "print_dp_server_info" "false"), "Do not print debug info in dp server.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
-]
+] ;;
 
-let parse_cmd_line () =
+let main_server_args = [
+  "--print-info",Arg.Unit (add_to_map "print_main_server_info" "true"),"Print debug info.";
+  "--no-print-info", Arg.Unit (add_to_map "print_main_server_info" "false"), "Do not print debug info.";
+  "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
+  "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
+] ;;
+
+let dp_server_args = [
+  "--print-info", Arg.Unit (add_to_map "print_dp_server_info" "true"), "Print debug info.";
+  "--no-print-info", Arg.Unit (add_to_map "print_dp_server_info" "false"), "Do not print debug info.";
+  "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
+  "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
+] ;;
+
+let parser_args = [ ];;
+
+(* Sets the type of server we're running. *)
+let set_server_type s_type = match s_type with
+  | MainServer -> server_type := Some MainServer
+  | DPServer -> server_type := Some DPServer
+  | BothServers -> server_type := Some BothServers
+  | Parser -> server_type := Some Parser ;;
+
+(* Parses the command-line arguments. *)
+let parse_cmd_line s_type =
   let usage_msg = "PiVC server command-line options:" in
   let fail_on_anon_arg arg =
     let error_msg = "Unknown anonymous option " ^ arg in
     raise (Arg.Bad error_msg)
   in
-    Arg.parse speclist fail_on_anon_arg usage_msg ;;
+  let arg_list = match s_type with
+    | MainServer -> main_server_args
+    | DPServer -> dp_server_args
+    | BothServers -> both_servers_args
+    | Parser -> parser_args
+  in
+  Arg.parse arg_list fail_on_anon_arg usage_msg ;;
 
 (* Sets up the config options by loading in the defaults
    from the specified file and then loading in arguments
    passed to the command line. *)
-let load file_path s_type = 
+let load file_path = 
   key_value_map := read_from_file file_path;
-  begin
-    match s_type with
-      | MainServer -> server_type := Some MainServer
-      | DPServer -> server_type := Some DPServer
-      | Parser -> server_type := Some Parser
-  end;
-  parse_cmd_line () ;;
+  let add_cmd_line_vals key value =
+    key_value_map := String_map.add key value !key_value_map
+  in
+  String_map.iter add_cmd_line_vals !cmd_line_arg_map ;;
 
 let print msg =
   assert (Utils.is_some !server_type);
@@ -160,5 +185,6 @@ let print msg =
   match s_type with
     | MainServer -> print_if_true "print_main_server_info"
     | DPServer -> print_if_true "print_dp_server_info"
+    | BothServers -> print_endline msg
     | Parser -> print_endline msg ;;
 

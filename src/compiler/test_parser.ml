@@ -27,7 +27,9 @@ let print_program program = match program with
   | None -> print_string "";;
 
 let _ =
-  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path) Config.Parser;
+  Config.parse_cmd_line Config.Parser;
+  Config.set_server_type Config.Parser;
+  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path);
   let input = ref "" in
     try
       while true do      

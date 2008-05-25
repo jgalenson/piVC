@@ -324,5 +324,6 @@ let get_main_server_func () =
   compile (vc_cache, cache_lock) ;;
 
 let start_main_server () =
-  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path) Config.MainServer;          
+  Config.set_server_type Config.MainServer;
+  Config.load (Utils.get_absolute_path Constants.main_server_config_file_path);
   run_server (get_main_server_func ()) (Config.get_value_int "port") ;;

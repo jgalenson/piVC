@@ -57,5 +57,6 @@ let verify ic oc =
   flush oc ;;
 
 let start_dp_server () =
-  Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path) Config.DPServer;          
+  Config.set_server_type Config.DPServer;
+  Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path);
   run_server verify (Config.get_value_int "port") ;;
