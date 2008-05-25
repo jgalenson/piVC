@@ -15,7 +15,6 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import data_structures.BasicPath;
 import data_structures.BasicPathHolder;
@@ -28,6 +27,11 @@ import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
 
 public class PiTree extends JPanel {
+	
+	/* Number of pixels to the left of the selectable object you
+	 * can click without unselecting it.
+	 */
+	private static final int ROW_LEFT_GRACE_SPACE = 17; 
 	
 	private DefaultTreeModel treeModel;
 	private JTree tree;
@@ -65,7 +69,7 @@ public class PiTree extends JPanel {
 			        	nodeSelected(node.getUserObject());
 				}
 				// If they clicked elsewhere, we unselect and unhighlight.
-				else if (e.getX() > bounds.getMaxX() || e.getY() > bounds.getMaxY() || e.getX() < bounds.getMinX() - 15) {
+				else if (e.getX() > bounds.getMaxX() || e.getY() > bounds.getMaxY() || e.getX() < bounds.getMinX() - ROW_LEFT_GRACE_SPACE) {
 					selectedNode = null;
 					tree.clearSelection();
 					nodeSelected(null);
