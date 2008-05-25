@@ -51,7 +51,7 @@ Result node: server no errors:
 		<function name="name">
 			<correctness status="valid/invalid/unknown">
   			        <verification_atom status="valid/invalid/unknown">
-				        <basic_path>
+				        <basic_path name="basic path name">
 					        <step type="expr/assume/annotation">
 						        <location>
 							        <start row=foo col=bar byte=bar />

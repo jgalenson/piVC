@@ -54,6 +54,7 @@ val string_of_quantification : quantification -> string
 
 val create_identifier : string -> location -> identifier
 val create_length_identifier : string -> location -> identifier
+  
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
@@ -96,30 +97,45 @@ and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt * expr * rankingAnnotation option
-  | ForStmt of location * expr * expr * expr * stmt * expr * rankingAnnotation option
+  | WhileStmt of location * expr * stmt * annotation * rankingAnnotation option
+  | ForStmt of location * expr * expr * expr * stmt * annotation * rankingAnnotation option
   | BreakStmt of location
   | ReturnStmt of location * expr
-  | AssertStmt of location * expr
+  | AssertStmt of location * annotation
   | StmtBlock of location * stmt list
   | EmptyStmt
+
+and annotation_type =
+  | Normal of identifier option
+  | Precondition
+  | Postcondition
+      
+and annotation = {
+  ann : expr;
+  ann_type : annotation_type
+}
 
 and rankingAnnotation = {
   tuple : expr list;
   location_ra : location;
 }
-	
+    
+val create_annotation : expr -> identifier option -> annotation ;;
+val create_anon_annotation : expr -> annotation ;;
+val create_precondition : expr -> annotation ;;
+val create_postcondition : expr -> annotation ;;
+
 type fnDecl = {
   fnName       : identifier;
   formals    : varDecl list;
   returnType   : varType;
   stmtBlock : stmt;
-  preCondition : expr;
-  postCondition : expr;
+  preCondition : annotation;
+  postCondition : annotation;
   fnRankingAnnotation : rankingAnnotation option;
   location_fd : location;
 }
-val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> expr -> expr -> rankingAnnotation option -> location -> fnDecl
+val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> annotation -> annotation -> rankingAnnotation option -> location -> fnDecl
 
 
 type predicate = {

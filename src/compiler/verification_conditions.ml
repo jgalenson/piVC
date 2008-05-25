@@ -66,7 +66,7 @@ let convert_basic_path_to_acceptable_form path =
     match step with
         Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_with_var e)
       | Assume(e) -> Assume(replace_length_with_var e)
-      | Annotation(e,s) -> Annotation(replace_length_with_var e, s)
+      | Annotation(e,s) -> Annotation(Ast.create_anon_annotation (replace_length_with_var e.ann), s)
       | RankingAnnotation (ra) -> RankingAnnotation({ tuple = List.map (function e -> replace_length_with_var e) ra.tuple; location_ra = ra.location_ra })
   in
   let add_extra_node_for_length_if_necessary node =
@@ -205,7 +205,7 @@ let get_vc bp =
       let rev_list = List.rev (List.tl path) in
       let rev_instrs = List.tl rev_list in
       let end_ann = get_expr_from_path_node (List.hd rev_list) in
-      Ast.Implies (dummy_loc, start_ann, wp end_ann rev_instrs)
+      Ast.Implies (dummy_loc, start_ann.ann, wp end_ann.ann rev_instrs)
     else
       (* Handle termination basic paths. *)
       begin
@@ -263,7 +263,7 @@ let get_vc bp =
 	  in
 	    Expr_utils.sub_idents weakest_precon rename_var
 	in
-	Ast.Implies (dummy_loc, start_ann, replaced_wp)
+	Ast.Implies (dummy_loc, start_ann.ann, replaced_wp)
       end
   in
   vc_to_return ;;

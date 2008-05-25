@@ -408,7 +408,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
       check_stmt scope_stack returnType errors (is_in_loop) else_block;
 
   | WhileStmt (loc, test, block, annotation, ra) -> 
-      ignore (check_and_get_return_type scope_stack annotation errors (true, false, true));
+      ignore (check_and_get_return_type scope_stack annotation.ann errors (true, false, true));
       check_ranking_annotation ra scope_stack errors;
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
@@ -419,7 +419,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
       check_stmt scope_stack returnType errors (true) block;
       
   | ForStmt (loc, init, test, incr, block, annotation, ra) ->
-      ignore (check_and_get_return_type scope_stack annotation errors (true, false, true));
+      ignore (check_and_get_return_type scope_stack annotation.ann errors (true, false, true));
       check_ranking_annotation ra scope_stack errors;      
       ignore (check_and_get_return_type scope_stack init errors (false, false, true));
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
@@ -443,7 +443,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
                             add_error SemanticError error_msg  loc errors
 
-  | AssertStmt (loc, e) -> check_annotation e scope_stack errors
+  | AssertStmt (loc, e) -> check_annotation e.ann scope_stack errors
 
   | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
                       List.iter (check_stmt scope_stack returnType errors (is_in_loop)) st;
@@ -481,7 +481,7 @@ let ensure_function_returns f =
 let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
-  check_annotation func.preCondition s errors;
+  check_annotation func.preCondition.ann s errors;
   check_ranking_annotation func.fnRankingAnnotation s errors;
   Scope_stack.enter_scope s;
   (*add rv to scope*)
@@ -490,7 +490,7 @@ let check_function func s errors =
       vd.var_id := Some("rv");
       Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
   end;
-  check_annotation func.postCondition s errors;  
+  check_annotation func.postCondition.ann s errors;  
   Scope_stack.exit_scope s;
 
 

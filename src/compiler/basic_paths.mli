@@ -3,7 +3,7 @@ open Ast ;;
 type path_step = 
   | Expr of Ast.expr
   | Assume of Ast.expr
-  | Annotation of Ast.expr * string
+  | Annotation of Ast.annotation * string
   | RankingAnnotation of Ast.rankingAnnotation ;;
 
 type basic_path =
@@ -26,3 +26,4 @@ val print_basic_path : basic_path -> unit ;;
 val generate_paths_for_func : fnDecl -> program -> bool -> (basic_path list * basic_path list) ;;
 val print_all_basic_paths : basic_path list -> unit ;;
 val is_termination_path : basic_path -> bool ;;
+val name_of_basic_path : basic_path -> string ;;

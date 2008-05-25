@@ -120,7 +120,7 @@ let create_identifier name location =
 
 let create_length_identifier name location =
   {name = name; location_id = location; decl = ref None; is_length = true}
-     
+    
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
@@ -164,27 +164,41 @@ and stmt =
   | Expr of location * expr
   | VarDeclStmt of location * varDecl
   | IfStmt of location * expr * stmt * stmt
-  | WhileStmt of location * expr * stmt * expr * rankingAnnotation option
-  | ForStmt of location * expr * expr * expr * stmt * expr * rankingAnnotation option
+  | WhileStmt of location * expr * stmt * annotation * rankingAnnotation option
+  | ForStmt of location * expr * expr * expr * stmt * annotation * rankingAnnotation option
   | BreakStmt of location
   | ReturnStmt of location * expr
-  | AssertStmt of location * expr
+  | AssertStmt of location * annotation
   | StmtBlock of location * stmt list
   | EmptyStmt
 
+and annotation_type =
+  | Normal of identifier option
+  | Precondition
+  | Postcondition
+      
+and annotation = {
+  ann : expr;
+  ann_type : annotation_type
+}
+    
 and rankingAnnotation = {
   tuple : expr list;
   location_ra : location;
 }
 
-	
+let create_annotation a t = { ann = a ; ann_type = Normal t }
+let create_anon_annotation a = { ann = a ; ann_type = Normal None }
+let create_precondition a = { ann = a; ann_type = Precondition }
+let create_postcondition a = { ann = a; ann_type = Postcondition }
+
 type fnDecl = {
   fnName        : identifier;
   formals       : varDecl list;
   returnType    : varType;
   stmtBlock     : stmt;
-  preCondition  : expr;
-  postCondition : expr;
+  preCondition  : annotation;
+  postCondition : annotation;
   fnRankingAnnotation : rankingAnnotation option;
   location_fd   : location;
 }
@@ -434,7 +448,19 @@ let string_of_ranking_annotation_with_tabs ra_opt num_tabs =
   match ra_opt with
     | Some (a) -> (insert_tabs num_tabs) ^ "#" ^ (string_of_ranking_annotation a) ^ "\n"
     | None -> "" ;;
-      
+
+let string_of_annotation a =
+  let prefix_str = match a.ann_type with
+    | Normal (loc) ->
+	if Utils.is_some loc then
+	  (string_of_identifier (Utils.elem_from_opt loc)) ^ ":"
+	else
+	  ""
+    | Precondition -> "pre"
+    | Postcondition -> "post"
+  in
+  "@" ^ prefix_str ^ " " ^ (string_of_expr a.ann) ;;
+
 let rec string_of_stmt s num_tabs =
   let soe = string_of_expr in
   let ins_tabs n = insert_tabs (num_tabs + n) in
@@ -450,11 +476,11 @@ let rec string_of_stmt s num_tabs =
 	^ (sos then_block) ^ (else_part else_block)
     | WhileStmt (loc, test, block, annotation, ra) ->
 	"while\n"
-	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (string_of_ranking_annotation_with_tabs ra (num_tabs+1))
+	^ (ins_tabs 1) ^ (string_of_annotation annotation) ^ "\n" ^ (string_of_ranking_annotation_with_tabs ra (num_tabs+1))
 	 ^ (ins_tabs 1) ^ "(" ^ (soe test) ^ ") " ^ (sos block)
     | ForStmt (loc, init, test, incr, block, annotation, ra) ->
 	"for\n"
-	^ (ins_tabs 1) ^ "@ " ^ (soe annotation) ^ "\n" ^ (string_of_ranking_annotation_with_tabs ra (num_tabs+1))
+	^ (ins_tabs 1) ^ (string_of_annotation annotation) ^ "\n" ^ (string_of_ranking_annotation_with_tabs ra (num_tabs+1))
 	^ (ins_tabs 1) ^ "(" ^ (soe init) ^ "; " ^ (soe test) ^ "; "
 	^ (soe incr) ^ ") " ^ (sos block)
     | BreakStmt loc -> "break;"
@@ -464,7 +490,7 @@ let rec string_of_stmt s num_tabs =
 	| _ -> " "
 	in
 	"return" ^ (space t) ^ (soe t) ^ ";"
-    | AssertStmt (loc, e) -> "@ " ^ (soe e) ^ ";"
+    | AssertStmt (loc, e) -> (string_of_annotation e) ^ ";"
     | StmtBlock (loc, tl) ->
       let map_fn s =
 	(string_of_stmt s (num_tabs + 1))
@@ -481,7 +507,7 @@ let tabbed_string_of_decl d num_tabs = match d with
   | VarDecl (loc, d) ->
       (string_of_var_decl d) ^ ";"
   | FnDecl  (loc, d) ->
-      "@pre " ^ (string_of_expr d.preCondition) ^ "\n@post " ^ (string_of_expr d.postCondition) ^ "\n"
+      (string_of_annotation d.preCondition) ^ "\n" ^ (string_of_annotation d.postCondition) ^ "\n"
       ^ (string_of_ranking_annotation_with_tabs d.fnRankingAnnotation 0)
       ^ (string_of_type d.returnType) ^ " " ^ string_of_identifier d.fnName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals)) ^ ") "

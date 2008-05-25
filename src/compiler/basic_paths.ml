@@ -8,7 +8,7 @@ exception BadDeclException
 type path_step = 
   | Expr of Ast.expr
   | Assume of Ast.expr
-  | Annotation of Ast.expr * string
+  | Annotation of Ast.annotation * string
   | RankingAnnotation of Ast.rankingAnnotation ;;
 
 type basic_path =
@@ -44,13 +44,13 @@ let type_of_step step = match step with
 let location_of_path_step step = match step with
     Expr(e) -> Ast.location_of_expr e
   | Assume(e) -> Ast.location_of_expr e
-  | Annotation(e,s) -> Ast.location_of_expr e
+  | Annotation(e,s) -> Ast.location_of_expr e.ann
   | RankingAnnotation(ra) -> Ast.location_of_ranking_annotation ra
 
 let string_of_path_step step = match step with
     Expr(exp) -> (Ast.string_of_expr exp)
   | Assume(exp) -> "Assume " ^ (Ast.string_of_expr exp)
-  | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp)
+  | Annotation(exp, str) -> "@" ^ str ^ ": " ^ (Ast.string_of_expr exp.ann)
   | RankingAnnotation(ra) -> "#: " ^ Ast.string_of_ranking_annotation ra
 
 let get_steps_from_path path = match path with
@@ -89,14 +89,14 @@ let gen_func_precondition_with_args_substitution func args =
     | e :: l -> (List.hd remaining_formals, List.hd remaining_actuals) :: (get_replacement_list (List.tl remaining_formals) (List.tl remaining_actuals))
   in 
   let ident_subs = get_replacement_list (get_idents_of_formals func) args in
-    sub_idents_in_expr_while_preserving_original_location func.preCondition ident_subs
+    sub_idents_in_expr_while_preserving_original_location func.preCondition.ann ident_subs
 
 let gen_func_postcondition_with_rv_substitution func rv_sub =
   let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
     rv_ident.decl := Some(create_rv_decl func.returnType rv_ident)
   ;
   let ident_subs = [(rv_ident, rv_sub)] in
-    sub_idents_in_expr_while_preserving_original_location func.postCondition ident_subs
+    sub_idents_in_expr_while_preserving_original_location func.postCondition.ann ident_subs
 
 
 (* CODE SECTION: GENERATING PATHS *)
@@ -162,7 +162,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
 		let low_node = Ast.GE(Ast.get_dummy_location (), index, constant_node) in
 		let length_node = Ast.Length(Ast.get_dummy_location (), arr) in
 		let up_node = Ast.LT(Ast.get_dummy_location (), index, length_node) in
-		add_path (List.append curr_path [Annotation(Ast.And(loc2, low_node, up_node), "runtime assert")]) true None;
+		add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.And(loc2, low_node, up_node)), "runtime assert")]) true None;
 	      end;
 	    ArrayLval(loc2, gnfe arr, gnfe index)
     and gnfe expr =
@@ -186,7 +186,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
                         decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
-                        add_path (List.append curr_path ([Annotation(gen_func_precondition_with_args_substitution callee el,"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false (Some(CallEnding));
+                        add_path (List.append curr_path ([Annotation(Ast.create_anon_annotation (gen_func_precondition_with_args_substitution callee el),"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false (Some(CallEnding));
                         new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )
@@ -199,14 +199,14 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true None;
+	    add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.NE(loc, t2, constant_node)), "runtime assert")]) true None;
 	  end;
 	Div(loc, gnfe t1, gnfe t2)
     | IDiv (loc,t1, t2) ->
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.NE(loc, t2, constant_node), "runtime assert")]) true None;
+	    add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.NE(loc, t2, constant_node)), "runtime assert")]) true None;
 	  end;
 	IDiv(loc, gnfe t1, gnfe t2)
     | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
@@ -298,6 +298,32 @@ let generate_paths_for_func func program gen_runtime_asserts =
         | Ast.StmtBlock(loc, stmts) -> generate_path curr_path (stmts @ remaining_stmts) closing_scope_actions
         | Ast.EmptyStmt -> generate_path curr_path remaining_stmts closing_scope_actions
 	)
-  in generate_path ([func_pre_condition] @ (get_ranking_annotation func.fnRankingAnnotation)) (get_statement_list func.stmtBlock) [];
-    (Utils.queue_to_list normal_paths, Utils.queue_to_list termination_paths)
+  in
+  generate_path ([func_pre_condition] @ (get_ranking_annotation func.fnRankingAnnotation)) (get_statement_list func.stmtBlock) [];
+  (Utils.queue_to_list normal_paths, Utils.queue_to_list termination_paths) ;;
 
+let name_of_basic_path path =
+  let (steps, type_of_path) = match path with
+    | NormalPath (s, _) -> (s, "")
+    | RuntimeAssertPath (s) -> (s, "Runtime assertion")
+    | TerminationPath (s) -> (s, "Termination")
+  in
+  let generate_string prev cur = match cur with
+    | Annotation (e, s) -> 
+	let separate_if_necessary a b =
+	  if a = "" then b else (a ^ " -> " ^ b)
+	in
+	let string_of_ann_type l = match e.ann_type with
+	  | Normal (l) ->
+	      if Utils.is_some l then
+		Ast.string_of_identifier (Utils.elem_from_opt l)
+	      else
+		"TODO: Generate temp name"
+	  | Precondition -> "pre"
+	  | Postcondition -> "post"
+	in
+	separate_if_necessary prev (string_of_ann_type e.ann_type)
+    | Assume (e) -> prev ^ " -> assume " ^ (Ast.string_of_expr e)
+    | _ -> prev
+  in
+  List.fold_left generate_string "" steps
