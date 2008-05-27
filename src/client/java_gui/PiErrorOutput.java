@@ -5,13 +5,10 @@ import java.util.ArrayList;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
-import javax.swing.DefaultListSelectionModel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 
 import data_structures.Location;
 import data_structures.PiError;
@@ -63,21 +60,6 @@ public class PiErrorOutput extends JPanel {
 			}
 		});*/
 		list.setSelectionModel(selectionModel);
-	}
-	
-	class ListSelector extends DefaultListSelectionModel {
-	    
-		/* Ignore default selection events because they
-		 * get triggered when you click below the last element.
-		 */
-	    @Override
-		public void setSelectionInterval(int index0, int index1) {
-	    }
-	    
-	    public void select(int index) {
-	    	super.setSelectionInterval(index, index);
-	    }
-	    
 	}
 	
 	/**

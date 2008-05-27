@@ -1,7 +1,8 @@
 import java.awt.Component;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.*;
-import javax.swing.event.*;
 
 import data_structures.Conjunct;
 import data_structures.Location;
@@ -13,12 +14,14 @@ public class PiVCPane extends JPanel {
 	private JList list;
 	private DefaultListModel model;
 	private PiCode piCode;
+	private ListSelector selectionModel;
 	
 	public PiVCPane(PiCode piCode) {
 		super();
 		this.piCode = piCode;
 		model = new DefaultListModel();
 		list = new JList(model);
+		selectionModel = new ListSelector();
 		initList();
 	}
 	
@@ -30,7 +33,24 @@ public class PiVCPane extends JPanel {
 	private void initList() {
 		list.setCellRenderer(new MyListCellRenderer());
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-		list.addListSelectionListener(new ListSelectionListener() {
+		list.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				if (e.getButton() != MouseEvent.BUTTON1)
+					return;
+				int index = list.locationToIndex(e.getPoint());
+				if (index != -1 && list.getCellBounds(index, index).contains(e.getPoint())) {
+					selectionModel.select(index);
+					Object obj = list.getSelectedValue();
+					if (obj != null)
+						conjunctClicked(obj);
+				} else {
+					selectionModel.clearSelection();
+					conjunctClicked(null);
+				}
+			}
+		});		
+		/*list.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {  // multiple events get thrown: we only care about one of them.
 					Object obj = list.getSelectedValue();
@@ -38,7 +58,8 @@ public class PiVCPane extends JPanel {
 						conjunctClicked(obj);
 				}
 			}
-		});
+		});*/
+		list.setSelectionModel(selectionModel);
 	}
 	
 
