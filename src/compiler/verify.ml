@@ -790,17 +790,21 @@ let inductive_core_good_enough function_validity_information_list =
       in
         List.for_all elem_is_in_core rhs
     in
-      match elem_from_opt vc.bp with
-          Basic_paths.NormalPath(p,e) ->
-            begin
-              match e with
-                  Basic_paths.PostConditionEnding -> rhs_all_in_core vc.vc
-                | Basic_paths.AssertEnding -> rhs_all_in_core vc.vc
-                | Basic_paths.AnnotationEnding -> true
-                | Basic_paths.CallEnding -> true
-            end
-        | Basic_paths.RuntimeAssertPath(p) -> rhs_all_in_core vc.vc
-        | Basic_paths.TerminationPath(p) -> rhs_all_in_core vc.vc
+      if (Utils.is_some vc.bp) then
+	match elem_from_opt vc.bp with
+            Basic_paths.NormalPath(p,e) ->
+              begin
+		match e with
+                    Basic_paths.PostConditionEnding -> rhs_all_in_core vc.vc
+                  | Basic_paths.AssertEnding -> rhs_all_in_core vc.vc
+                  | Basic_paths.AnnotationEnding -> true
+                  | Basic_paths.CallEnding -> true
+              end
+          | Basic_paths.RuntimeAssertPath(p) -> rhs_all_in_core vc.vc
+          | Basic_paths.TerminationPath(p) -> rhs_all_in_core vc.vc
+      else
+	rhs_all_in_core vc.vc
+	
   in
   let inductive_core_good_enough_for_function function_validity_information = 
     List.for_all important_vc_implies_all_rhs_conjuncts_in_inductive_core function_validity_information.correctness_result.vcs &&

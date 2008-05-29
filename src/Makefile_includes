@@ -3,5 +3,5 @@ LANGUAGE_COMPILE_OBJS = ast.cmo parser.ml lexer.ml scope_stack.cmo parser.cmi pa
 LANGUAGE_OBJS = ast.cmo parser.cmo lexer.cmo scope_stack.cmo
 SERVER_OBJS = xml_generator.cmo server_framework.cmo ci_yices.cmo main_server.cmo dp_server.cmo
 SERVER_INCLUDES = str.cma unix.cma xml-light.cma threads.cma
-COMPILER_OBJS = semantic_checking.cmo expr_utils.cmo basic_paths.cmo verification_conditions.cmo compile.cmo transform_yices.cmo counterexamples.cmo termination.cmo verify.cmo
+COMPILER_OBJS = expr_utils.cmo semantic_checking.cmo basic_paths.cmo verification_conditions.cmo compile.cmo transform_yices.cmo counterexamples.cmo termination.cmo verify.cmo
 COMPILER_INCLUDES = str.cma unix.cma threads.cma

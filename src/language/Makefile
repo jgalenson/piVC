@@ -1,6 +1,6 @@
 PROJ_DIR = . 
 
-OCFLAGS = -dtypes
+OCFLAGS = -dtypes -g
 
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils
 

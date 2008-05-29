@@ -103,6 +103,8 @@ let both_servers_args = [
   "--no-print-main-server-info", Arg.Unit (add_to_map "print_main_server_info" "false"), "Do not print debug info in main server.";
   "--print-dp-server-info", Arg.Unit (add_to_map "print_dp_server_info" "true"), "Print debug info in dp server.";
   "--no-print-dp-server-info", Arg.Unit (add_to_map "print_dp_server_info" "false"), "Do not print debug info in dp server.";
+  "--print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "true"), "Print messages for network events.";
+  "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
 ] ;;
@@ -110,6 +112,8 @@ let both_servers_args = [
 let main_server_args = [
   "--print-info",Arg.Unit (add_to_map "print_main_server_info" "true"),"Print debug info.";
   "--no-print-info", Arg.Unit (add_to_map "print_main_server_info" "false"), "Do not print debug info.";
+  "--print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "true"), "Print messages for network events.";
+  "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
 ] ;;
@@ -117,6 +121,8 @@ let main_server_args = [
 let dp_server_args = [
   "--print-info", Arg.Unit (add_to_map "print_dp_server_info" "true"), "Print debug info.";
   "--no-print-info", Arg.Unit (add_to_map "print_dp_server_info" "false"), "Do not print debug info.";
+  "--print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "true"), "Print messages for network events.";
+  "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
 ] ;;
@@ -155,21 +161,23 @@ let load file_path =
   in
   String_map.iter add_cmd_line_vals !cmd_line_arg_map ;;
 
+(* Truncates the message if necessary. *)
+let truncated_msg msg =
+  let should_truncate = get_value_bool "truncate_output" in
+  let truncate_finish = " [...]" in
+  let truncate_len = (get_value_int "truncate_output_length") - (String.length truncate_finish) in
+  if (should_truncate && (String.length msg) > truncate_len) then
+    (Str.string_before (msg) truncate_len) ^ truncate_finish
+  else
+    msg ;;
+
 let print msg =
   assert (Utils.is_some !server_type);
   (* Gets the string that we will print on the screen.
      Truncates it if necessary. *)
-  let final_msg =
-    let should_truncate = get_value_bool "truncate_output" in
-    let truncate_finish = " [...]" in
-    let truncate_len = (get_value_int "truncate_output_length") - (String.length truncate_finish) in
-      if (should_truncate && (String.length msg) > truncate_len) then
-        (Str.string_before (msg) truncate_len) ^ truncate_finish
-      else
-        msg
-  in
     (* Prints the final msg created above if the config map
        for key has value "true". *)
+  let final_msg = truncated_msg msg in
   let print_if_true key =
     let print_fn = 
       if (String.length final_msg > 0 && final_msg.[String.length final_msg - 1] = '\n') then
@@ -188,3 +196,6 @@ let print msg =
     | BothServers -> print_endline msg
     | Parser -> print_endline msg ;;
 
+let always_print msg =
+  print_endline (truncated_msg msg) ;;
+  

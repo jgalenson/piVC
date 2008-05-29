@@ -66,7 +66,7 @@ let convert_basic_path_to_acceptable_form path =
     match step with
         Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_with_var e)
       | Assume(e) -> Assume(replace_length_with_var e)
-      | Annotation(e,s) -> Annotation(Ast.create_anon_annotation (replace_length_with_var e.ann), s)
+      | Annotation(e,s) -> Annotation(Ast.create_annotation_copy (replace_length_with_var e.ann) e, s)
       | RankingAnnotation (ra) -> RankingAnnotation({ tuple = List.map (function e -> replace_length_with_var e) ra.tuple; location_ra = ra.location_ra })
   in
   let add_extra_node_for_length_if_necessary node =

@@ -22,10 +22,10 @@ counterexamples.cmx: ../utils/utils.cmx ../utils/scanner.cmx \
     ../language/ast.cmx counterexamples.cmi 
 expr_utils.cmo: ../language/ast.cmi expr_utils.cmi 
 expr_utils.cmx: ../language/ast.cmx expr_utils.cmi 
-semantic_checking.cmo: ../language/scope_stack.cmi ../language/ast.cmi \
-    semantic_checking.cmi 
-semantic_checking.cmx: ../language/scope_stack.cmx ../language/ast.cmx \
-    semantic_checking.cmi 
+semantic_checking.cmo: ../utils/utils.cmi ../language/scope_stack.cmi \
+    expr_utils.cmi ../language/ast.cmi semantic_checking.cmi 
+semantic_checking.cmx: ../utils/utils.cmx ../language/scope_stack.cmx \
+    expr_utils.cmx ../language/ast.cmx semantic_checking.cmi 
 termination.cmo: ../utils/utils.cmi ../language/ast.cmi termination.cmi 
 termination.cmx: ../utils/utils.cmx ../language/ast.cmx termination.cmi 
 test_parser.cmo: verify.cmi verification_conditions.cmi ../utils/utils.cmi \

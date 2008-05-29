@@ -22,8 +22,15 @@ val get_value : string -> string
 
 (* Takes a config key, returns the corresponding value parsed to an integer.
    Raises Config_Key_Not_Found or Config_Key_Could_Not_Be_Parsed_To_Int if necessary. *)
-val get_value_int : string -> int
+val get_value_int : string -> int ;;
+
+(* Takes a config key, returns the corresponding value parsed to a bool.
+   Raises Config_Key_Not_Found or Config_Key_Could_Not_Be_Parsed_To_Bool if necessary. *)
+val get_value_bool : string -> bool ;;
 
 (* Prints the specified message if the config options to print are set.
    There are different options for the main and the dp server. *)
 val print : string -> unit ;;
+
+(* Always prints the specified message.  Truncates if necessary. *)
+val always_print : string -> unit ;;

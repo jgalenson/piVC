@@ -96,8 +96,22 @@ let gen_func_postcondition_with_rv_substitution func rv_sub =
     rv_ident.decl := Some(create_rv_decl func.returnType rv_ident)
   ;
   let ident_subs = [(rv_ident, rv_sub)] in
-    sub_idents_in_expr_while_preserving_original_location func.postCondition.ann ident_subs
+    sub_idents_in_expr_while_preserving_original_location func.postCondition.ann ident_subs ;;
 
+let gen_func_ranking_annotation_with_args_substitution func args =
+  if (Utils.is_none func.fnRankingAnnotation) then
+    None
+  else begin
+    let rec get_replacement_list remaining_formals remaining_actuals = match remaining_formals with
+	[] -> [] 
+      | e :: l -> (List.hd remaining_formals, List.hd remaining_actuals) :: (get_replacement_list (List.tl remaining_formals) (List.tl remaining_actuals))
+    in
+    let ra = Utils.elem_from_opt func.fnRankingAnnotation in
+    let ident_subs = get_replacement_list (get_idents_of_formals func) args in
+    let map_fn e =  sub_idents_in_expr_while_preserving_original_location e ident_subs in
+    let new_tuple = List.map map_fn ra.tuple in
+    Some (Ast.create_ranking_annotation new_tuple ra.location_ra)
+  end ;;
 
 (* CODE SECTION: GENERATING PATHS *)
 
@@ -107,6 +121,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
   let func_pre_condition = Annotation(func.preCondition, "pre") in
   let func_post_condition = Annotation(func.postCondition, "post") in
   let temp_var_number = (ref 0) in
+  let runtime_assertion_id = ref 0 in
   let get_ranking_annotation ra_opt = match ra_opt with
     | Some (ra) -> [RankingAnnotation (ra)]
     | None -> []
@@ -162,7 +177,8 @@ let generate_paths_for_func func program gen_runtime_asserts =
 		let low_node = Ast.GE(Ast.get_dummy_location (), index, constant_node) in
 		let length_node = Ast.Length(Ast.get_dummy_location (), arr) in
 		let up_node = Ast.LT(Ast.get_dummy_location (), index, length_node) in
-		add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.And(loc2, low_node, up_node)), "runtime assert")]) true None;
+		add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.And(loc2, low_node, up_node)) func runtime_assertion_id, "runtime assert")]) true None;
+		incr runtime_assertion_id
 	      end;
 	    ArrayLval(loc2, gnfe arr, gnfe index)
     and gnfe expr =
@@ -186,7 +202,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
                         decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
-                        add_path (List.append curr_path ([Annotation(Ast.create_anon_annotation (gen_func_precondition_with_args_substitution callee el),"call-pre")]  @ (get_ranking_annotation func.fnRankingAnnotation))) false (Some(CallEnding));
+                        add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ (get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)))) false (Some(CallEnding));
                         new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )
@@ -199,14 +215,16 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.NE(loc, t2, constant_node)), "runtime assert")]) true None;
+	    add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
+	    incr runtime_assertion_id
 	  end;
 	Div(loc, gnfe t1, gnfe t2)
     | IDiv (loc,t1, t2) ->
 	if (gen_runtime_asserts) then
 	  begin
 	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.create_anon_annotation (Ast.NE(loc, t2, constant_node)), "runtime assert")]) true None;
+	    add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
+	    incr runtime_assertion_id
 	  end;
 	IDiv(loc, gnfe t1, gnfe t2)
     | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)

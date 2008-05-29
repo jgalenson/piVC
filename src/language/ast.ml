@@ -174,6 +174,7 @@ and stmt =
 
 and annotation_type =
   | Normal of identifier option
+  | Runtime
   | Precondition
   | Postcondition
       
@@ -189,9 +190,10 @@ and rankingAnnotation = {
 }
 
 let create_annotation a t = { ann = a ; ann_type = Normal t ; ann_name = None }
-let create_anon_annotation a = { ann = a ; ann_type = Normal None ; ann_name = None }
 let create_precondition a = { ann = a; ann_type = Precondition ; ann_name = None }
 let create_postcondition a = { ann = a; ann_type = Postcondition ; ann_name = None }
+let create_annotation_copy a c = { ann = a; ann_type = c.ann_type ; ann_name = c.ann_name }
+let create_ranking_annotation t l = { tuple = t ; location_ra = l }
 
 type fnDecl = {
   fnName        : identifier;
@@ -457,6 +459,7 @@ let string_of_annotation a =
 	  (string_of_identifier (Utils.elem_from_opt loc)) ^ ":"
 	else
 	  ""
+    | Runtime -> "runtime_assert"
     | Precondition -> "pre"
     | Postcondition -> "post"
   in
@@ -538,3 +541,13 @@ let rec identifier_of_array_expr exp =
     | ArrayUpdate(loc,expr,assign_to,assign_val) -> identifier_of_array_expr expr
     | _ -> raise (Error ("expr more than just an array ident: " ^ string_of_expr exp))
    
+let unique_fn_name fn =
+  string_of_identifier fn.fnName ;;
+
+let name_annotation func annotation_id ann_type = match ann_type with
+  | Normal (_) -> (string_of_identifier func.fnName) ^ "." ^ (string_of_int !annotation_id)
+  | Runtime -> (string_of_identifier func.fnName) ^ ".runtime_assertion." ^ (string_of_int !annotation_id)
+  | Precondition -> (string_of_identifier func.fnName) ^ ".pre"
+  | Postcondition -> (string_of_identifier func.fnName) ^ ".post" ;;
+
+let create_runtime_assertion a func annotation_id = { ann = a ; ann_type = Runtime; ann_name = Some (name_annotation func annotation_id Runtime) }

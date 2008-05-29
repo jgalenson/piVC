@@ -1,6 +1,6 @@
 PROJ_DIR = .
 
-OCFLAGS = -dtypes -thread
+OCFLAGS = -dtypes -thread -g
 
 INCLUDES = $(PROJ_DIR:%=-I %)
 

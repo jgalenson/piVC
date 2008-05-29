@@ -107,6 +107,7 @@ and stmt =
 
 and annotation_type =
   | Normal of identifier option
+  | Runtime
   | Precondition
   | Postcondition
       
@@ -122,9 +123,10 @@ and rankingAnnotation = {
 }
     
 val create_annotation : expr -> identifier option -> annotation ;;
-val create_anon_annotation : expr -> annotation ;;
 val create_precondition : expr -> annotation ;;
 val create_postcondition : expr -> annotation ;;
+val create_annotation_copy : expr -> annotation -> annotation ;;
+val create_ranking_annotation : expr list -> location -> rankingAnnotation ;;
 
 type fnDecl = {
   fnName       : identifier;
@@ -137,7 +139,11 @@ type fnDecl = {
   location_fd : location;
 }
 val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> annotation -> annotation -> rankingAnnotation option -> location -> fnDecl
+(* TODO: Change this when we add classes to use the fn's class if any. *)
+val unique_fn_name : fnDecl -> string ;;
 
+val name_annotation : fnDecl -> int ref -> annotation_type -> string ;;
+val create_runtime_assertion : expr -> fnDecl -> int ref -> annotation ;;
 
 type predicate = {
   predName   : identifier;

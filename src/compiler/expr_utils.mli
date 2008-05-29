@@ -11,4 +11,4 @@ val get_index_set : expr -> expr list
 val guaranteed_unique_string_of_expr : expr -> string ;;
 val conjuncts_of_exprs : expr list -> expr;;
 val remove_duplicates_from_list : expr list -> expr list;;
-
+val get_calls : expr -> expr list ;;

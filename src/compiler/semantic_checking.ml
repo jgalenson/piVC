@@ -154,13 +154,14 @@ and check_annotation annotation scope_stack errors annotation_id func =
 	      | Some (x) -> string_of_identifier x
 	      | None ->
 		  begin
-		    let my_name = (string_of_identifier func.fnName) ^ "." ^ (string_of_int !annotation_id) in
+		    let my_name = name_annotation func annotation_id annotation.ann_type in
 		    incr annotation_id;
 		    my_name
 		  end
 	  end
-      | Precondition -> (string_of_identifier func.fnName) ^ ".pre"
-      | Postcondition -> (string_of_identifier func.fnName) ^ ".post"
+      | Precondition -> name_annotation func annotation_id Precondition
+      | Postcondition -> name_annotation func annotation_id Postcondition
+      | Runtime -> assert false (* We don't generate these until basic path generation. *)
   in
   annotation.ann_name <- Some (name)
 
@@ -395,6 +396,8 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
   in
   cagrt_full e (is_top_level) ;;
 
+(* Check a ranking annotation.  We ensure that all the things
+   in the tuples are integers. *)
 let check_ranking_annotation ra_opt scope_stack errors = match ra_opt with
     Some (ra) ->
       let check_ranking_expr e =
@@ -402,7 +405,7 @@ let check_ranking_annotation ra_opt scope_stack errors = match ra_opt with
 	if not (Ast.is_integral_type my_type) then
 	  begin
 	    let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
-            add_error SemanticError error_msg (location_of_expr e) errors;
+	    add_error SemanticError error_msg (location_of_expr e) errors;
 	  end;
       in
       List.iter check_ranking_expr ra.tuple
@@ -466,7 +469,161 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
                       List.iter (check_stmt scope_stack returnType errors (is_in_loop) annotation_id func) st;
                       Scope_stack.exit_scope scope_stack
 
-  | EmptyStmt -> ignore ()
+  | EmptyStmt -> ignore () ;;
+
+module Fndecl_set = Set.Make (struct
+				type t = fnDecl
+				let compare a b =
+				  let a_name = Ast.unique_fn_name a in
+				  let b_name = Ast.unique_fn_name b in
+				  String.compare a_name b_name
+                              end)
+let check_termination func scope_stack errors =
+  (* Gets the fnDecl from a call.
+     We return it as an option since there could be an error. *)
+  let get_fndecl_from_call c =
+    let ident = match c with
+      | Call (_, i, _) -> i
+      | _ -> assert false (* We should only ever call this on a Call expr. *)
+    in
+    let lookup_result = Scope_stack.lookup_decl ident.name scope_stack in
+    match lookup_result with
+      | None -> None
+      | Some (d) -> begin
+	  match d with
+	    | FnDecl (_, fd) -> Some (fd)
+	    | _ -> None
+	end
+  in
+  (* Gets all the functions func calls.
+     We return one Call expr for each function we call. *)
+  let get_fn_calls func =
+    let rec get_calls_from_stmt s = match s with
+      | Expr (_, e) -> [Expr_utils.get_calls e]
+      | StmtBlock (_, st) -> List.concat (List.map get_calls_from_stmt st)
+      | IfStmt (_, _, s1, s2) -> (get_calls_from_stmt s1) @ (get_calls_from_stmt s2)
+      | WhileStmt (_, _, block, _, _) -> get_calls_from_stmt block
+      | ForStmt (_, _, _, _, block, _, _) -> get_calls_from_stmt block
+      | _ -> []
+    in
+    let calls_per_line = get_calls_from_stmt func.stmtBlock in
+    let all_calls = List.concat calls_per_line in
+    let num_occurrences elem list =
+      let elem_decl = get_fndecl_from_call elem in
+      if (Utils.is_none elem_decl) then
+	0
+      else begin
+	let calls_this_fn e =
+	  let this_decl = get_fndecl_from_call e in
+	  if (Utils.is_none this_decl) then
+	    false
+	  else
+	    (Utils.elem_from_opt this_decl) == (Utils.elem_from_opt elem_decl)
+	in
+	let occurrences = List.filter calls_this_fn list in
+	List.length occurrences
+      end
+    in
+    List.filter (fun e -> (num_occurrences e all_calls) == 1) all_calls
+  in
+  (* Checks whether a functions i recursive (directly or indirectly). *)
+  let is_recursive func =
+    let visited = ref Fndecl_set.empty in
+    (* Checks whether caller calls callee. *)
+    let rec does_call caller callee depth =
+      let are_same_fn f1 f2 =
+	(Ast.unique_fn_name f1) == (Ast.unique_fn_name f2)
+      in
+      if (are_same_fn callee caller && depth > 0) then
+	true
+      else if (Fndecl_set.mem caller !visited) then
+	false
+      else begin
+	visited := Fndecl_set.add caller !visited;
+	let all_calls = get_fn_calls caller in
+	let all_calls_decls =
+	  let decl_opt_list = List.map get_fndecl_from_call all_calls in
+	  let some_decl_list = List.filter Utils.is_some decl_opt_list in
+	  List.map Utils.elem_from_opt some_decl_list
+	in
+	let map_fn x = does_call x callee (depth + 1) in
+	List.exists map_fn all_calls_decls
+      end
+    in
+    does_call func func 0
+  in
+  (* Gets a list of all the loops in a function. *)
+  let get_loops func =
+    let rec get_a_loop s = match s with
+      | StmtBlock (_, sl) -> List.concat (List.map get_a_loop sl)
+      | IfStmt (_, _, s1, s2) -> (get_a_loop s1) @ (get_a_loop s2)
+      | WhileStmt (_, _, block, _, _) -> [s] @ (get_a_loop block)
+      | ForStmt (_, _, _, _, block, _, _) -> [s] @ (get_a_loop block)
+      | _ -> []
+    in
+    let list_of_loops = get_a_loop func.stmtBlock in
+    list_of_loops
+  in
+  (* Gets the ranking annotation out of a loop. *)
+  let rec get_ranking_annotation s = match s with
+    | WhileStmt (_, _, _, _, ra) -> ra
+    | ForStmt (_, _, _, _, _, _, ra) -> ra
+    | _ -> assert false (* We should only call this on loops. *)
+  in
+  (* Gets whether or not the user is trying to prove that a function terminates.
+     They are trying to prove a function terminates if they annotation
+     the function itself or any of its loop.  Or if the function is not recursive
+     and has no loops, in which case there is nothing to do. *)
+  let is_trying_to_prove_termination func =
+    if (Utils.is_some func.fnRankingAnnotation) then
+      true
+    else begin
+      let loops = get_loops func in
+      let termination_args = List.map get_ranking_annotation loops in
+      let is_termination_arg = List.exists (Utils.is_some) termination_args in
+      is_termination_arg
+    end
+  in
+  if is_trying_to_prove_termination func then begin
+    (* If we're trying to prove termination, we need to ensure that all loops
+       are annotated and that all calls are themselves proved to terminate.
+       We also need to make sure that paths we will use have the same size annotations. *)
+    (* If the function is recursive, we need to annotate it. *)
+    if (is_recursive func) && (Utils.is_none func.fnRankingAnnotation) then begin
+      let fn_name_str = string_of_identifier func.fnName in
+      let error_msg = "To prove that the function " ^ fn_name_str ^ " terminates, you must annotate the function itself since it is recursive." in
+      add_error SemanticError error_msg func.location_fd errors
+    end;
+    (* Ensure that all loops are annotated. *)
+    let ensure_loop_ra s =
+      let ra = get_ranking_annotation s in
+      if (Utils.is_none ra) then begin
+	let fn_name_str = string_of_identifier func.fnName in
+	let error_msg = "To prove that the function " ^ fn_name_str ^ " terminates, you must annotate this loop." in
+	let loc = Ast.location_of_stmt s in
+	add_error SemanticError error_msg loc errors
+      end
+    in
+    List.iter ensure_loop_ra (get_loops func);
+    (* Ensure that all called functions are proved to terminate. *)
+    let ensure_trying_to_prove_fn_termination call =
+      let fn_decl_opt = get_fndecl_from_call call in
+      if (Utils.is_some fn_decl_opt) then
+	let fn_decl = Utils.elem_from_opt fn_decl_opt in
+	let is_trying = is_trying_to_prove_termination fn_decl in
+	let loops = get_loops fn_decl in
+	let doesnt_need_termination_arg = (not (is_recursive fn_decl) && (List.length loops) == 0) in
+	if not (is_trying || doesnt_need_termination_arg) then begin
+	  let caller = string_of_identifier func.fnName in
+	  let callee = string_of_identifier fn_decl.fnName in
+	  let error_msg = "To prove that the function " ^ caller ^ " terminates, you must prove that the function " ^ callee ^ " terminates since you call it." in
+	  let loc = Ast.location_of_expr call in
+	  add_error SemanticError error_msg loc errors
+	end
+    in
+    List.iter ensure_trying_to_prove_fn_termination (get_fn_calls func);
+    (* TODO: Ensure all paths have same size annotations. *)
+  end ;;
 
 (* Ensures that a non-void function returns
    in all control paths. *)
@@ -493,14 +650,15 @@ let ensure_function_returns f =
   in
   match f.returnType with
       Void (_) -> true
-    | _ -> check_if_stmt_returns f.stmtBlock
+    | _ -> check_if_stmt_returns f.stmtBlock ;;
 
 let check_function func s errors =
-  let ann_id = ref 1 in
+  let ann_id = ref 0 in
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
   check_annotation func.preCondition s errors ann_id func;
   check_ranking_annotation func.fnRankingAnnotation s errors;
+  check_termination func s errors;
   Scope_stack.enter_scope s;
   (*add rv to scope*)
   begin

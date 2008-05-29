@@ -534,8 +534,41 @@ let remove_quantification_from_vc_with_array_dp exp_orig =
     | Implies (loc,t1, t2) -> Implies(loc, rq t1, rq t2)
     | _ -> exp
   in
-    rq (nnf_exp_orig)
-      
-      
-      
+    rq (nnf_exp_orig) ;;
+
+let rec get_calls e =
+  let get_calls_lval l = match l with
+    | NormLval (_, _) -> []
+    | ArrayLval (l, e1, e2) -> get_calls e1 @ get_calls e2
+  in
+  match e with
+  | Assign (loc,l, e) -> get_calls_lval l @ get_calls e
+  | Constant (loc,c) -> []
+  | LValue (loc,l) -> get_calls_lval l
+  | Call (loc,s, el) ->
+      let arg_results = List.rev_map get_calls el in
+      e :: List.concat arg_results
+  | Plus (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Minus (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Times (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Div (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | IDiv (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Mod (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | UMinus (loc,t) -> get_calls t
+  | ForAll (loc,decls,e) -> get_calls e
+  | Exists (loc,decls,e) -> get_calls e
+  | ArrayUpdate (loc,e,assign_to,assign_val) -> get_calls e @ get_calls assign_to @ get_calls assign_val
+  | LT (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | LE (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | GT (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | GE (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | EQ (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | NE (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | And (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Or (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Not (loc,t) -> get_calls t
+  | Iff (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Implies (loc,t1, t2) -> get_calls t1 @ get_calls t2
+  | Length (loc, t) -> get_calls t
+  | EmptyExpr  -> [] ;;
 

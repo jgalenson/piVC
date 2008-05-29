@@ -22,7 +22,8 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   try
     while true do
       let (s, _) = Unix.accept sock in
-      Config.print "Accepted network request." ;
+      if Config.get_value_bool "print_net_msgs" then
+	Config.always_print "Accepted network request." ;
       ignore (Thread.create compile_thread (s, server_fun))
     done
   with
