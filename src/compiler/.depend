@@ -8,10 +8,10 @@ transform_yices.cmi: ../language/ast.cmi
 verification_conditions.cmi: basic_paths.cmi ../language/ast.cmi 
 verify.cmi: ../utils/utils.cmi semantic_checking.cmi counterexamples.cmi \
     basic_paths.cmi ../language/ast.cmi 
-basic_paths.cmo: ../utils/utils.cmi expr_utils.cmi ../language/ast.cmi \
-    basic_paths.cmi 
-basic_paths.cmx: ../utils/utils.cmx expr_utils.cmx ../language/ast.cmx \
-    basic_paths.cmi 
+basic_paths.cmo: ../utils/utils.cmi expr_utils.cmi ../utils/exceptions.cmi \
+    ../language/ast.cmi basic_paths.cmi 
+basic_paths.cmx: ../utils/utils.cmx expr_utils.cmx ../utils/exceptions.cmx \
+    ../language/ast.cmx basic_paths.cmi 
 compile.cmo: ../utils/utils.cmi semantic_checking.cmi ../language/parser.cmi \
     ../language/lexer.cmi ../utils/config.cmi ../language/ast.cmi compile.cmi 
 compile.cmx: ../utils/utils.cmx semantic_checking.cmx ../language/parser.cmx \

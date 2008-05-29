@@ -139,13 +139,30 @@ and check_for_same_type t1 t2 loc errors =
   else
     true
 
-and check_annotation annotation scope_stack errors = 
-  let annotation_type = check_and_get_return_type scope_stack annotation errors (true, false, true) in
-    begin
-      if not (types_equal annotation_type (Bool(gdl()))) then
-        let error_message = get_type_error_msg (string_of_expr annotation) annotation_type "bool" in
-          add_error SemanticError error_message (location_of_expr annotation) errors
-    end;  
+and check_annotation annotation scope_stack errors annotation_id func = 
+  let annotation_type = check_and_get_return_type scope_stack annotation.ann errors (true, false, true) in
+  begin
+    if not (types_equal annotation_type (Bool(gdl()))) then
+      let error_message = get_type_error_msg (string_of_expr annotation.ann) annotation_type "bool" in
+      add_error SemanticError error_message (location_of_expr annotation.ann) errors
+  end;
+  let name =
+    match annotation.ann_type with
+      | Normal (id) ->
+	  begin
+	    match id with
+	      | Some (x) -> string_of_identifier x
+	      | None ->
+		  begin
+		    let my_name = (string_of_identifier func.fnName) ^ "." ^ (string_of_int !annotation_id) in
+		    incr annotation_id;
+		    my_name
+		  end
+	  end
+      | Precondition -> (string_of_identifier func.fnName) ^ ".pre"
+      | Postcondition -> (string_of_identifier func.fnName) ^ ".post"
+  in
+  annotation.ann_name <- Some (name)
 
 and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
@@ -391,7 +408,7 @@ let check_ranking_annotation ra_opt scope_stack errors = match ra_opt with
       List.iter check_ranking_expr ra.tuple
   | None -> () ;;
 
-let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
+let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func stmt =
   match stmt with
     Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (false, false, true))
 
@@ -404,11 +421,11 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	  add_error SemanticError error_msg loc errors;
 	end;
-      check_stmt scope_stack returnType errors (is_in_loop) then_block;
-      check_stmt scope_stack returnType errors (is_in_loop) else_block;
+      check_stmt scope_stack returnType errors (is_in_loop) annotation_id func then_block;
+      check_stmt scope_stack returnType errors (is_in_loop) annotation_id func else_block;
 
-  | WhileStmt (loc, test, block, annotation, ra) -> 
-      ignore (check_and_get_return_type scope_stack annotation.ann errors (true, false, true));
+  | WhileStmt (loc, test, block, annotation, ra) ->
+      check_annotation annotation scope_stack errors annotation_id func;
       check_ranking_annotation ra scope_stack errors;
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
@@ -416,10 +433,10 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 	  let error_msg = "Test type is " ^ (string_of_type testType) ^ " but should be boolean" in
 	  add_error SemanticError error_msg loc errors;
 	end;
-      check_stmt scope_stack returnType errors (true) block;
+      check_stmt scope_stack returnType errors (true) annotation_id func block;
       
   | ForStmt (loc, init, test, incr, block, annotation, ra) ->
-      ignore (check_and_get_return_type scope_stack annotation.ann errors (true, false, true));
+      check_annotation annotation scope_stack errors annotation_id func;
       check_ranking_annotation ra scope_stack errors;      
       ignore (check_and_get_return_type scope_stack init errors (false, false, true));
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
@@ -429,7 +446,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 	  add_error SemanticError error_msg loc errors;
 	end;
       ignore (check_and_get_return_type scope_stack incr errors (false, false, true));
-      check_stmt scope_stack returnType errors (true) block;
+      check_stmt scope_stack returnType errors (true) annotation_id func block;
       
   | BreakStmt (loc) ->
       if (not is_in_loop) then
@@ -443,10 +460,10 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) stmt =
 			    let error_msg = ("Incorrect return type: expected: " ^ (string_of_type returnType) ^ ", given: " ^ (string_of_type type_of_return)) in
                             add_error SemanticError error_msg  loc errors
 
-  | AssertStmt (loc, e) -> check_annotation e.ann scope_stack errors
+  | AssertStmt (loc, e) -> check_annotation e scope_stack errors annotation_id func
 
   | StmtBlock(loc,st) -> Scope_stack.enter_scope scope_stack;
-                      List.iter (check_stmt scope_stack returnType errors (is_in_loop)) st;
+                      List.iter (check_stmt scope_stack returnType errors (is_in_loop) annotation_id func) st;
                       Scope_stack.exit_scope scope_stack
 
   | EmptyStmt -> ignore ()
@@ -479,9 +496,10 @@ let ensure_function_returns f =
     | _ -> check_if_stmt_returns f.stmtBlock
 
 let check_function func s errors =
+  let ann_id = ref 1 in
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
-  check_annotation func.preCondition.ann s errors;
+  check_annotation func.preCondition s errors ann_id func;
   check_ranking_annotation func.fnRankingAnnotation s errors;
   Scope_stack.enter_scope s;
   (*add rv to scope*)
@@ -490,11 +508,10 @@ let check_function func s errors =
       vd.var_id := Some("rv");
       Scope_stack.insert_decl_without_setting_id (Ast.VarDecl(Ast.get_dummy_location (), vd)) s
   end;
-  check_annotation func.postCondition.ann s errors;  
+  check_annotation func.postCondition s errors ann_id func;  
   Scope_stack.exit_scope s;
 
-
-  check_stmt s func.returnType errors (false) func.stmtBlock;
+  check_stmt s func.returnType errors (false) ann_id func func.stmtBlock;
   if not (ensure_function_returns func) then
     let error_msg = "Function " ^ (string_of_identifier func.fnName) ^ " does not return in all control paths." in
     add_error SemanticError error_msg func.location_fd errors;

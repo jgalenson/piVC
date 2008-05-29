@@ -112,7 +112,8 @@ and annotation_type =
       
 and annotation = {
   ann : expr;
-  ann_type : annotation_type
+  ann_type : annotation_type;
+  mutable ann_name : string option
 }
 
 and rankingAnnotation = {

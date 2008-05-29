@@ -313,16 +313,9 @@ let name_of_basic_path path =
 	let separate_if_necessary a b =
 	  if a = "" then b else (a ^ " -> " ^ b)
 	in
-	let string_of_ann_type l = match e.ann_type with
-	  | Normal (l) ->
-	      if Utils.is_some l then
-		Ast.string_of_identifier (Utils.elem_from_opt l)
-	      else
-		"TODO: Generate temp name"
-	  | Precondition -> "pre"
-	  | Postcondition -> "post"
-	in
-	separate_if_necessary prev (string_of_ann_type e.ann_type)
+	Exceptions.our_assert_str (lazy (assert (Utils.is_some e.ann_name))) "Annotation doesn't have a name";
+	let ann_name = Utils.elem_from_opt (e.ann_name) in
+	separate_if_necessary prev ann_name
     | Assume (e) -> prev ^ " -> assume " ^ (Ast.string_of_expr e)
     | _ -> prev
   in

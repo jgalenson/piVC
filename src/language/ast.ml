@@ -179,7 +179,8 @@ and annotation_type =
       
 and annotation = {
   ann : expr;
-  ann_type : annotation_type
+  ann_type : annotation_type;
+  mutable ann_name : string option
 }
     
 and rankingAnnotation = {
@@ -187,10 +188,10 @@ and rankingAnnotation = {
   location_ra : location;
 }
 
-let create_annotation a t = { ann = a ; ann_type = Normal t }
-let create_anon_annotation a = { ann = a ; ann_type = Normal None }
-let create_precondition a = { ann = a; ann_type = Precondition }
-let create_postcondition a = { ann = a; ann_type = Postcondition }
+let create_annotation a t = { ann = a ; ann_type = Normal t ; ann_name = None }
+let create_anon_annotation a = { ann = a ; ann_type = Normal None ; ann_name = None }
+let create_precondition a = { ann = a; ann_type = Precondition ; ann_name = None }
+let create_postcondition a = { ann = a; ann_type = Postcondition ; ann_name = None }
 
 type fnDecl = {
   fnName        : identifier;
