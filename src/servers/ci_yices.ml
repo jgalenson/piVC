@@ -21,6 +21,7 @@ let log = Unix.openfile ".yices.log" [Unix.O_CREAT; Unix.O_WRONLY] 0o640
 let init () = ()
 
 exception Done
+exception YicesNotFound of string
 
 let create () =
   let ip, op = Unix.pipe () in
@@ -34,7 +35,11 @@ let create () =
 	config_value
     in
     let pid = (Unix.create_process yices_executable [|"yices"|] ip om log) in
-      ignore (pid);
+      (* Ensure yices was successfully started. *)
+      let (killed_pid, _) = Unix.waitpid [Unix.WNOHANG; Unix.WUNTRACED] pid in
+      if killed_pid != 0 then begin
+	raise (YicesNotFound yices_executable)
+      end;
       Unix.close ip;
       Unix.close om;
       { ic = Unix.in_channel_of_descr im;
