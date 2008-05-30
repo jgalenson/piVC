@@ -25,8 +25,15 @@ let create () =
   let ip, op = Unix.pipe () in
   let im, om = Unix.pipe () in
     Unix.set_nonblock im;
-    let pid = (Unix.create_process (Utils.get_absolute_path (Config.get_value "yices_path")) [|"yices"|] ip om log) in
-      ignore(pid);(*doing this to supress unused variable warning*)
+    let yices_executable =
+      let config_value = Config.get_value "yices_path" in
+      if (String.contains config_value '/') then
+	Utils.get_absolute_path config_value
+      else
+	config_value
+    in
+    let pid = (Unix.create_process yices_executable [|"yices"|] ip om log) in
+      ignore (pid);
       Unix.close ip;
       Unix.close om;
       { ic = Unix.in_channel_of_descr im;

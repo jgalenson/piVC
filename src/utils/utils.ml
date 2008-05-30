@@ -27,7 +27,7 @@ let compare_locs loc1 loc2 =
 
 let get_absolute_path path = 
   let first_char = String.get path 0 in
-    if first_char = '\\' then (*in this case, the path is already absolute*)
+    if first_char = '/' then (*in this case, the path is already absolute*)
         path
     else (*otherwise we need to turn it into an absolute path*)
       (* We could use Sys.argv.(0) here. *)
