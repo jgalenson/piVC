@@ -14,6 +14,7 @@ type manager =
 
 let max_man = 32
 let managers = A.make max_man None
+let managers_lock = Mutex.create ()
 
 let log = Unix.openfile ".yices.log" [Unix.O_CREAT; Unix.O_WRONLY] 0o640
 
@@ -45,6 +46,7 @@ let create () =
 let new_context () =
   let rv = ref (-1) in
     try
+      Mutex.lock managers_lock;
       for i = 0 to A.length managers - 1 do
 	if managers.(i) = None then begin
 	  managers.(i) <- Some (create ());
@@ -54,13 +56,23 @@ let new_context () =
       done;
       raise Not_found
     with
-      | Done -> !rv
+      | Done ->
+	  Mutex.unlock managers_lock;
+	  !rv
+      | Not_found ->
+	  Mutex.unlock managers_lock;
+	  raise Not_found
 
 let get i =
+  Mutex.lock managers_lock;
   assert (0 <= i && i < A.length managers);
   match managers.(i) with
-    | None -> assert false
-    | Some m -> m
+    | None ->
+	Mutex.unlock managers_lock;
+	assert false
+    | Some m ->
+	Mutex.unlock managers_lock;
+	m
 
 let send i msg =
   (*pr ((soi i) ^ ": " ^ msg);*)
@@ -94,8 +106,12 @@ let destroy i m =
 
 let delete_context i =
   destroy i (get i);
-  managers.(i) <- None
+  Mutex.lock managers_lock;
+  managers.(i) <- None;
+  Mutex.unlock managers_lock
 
 let reset_context i =
   destroy i (get i);
-  managers.(i) <- Some (create ())
+  Mutex.lock managers_lock;
+  managers.(i) <- Some (create ());
+  Mutex.unlock managers_lock
