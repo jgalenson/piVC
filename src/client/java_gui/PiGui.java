@@ -322,7 +322,7 @@ public class PiGui extends JFrame {
 		
 		@Override
 		public void run() {
-			String result = Config.getValue("server_address");
+			final String result = Config.getValueWithEnvironmentOverride("server_address");
 			if (result != null) {
 				String[] parts = result.split(":");
 				String name = parts[0].trim();
@@ -344,7 +344,11 @@ public class PiGui extends JFrame {
 					SwingUtilities.invokeLater(new Runnable() {
 						public void run() {
 							compileEnded();
-							JOptionPane.showMessageDialog(gui, ex.getMessage() + "\n\nEnsure that a server is running and that the server address in the Settings menu is set to the proper address.", "Connection Error", JOptionPane.ERROR_MESSAGE);
+							String message = "You attempted to connect to " + result + ". Ensure that a piVC server is running\nand that the server address in the Settings menu is set to the proper address.";
+							if(Config.enviornmentKeyExists("server_address")){
+								message = "You attempted to connect to " + result + ". Ensure that a piVC server is running at this address.";
+							}
+							JOptionPane.showMessageDialog(gui, ex.getMessage() + "\n\n" + message, "Connection Error", JOptionPane.ERROR_MESSAGE);
 						}
 					});
 				} catch (Exception ex) {
@@ -390,7 +394,7 @@ public class PiGui extends JFrame {
 	            if(alsoSubmit){
 	            	Element submitNode = doc.createElement("submit");
 	            	Element toAddrsNode = doc.createElement("to_addrs");	            	
-	            	String[] addrs = Config.getValue("submit_to_email_address").split(",");
+	            	String[] addrs = Config.getValueWithEnvironmentOverride("submit_to_email_address").split(",");
 	            	for(String addr:addrs){
 	            		Element addrNode = doc.createElement("addr");
 	            		addrNode.setTextContent(addr.trim());

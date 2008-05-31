@@ -250,17 +250,19 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		showRawXml.setState(Config.getBooleanValue("show_raw_xml"));
 		settingsMenu.add(showRawXml);	
 		
-		JMenuItem serverAddress = new JMenuItem("Change server address");
-		serverAddress.setMnemonic(KeyEvent.VK_S);
-		serverAddress.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String result = JOptionPane.showInputDialog("New server host:port", Config.getValue("server_address"));
-				if(result!=null){
-					Config.setValue("server_address", result);
+		if(!Config.enviornmentKeyExists("server_address")){
+			JMenuItem serverAddress = new JMenuItem("Change server address");
+			serverAddress.setMnemonic(KeyEvent.VK_S);
+			serverAddress.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					String result = (String)JOptionPane.showInputDialog(piGui,"Enter the address in the form \'host:port\'.", "Change server address", JOptionPane.QUESTION_MESSAGE, null, null, Config.getValue("server_address"));
+					if(result!=null){
+						Config.setValue("server_address", result);
+					}
 				}
-			}
-		});
-		settingsMenu.add(serverAddress);
+			});
+			settingsMenu.add(serverAddress);
+		}
 		
 		add(settingsMenu);
 	}

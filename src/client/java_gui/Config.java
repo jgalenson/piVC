@@ -5,6 +5,8 @@ public class Config {
 	
 	private static final String CONFIG_FILE_LOCATION = System.getProperty("user.home")+"/.pivc-client";
 	
+	private static final String ENVIRONMENT_FILE_LOCATION = "ENVIRONMENT";
+	
 	//All possible keys must be included in the DEFAULTS array
 	//If a key is not included here, that key/value pair will
 	//be purged from the config file upon program startup,
@@ -23,6 +25,7 @@ public class Config {
 	private static Map<String,String> settings;
 	private static Set<String> validKeys;
 	
+	private static Map<String,String> environment;
 
 	public static String getValue(String key){
 		if(isValidKey(key)){
@@ -31,6 +34,23 @@ public class Config {
 			throw new RuntimeException("Invalid key: "+key+". Every key needs to be included in the defaults list.");
 		}
 	}
+	
+	public static String getEnviornmentValue(String key){
+		return environment.get(key);
+	}	
+
+	public static boolean enviornmentKeyExists(String key){
+		return environment.containsKey(key);
+	}	
+	
+	public static String getValueWithEnvironmentOverride(String key){
+		String environmentValue = environment.get(key);
+		if(environmentValue==null){
+			return getValue(key);
+		}else{
+			return environmentValue;
+		}
+	}		
 	
 	public static boolean getBooleanValue(String key) {
 		String val = getValue(key);
@@ -50,7 +70,7 @@ public class Config {
 		}
 		else{
 			settings.put(key, newValue);
-			write();
+			writeConfigFile();
 		}
 	}
 
@@ -61,13 +81,45 @@ public class Config {
 			setValue(key, "false");
 	}
 	
+	private static HashMap<String,String> getMapFromBuffer(BufferedReader input){
+		HashMap<String,String> map = new HashMap<String,String>();
+		try{
+			while(true){
+				String line = input.readLine();				
+				if(line==null)
+					break;
+				if(line.length()==0 || line.charAt(0)=='#')
+					continue;
+				int index = line.indexOf('=');
+				if(index==-1)
+					throw new RuntimeException("Malformatted config file");
+				String lhs = line.substring(0,index).trim();
+				String rhs = line.substring(index+1,line.length()).trim();
+				map.put(lhs, rhs);
+			}
+			input.close();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		return map;
+	}
+	
 	public static void initConfig(){
-		settings = new HashMap<String,String>();
-		validKeys = new HashSet<String>();
 		
-		boolean shouldWriteNewConfigFile = false;
+		//Step -1: load the ENVIRONMENT file
+		
+		BufferedReader environmentReader = null;
+		try {
+			environmentReader = new BufferedReader(new InputStreamReader(Utils.getURL(ENVIRONMENT_FILE_LOCATION).openStream()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		environment = getMapFromBuffer(environmentReader);
+		
 		
 		//Step 0: populate the map of valid keys
+		validKeys = new HashSet<String>();
 		for(String[] keyAndValue: DEFAULTS){
 			if(keyAndValue.length!=2){
 				throw new RuntimeException("Error: the default specification must be an array of length 2. The first element is the key and the second element is the default value.");
@@ -75,37 +127,31 @@ public class Config {
 			validKeys.add(keyAndValue[0]);
 		}		
 		
+		boolean shouldWriteNewConfigFile = false;
+		
 		//Step 1: load the key/value pairs from the file
 		File configFile = getConfigFile();
 		if(configFile.exists()){
+			FileReader reader = null;
 			try {
-				BufferedReader input = null;
-				input = new BufferedReader(new FileReader(configFile));
-				while(true){
-					String line = input.readLine();				
-					if(line==null)
-						break;
-					if(line.charAt(0)=='#' || line.length()==0)
-						continue;
-					int index = line.indexOf('=');
-					if(index==-1)
-						throw new RuntimeException("Malformatted config file");
-					String lhs = line.substring(0,index).trim();
-					String rhs = line.substring(index+1,line.length()).trim();
-					if(isValidKey(lhs)){
-						settings.put(lhs,rhs);
-					}
-					else{
-						shouldWriteNewConfigFile = true;
-					}
-				}
-				input.close();
-			} catch (Exception e) {
-				e.printStackTrace();
+				reader = new FileReader(configFile);
+			} catch (FileNotFoundException e1) {
+				e1.printStackTrace();
+			}
+			settings = getMapFromBuffer(new BufferedReader(reader));
+		}else{
+			settings = new HashMap<String,String>();
+			shouldWriteNewConfigFile = true;
+		}
+		
+		//Step 2: see if the config file has any excess (most likely deprecated) keys that need to be removed
+		for (String key:settings.keySet()){
+			if(!validKeys.contains(key)){
+				shouldWriteNewConfigFile = true;
 			}
 		}
-
-		//Step 2: see if there are any keys that were not included in the file
+		
+		//Step 3: see if there are any keys that were not included in the file
 		//If there were, we'll add them to the file
 		for(String[] keyAndValue: DEFAULTS){
 			if(keyAndValue.length!=2){
@@ -117,9 +163,9 @@ public class Config {
 			}
 		}
 		
-		//Step 3: rewrite the config file to remove deprecated keys, or to add new keys
+		//Step 4: rewrite the config file to remove deprecated keys, or to add new keys
 		if(shouldWriteNewConfigFile){
-			write();
+			writeConfigFile();
 		}		
 	}
 		
@@ -131,9 +177,10 @@ public class Config {
 	
 	private static File getConfigFile() {
 		return new File(CONFIG_FILE_LOCATION);
-	}	
+	}
+
 	
-	private static void write() {
+	private static void writeConfigFile() {
 		try {
 			File f = getConfigFile();
 			BufferedWriter output = new BufferedWriter(new FileWriter(f));

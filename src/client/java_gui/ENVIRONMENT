@@ -1,0 +1,24 @@
+#The ENVIRONMENT file defines configuration information that a class instructor
+#may want to set before distributing piVC to students.
+#
+#It follows the same format as all piVC configuration files. Each line is of
+#the form key=value.
+#
+#The instructor can uncomment and change any of the following configuration settings.
+#
+#The instructor will presumably want to jar the client with the changed ENVIRONMENT
+#file and then distribute this jar to students in his class. If you downloaded the full
+#piVC source distribution, jaring is easy: you just type
+#make in the client directory. A jar will be placed into in the bin directory.
+#
+#Note that if any of these configuration settings are used, it will not be possible to
+#change them without modifying this ENVIORNMENT file. For example, if the server address
+#is set in this file, there will be no way to change the server address without editing
+#this file.
+#
+#Note: it is not necessary to use this file. The configuration parameters in this file
+#serve as overrides. If this file is not used, the parameters can be set
+#using the piVC GUI.
+
+#submit_to_email_address = pivc_ta@stanford.edu
+#server_address = pivc.stanford.edu:4242
