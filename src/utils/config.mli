@@ -32,5 +32,10 @@ val get_value_bool : string -> bool ;;
    There are different options for the main and the dp server. *)
 val print : string -> unit ;;
 
+val get_cmd_line_value_iff_key_exists : string -> string option
+  
+val get_cmd_line_value : string -> string
+
 (* Always prints the specified message.  Truncates if necessary. *)
 val always_print : string -> unit ;;
+

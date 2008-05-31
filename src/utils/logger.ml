@@ -1,0 +1,2 @@
+let log msg = 
+  ignore ()

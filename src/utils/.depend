@@ -6,6 +6,8 @@ constants.cmo: constants.cmi
 constants.cmx: constants.cmi 
 exceptions.cmo: exceptions.cmi 
 exceptions.cmx: exceptions.cmi 
+logger.cmo: logger.cmi 
+logger.cmx: logger.cmi 
 net_utils.cmo: net_utils.cmi 
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 

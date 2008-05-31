@@ -17,6 +17,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem undo, redo;
 	private JMenuItem cut, copy, paste;
 	private JMenuItem displayPath;
+	private JMenuItem submit;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	private JCheckBoxMenuItem runtimeAssertions;
 	private JCheckBoxMenuItem findInductiveCore;
@@ -30,6 +31,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		addEditMenu();
 		addCompileMenu();
 		addAnalyzeMenu();
+		addSubmitMenu();
 		addSettingsMenu();
 	}
 	
@@ -199,9 +201,25 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		add(analyzeMenu);
 	}
 	
+	private void addSubmitMenu() {
+		JMenu submitMenu = new JMenu("Submit");
+		submitMenu.setMnemonic(KeyEvent.VK_S);
+		
+		submit = new JMenuItem("Submit");
+		submit.setMnemonic(KeyEvent.VK_S);
+		submit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+		submit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doSubmit();
+			}
+		});
+		submitMenu.add(submit);
+		add(submitMenu);
+	}	
+	
 	private void addSettingsMenu() {
 		JMenu settingsMenu = new JMenu("Settings");
-		settingsMenu.setMnemonic(KeyEvent.VK_S);
+		settingsMenu.setMnemonic(KeyEvent.VK_E);
 		
 		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
 		runtimeAssertions.addActionListener(new ActionListener() {

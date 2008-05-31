@@ -14,7 +14,10 @@ public class Config {
 								{"pi_files_location","."},
 								{"generate_runtime_assertions", "false"},
 								{"find_inductive_core", "true"},
-								{"show_raw_xml", "false"}
+								{"show_raw_xml", "false"},
+								{"name", ""},
+								{"email_address", ""},
+								{"submit_to_email_address", ""}
 	};
 	
 	private static Map<String,String> settings;

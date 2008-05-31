@@ -18,6 +18,9 @@ Jason
 	Put filename into xml and ocaml data structures.
 	Bug: Remove stupid a,b counterexample nodes (look for filename field in the location)
 	Allow termination arguments after annotation, not just before.
+        Bug: function locations not always correct
+        Change function locations to prototype only
+        Update README. Especially with information about email functionality.
 
 
 Joel

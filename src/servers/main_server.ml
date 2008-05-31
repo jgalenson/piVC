@@ -4,6 +4,7 @@ open Ast
 open Semantic_checking
 open Server_framework
 open Net_utils
+open Email
 open Verify ;;
 
 exception InvalidXml of string ;;
@@ -62,46 +63,149 @@ let rec compile vc_cache_and_lock ic oc =
     let code_node = get_child_node "code" xml in
     let code = get_text_from_text_node code_node in
     (* Gets the options. *)
+    let options_node = get_child_node "options" xml in
     let options =
-      let option_node = get_child_node "options" xml in
-      let should_generate_runtime_assertions = has_child "generate_runtime_assertions" option_node in
-      let should_find_inductive_core = has_child "find_inductive_core" option_node in
+      let should_generate_runtime_assertions = has_child "generate_runtime_assertions" options_node in
+      let should_find_inductive_core = has_child "find_inductive_core" options_node in
 	{generate_runtime_assertions = should_generate_runtime_assertions; find_inductive_core = should_find_inductive_core;}
     in
-    (code, options)
+    let user_info = 
+      match has_child "user" xml with
+          false -> None
+        | true ->
+            begin
+              let user_node = get_child_node "user" xml in
+                Some({user_name = Xml.attrib user_node "name"; user_email_addr = Xml.attrib user_node "email_addr"})
+            end
+    in
+    let submission_info = 
+      match has_child "submit" options_node with
+          false -> None
+        | true ->
+            begin
+              let submit_node = get_child_node "submit" options_node in
+              let addrs_node = get_child_node "to_addrs" submit_node in
+              let to_addrs = ref [] in
+                List.iter
+                  (function node -> if Xml.tag node = "addr" then to_addrs := !to_addrs @ [get_text_from_text_node node])
+                  (Xml.children addrs_node);
+                let comment = match has_child "comment" submit_node with
+                    false -> None
+                  | true -> Some(get_text_from_text_node (get_child_node "comment" submit_node))
+                in
+                  Some({to_addrs=to_addrs.contents; comment=comment})
+            end
+    in
+      (code, options, user_info, submission_info)
   in
-  
-  begin
+  let go_exception code options user ex =
     try
-      let xml_str = get_input ic in
-      let (code, options) = parse_xml xml_str in
-        (* Config.print_endline code; *)
-      let (program, errors) = Compile.parse_strings [("user-file", code)] in
-        
-      let get_output_to_return_to_client = 
-        match errors with
-            [] -> (
-              let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
-              let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
-                Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options)
-            )
-          | _  -> Xml_generator.string_of_xml_node (xml_of_errors errors)
-              
-      in
-        send_output oc get_output_to_return_to_client;
-        Config.print "Compilation completed. Response sent back to client.";
-    with
-        ex -> 
+      let log_message = 
+        "An exception has occured.\n\n" ^
+          Email.email_heading "Exception" ^
+          Exceptions.string_of_exception ex ^
+          "\n\n" ^
           begin
-            send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
-            Config.print ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex))
+            match options with
+                Some(options) -> Email.email_segment_of_options options ^ "\n"
+              | None -> ""
+          end ^
+          begin
+            match user with
+                Some(user) -> Email.email_segment_of_user user ^ "\n"
+              | None -> ""
+          end ^
+          Email.email_heading "Code" ^ 
+          code
+      in
+        send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
+        Config.print ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex));
+        Logger.log log_message;
+        Email.send_error_notification log_message
+    with
+        ex_inner ->
+          begin
+            (*Note: I purposely use print_endline as opposed to Config.print. This code is supposed
+              to catch exceptions in (among other things) Config.print, so we dont want to use
+              the code that potentially caused an exception to respond to an exception.
+              This code is for a super-worst case scenario. It will probably never be run in the
+              entire (hopefully long) lifetime of piVC.*)
+            print_endline "Critical issue: there was an exception while processing another exception.";
+            print_endline ("The original exception was: " ^ (Exceptions.string_of_exception ex));
+            print_endline ("The exception within the exception was: " ^ (Exceptions.string_of_exception ex_inner))
           end
-  end;
-  flush stdout;
-  flush stderr;
-  flush oc
-    
-
+  in
+    begin
+      try
+        let xml_str = get_input ic in
+          try
+            let (code, options, user_info, submission_info) = parse_xml xml_str in
+              try          
+                (* Config.print_endline code; *)
+                let (program, errors) = Compile.parse_strings [("user-file", code)] in
+                  
+                let get_output_to_return_to_client = 
+                  let messages = ref [] in
+                    match errors with
+                        [] -> 
+                          begin
+                            let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
+                            let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
+                              begin
+                                match submission_info with
+                                    Some(s) -> 
+                                      let msg = Email.go_submit code s (elem_from_opt user_info) options (Some(verified_program_info)) [] in
+                                        messages := messages.contents @ [msg]
+                                  | None -> ignore()
+                              end;
+                              begin
+                                if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
+                                  messages := messages.contents @ [Constants.inductive_core_message]
+                              end;
+                              Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options messages.contents)
+                          end
+                      | _  -> 
+                          begin
+                            begin
+                              match submission_info with
+                                  Some(s) -> 
+                                    let msg = Email.go_submit code s (elem_from_opt user_info) options None errors in
+                                      messages := messages.contents @ [msg]
+                                | None -> ignore()
+                            end;
+                          end;
+                          Xml_generator.string_of_xml_node (xml_of_errors errors messages.contents)
+                in
+                  send_output oc get_output_to_return_to_client;
+                  Config.print "Compilation completed. Response sent back to client.";
+              with
+                  ex -> 
+                    begin
+                      go_exception code (Some(options)) user_info ex
+                    end
+          with 
+              ex ->
+                begin
+                  go_exception ("Exception occured before XML parsing completed. XML is as follows.\n\n"^xml_str) None None ex
+                end
+      with ex ->
+        begin
+          go_exception ("Exception occured before transmission had been fully recieved.") None None ex
+        end
+    end;
+    flush stdout;
+    flush stderr;
+    flush oc
+      
+and xml_of_messages messages = 
+  let messages_node = Xml_generator.create "messages" in
+  let add_message message = 
+    let message_node = Xml_generator.create "message" in
+      set_text message message_node;
+      add_child message_node messages_node
+  in
+    List.iter add_message messages;
+    messages_node
 
 and xml_of_location location = 
   let location_node = Xml_generator.create "location" in
@@ -131,26 +235,25 @@ and xml_of_compiler_exception ex =
   add_child result_node transmission_node;
   transmission_node
       
-and xml_of_errors errors =
-
+and xml_of_errors errors messages =
   let transmission_node = Xml_generator.create "piVC_transmission" in
     add_attribute ("type", "program_submission_response") transmission_node;
-    let result_node = Xml_generator.create "result" in
-      add_attribute ("status", "error") result_node;
-      List.iter (fun e -> 
-                   let error_node = (Xml_generator.create "error") in
-                     Xml_generator.add_attribute ("type", (Semantic_checking.string_of_error_type_for_xml e.e_type)) error_node;
-                     Xml_generator.add_child (xml_of_location e.loc) error_node;
-                     let message_node = Xml_generator.create "message" in
-                       Xml_generator.set_text e.msg message_node;
-                       Xml_generator.add_child message_node error_node;
-                       Xml_generator.add_child error_node result_node) errors;                     
-      Xml_generator.add_child result_node transmission_node;
-      transmission_node
-
-
-
-and xml_of_verified_program fns options = 
+    let messages_node = xml_of_messages messages in
+      add_child messages_node transmission_node;
+      let result_node = Xml_generator.create "result" in
+        add_attribute ("status", "error") result_node;
+        List.iter (fun e -> 
+                     let error_node = (Xml_generator.create "error") in
+                       Xml_generator.add_attribute ("type", (Semantic_checking.string_of_error_type_for_xml e.e_type)) error_node;
+                       Xml_generator.add_child (xml_of_location e.loc) error_node;
+                       let message_node = Xml_generator.create "message" in
+                         Xml_generator.set_text e.msg message_node;
+                         Xml_generator.add_child message_node error_node;
+                         Xml_generator.add_child error_node result_node) errors;                     
+        Xml_generator.add_child result_node transmission_node;
+        transmission_node
+        
+and xml_of_verified_program fns options messages =
   (*Now we have the xml generation functions for the various levels*)
   let rec xml_of_function (fn) = 
     let function_node = Xml_generator.create "function" in
@@ -268,56 +371,27 @@ and xml_of_verified_program fns options =
         let nonnegative_node = Xml_generator.create "nonnegative" in
 	  add_attribute ("status", Verify.string_of_validity (termination_info.nonnegative_vcs_validity)) nonnegative_node;
 	  let process_vc vc =
-            (*TODO-J: clean this up - can we just use xml_of_basic_path? *)
-            (*let vc = vc_detailed.vc in TODO-J: uncomment when you're actually using the vc*)
-            (*let valid = vc_detailed.valid in
-              let counterexample = vc_detailed.counter_example in
-	      let nonnegative_vc_node = Xml_generator.create "nonnegative_vc" in
-	      add_child (xml_of_location (gdl())) nonnegative_vc_node; (*TODO-J: remove gdl()*)
-	      let vc_node = Xml_generator.create "vc" in
-              set_text ("vc goes here") vc_node;(*TODO-J: fix*)
-              add_child vc_node nonnegative_vc_node;
-	      add_attribute ("status", Verify.string_of_validity valid) nonnegative_vc_node;
-	      if (Utils.is_some counterexample) then
-	      begin
-	      add_child (xml_of_counterexample (Utils.elem_from_opt counterexample)) nonnegative_vc_node
-	      end;
-              add_child nonnegative_vc_node nonnegative_node;*)
             add_child (xml_of_nonnegative_vc vc) nonnegative_node
 	  in
 	    List.iter process_vc (termination_info.nonnegative_vcs); 
 	    add_child nonnegative_node termination_node;
       end;
       termination_node
-  and xml_of_message message = 
-    let message_node = Xml_generator.create "message" in
-      set_text message message_node;
-      message_node
-        
-  (* Now we put together the root node *)
+        (* Now we put together the root node *)
   and transmission_node = Xml_generator.create "piVC_transmission" in
   let overall_validity = (Verify.overall_validity_of_function_validity_information_list fns) in
-    add_attribute ("type", "program_submission_response") transmission_node;
-
-    begin
-      let messages_node = Xml_generator.create "messages" in
-        begin
-          if (overall_validity != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough fns then
-            add_child (xml_of_message Constants.inductive_core_message) messages_node
-        end
-        ;
-        add_child messages_node transmission_node
-    end;
-
-    let result_node = Xml_generator.create "result" in
-      add_attribute ("status", Verify.string_of_validity overall_validity) result_node;
-      add_child result_node transmission_node;
-      let process_function func = 
-        add_child (xml_of_function func) result_node
-      in
-        List.iter process_function fns;
-        transmission_node ;;
-
+    add_attribute ("type", "program_submission_response") transmission_node;    
+    let messages_node = xml_of_messages messages in
+      add_child messages_node transmission_node;
+      let result_node = Xml_generator.create "result" in
+        add_attribute ("status", Verify.string_of_validity overall_validity) result_node;
+        add_child result_node transmission_node;
+        let process_function func = 
+          add_child (xml_of_function func) result_node
+        in
+          List.iter process_function fns;
+          transmission_node
+  
 (* Wrapper for compile function that passes it the
    cache of VCs. *)
 let get_main_server_func () =

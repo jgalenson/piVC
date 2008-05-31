@@ -54,6 +54,7 @@ public class PiGui extends JFrame {
 	private boolean dirty;
 	private ArrayList<DirtyChangedListener> dirtyChangedListeners;
 	private JButton compileButton;
+	private JButton submitButton;
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
@@ -246,14 +247,22 @@ public class PiGui extends JFrame {
 	 * Handles a call to compile the code by sending it
 	 * off to the server and handling the response.
 	 */
-	public void doCompile() {
+	public void doCompile(){
+		doCompileAndMaybeSubmit(false, null);
+	}
+	
+	public void doCompileAndMaybeSubmit(boolean alsoSubmit, String submissionComments) {
 		String code = piCode.getText();
 		boolean shouldGenerateRuntimeAssertions = Config.getBooleanValue("generate_runtime_assertions");
 		boolean shouldFindInductiveCore = Config.getBooleanValue("find_inductive_core");
-		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions, shouldFindInductiveCore, this);
+		curCompilation = new Compiler(code, shouldGenerateRuntimeAssertions, shouldFindInductiveCore, alsoSubmit, submissionComments, this);
 		compileStarted();
 		curCompilation.start();
 	}
+	
+	public void doSubmit() {
+		new PiSubmit(this);
+	}	
 	
 	/**
 	 * Sets up the GUI when we start a compile.
@@ -299,11 +308,15 @@ public class PiGui extends JFrame {
 		private String code;  // Store the code since we can't get it from piCode.
 		private boolean shouldGenerateRuntimeAssertions, shouldFindInductiveCore;
 		private PiGui gui;
+		private boolean alsoSubmit;
+		private String submissionComment;
 		
-		public Compiler(String code, boolean shouldGenerateRuntimeAssertions, boolean shouldFindInductiveCore, PiGui gui) {
+		public Compiler(String code, boolean shouldGenerateRuntimeAssertions, boolean shouldFindInductiveCore, boolean alsoSubmit, String submissionComment, PiGui gui) {
 			this.code = code;
 			this.shouldGenerateRuntimeAssertions = shouldGenerateRuntimeAssertions;
 			this.shouldFindInductiveCore = shouldFindInductiveCore;
+			this.alsoSubmit = alsoSubmit;
+			this.submissionComment = submissionComment;
 			this.gui = gui;
 		}
 		
@@ -353,6 +366,17 @@ public class PiGui extends JFrame {
 	            Element codeNode = doc.createElement("code");
 	            codeNode.setTextContent(code);
 	            rootNode.appendChild(codeNode);
+	            
+	            String userName = Config.getValue("name");
+	            String userEmail = Config.getValue("email_address");
+	            
+	            if(userName.length()>0 || userEmail.length()>0){
+	            	Element userNode = doc.createElement("user");
+	            	userNode.setAttribute("name", userName);
+	            	userNode.setAttribute("email_addr", userEmail);
+	            	rootNode.appendChild(userNode);
+	            }	
+	            
             	Element optionNode = doc.createElement("options");
 	            if (shouldGenerateRuntimeAssertions) {
 	            	Element runtimeAssertionNode = doc.createElement("generate_runtime_assertions");
@@ -361,7 +385,26 @@ public class PiGui extends JFrame {
 	            if (shouldFindInductiveCore) {
 	            	Element inductiveCoreNode = doc.createElement("find_inductive_core");
 	            	optionNode.appendChild(inductiveCoreNode);
-	            }	            
+	            }
+            	
+	            if(alsoSubmit){
+	            	Element submitNode = doc.createElement("submit");
+	            	Element toAddrsNode = doc.createElement("to_addrs");	            	
+	            	String[] addrs = Config.getValue("submit_to_email_address").split(",");
+	            	for(String addr:addrs){
+	            		Element addrNode = doc.createElement("addr");
+	            		addrNode.setTextContent(addr.trim());
+	            		toAddrsNode.appendChild(addrNode);
+	            	}	            	
+	            	submitNode.appendChild(toAddrsNode);
+	            	if(submissionComment!=null){
+	            		Element comment = doc.createElement("comment");
+	            		comment.setTextContent(submissionComment);
+	            		submitNode.appendChild(comment);
+	            	}
+	            	optionNode.appendChild(submitNode);
+	            }
+
             	rootNode.appendChild(optionNode);
 	            
 	            // Convert the node into a string
@@ -654,6 +697,14 @@ public class PiGui extends JFrame {
 			}
 		});
 		box.add(compileButton);
+		
+		submitButton = new JButton("Submit");
+		submitButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doSubmit();
+			}
+		});
+		box.add(submitButton);		
 		
 		add(box, BorderLayout.NORTH);
 	}

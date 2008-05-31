@@ -6,6 +6,7 @@ type options = {
   find_inductive_core : bool;
 }
 
+
 (* Converts from Windows to UNIX line endings. *)
 let convert_line_endings str =
   let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in
@@ -51,3 +52,22 @@ let elem_from_opt opt = match opt with
 (* Converts a queue to a list. *)
 let queue_to_list q =
   Queue.fold (fun a b -> a @ [b]) [] q  ;;
+
+
+
+let rec trim str = 
+  if str = "" || str = " " then str
+  else
+    let start_index = match String.get str 0 with
+        ' ' -> 1
+      | _ -> 0
+    in
+    let end_index = match String.get str ((String.length str) - 1) with
+        ' ' -> (String.length str) - 1
+      | _ -> String.length str
+    in
+      if start_index = 0 && end_index = String.length str then
+        str
+      else
+        trim (String.sub str start_index (end_index-start_index))
+  

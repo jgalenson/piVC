@@ -1,6 +1,7 @@
 module String_map = Map.Make(String)
 
 exception Config_Key_Not_Found of string;;
+exception Cmd_Line_Arg_Key_Not_Found of string;;
 exception Config_Key_Could_Not_Be_Parsed_To_Int of string * string;;
 exception Config_Key_Could_Not_Be_Parsed_To_Bool of string * string;;
 
@@ -26,20 +27,6 @@ let get_value_bool key =
   with
       Failure("int_of_string") -> raise (Config_Key_Could_Not_Be_Parsed_To_Bool (key,value))
 
-let rec trim str = 
-  let start_index = match String.get str 0 with
-      ' ' -> 1
-    | _ -> 0
-  in
-  let end_index = match String.get str ((String.length str) - 1) with
-      ' ' -> (String.length str) - 1
-    | _ -> String.length str
-  in
-    if start_index = 0 && end_index = String.length str then
-      str
-    else
-      trim (String.sub str start_index (end_index-start_index))
-  
 let read_from_file file_path = 
   let file = Unix.openfile file_path [Unix.O_RDONLY] 0o640 in
   let file_size = (Unix.fstat file).Unix.st_size in
@@ -56,7 +43,7 @@ let read_from_file file_path =
         else
           String.length str
       in
-      let key_value = String.sub str 0 index_of_end in
+      let key_value = (String.sub str 0 index_of_end) in
       let rest = 
         if index_of_end < (String.length str)-1 then
           String.sub str (index_of_end + 1) ((String.length str)-index_of_end-1)
@@ -66,8 +53,9 @@ let read_from_file file_path =
         if (String.length key_value > 0) && (String.get key_value 0 != '#') then
           begin
             let index_of_equals = String.index key_value '=' in
-            let key = trim (String.sub key_value 0 index_of_equals) in 
-            let value = trim (String.sub key_value (index_of_equals + 1) ((String.length key_value)-index_of_equals-1)) in
+            let key = Utils.trim (String.sub key_value 0 index_of_equals) in 
+            let value = Utils.trim (String.sub key_value (index_of_equals + 1) ((String.length key_value)-index_of_equals-1))
+            in
               String_map.add key value (load_key_values rest)
           end
         else
@@ -97,6 +85,9 @@ let cmd_line_arg_map = ref String_map.empty ;;
 let add_to_map key value () =
   cmd_line_arg_map := String_map.add key value !cmd_line_arg_map ;;
 
+let add_to_map_no_dummy key value =
+  cmd_line_arg_map := String_map.add key value !cmd_line_arg_map ;;
+
 (* The command-line arguments we accept for each type of server. *)
 let both_servers_args = [
   "--print-main-server-info",Arg.Unit (add_to_map "print_main_server_info" "true"),"Print debug info in main server.";
@@ -107,6 +98,7 @@ let both_servers_args = [
   "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
+  "--test-email-addr", Arg.String (add_to_map_no_dummy "test_email_addr"), "Send a test email to the address and exit.";
 ] ;;
 
 let main_server_args = [
@@ -116,6 +108,7 @@ let main_server_args = [
   "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
+  "--test-email-addr", Arg.String (add_to_map_no_dummy "test_email_addr"), "Send a test email to the address and exit.";
 ] ;;
 
 let dp_server_args = [
@@ -196,6 +189,19 @@ let print msg =
     | BothServers -> print_endline msg
     | Parser -> print_endline msg ;;
 
+let get_cmd_line_value key = 
+  try
+    String_map.find key (!cmd_line_arg_map)
+  with
+      Not_found -> raise (Cmd_Line_Arg_Key_Not_Found key)
+        
+let get_cmd_line_value_iff_key_exists key = 
+  try
+    Some(String_map.find key (!cmd_line_arg_map))
+  with
+      Not_found -> None
+
 let always_print msg =
   print_endline (truncated_msg msg) ;;
   
+
