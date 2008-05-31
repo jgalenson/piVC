@@ -219,7 +219,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	
 	private void addSettingsMenu() {
 		JMenu settingsMenu = new JMenu("Settings");
-		settingsMenu.setMnemonic(KeyEvent.VK_E);
+		settingsMenu.setMnemonic(KeyEvent.VK_T);
 		
 		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
 		runtimeAssertions.addActionListener(new ActionListener() {
