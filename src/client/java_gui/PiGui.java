@@ -32,6 +32,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import data_structures.BasicPath;
+import data_structures.VerificationAtom;
 import data_structures.PiError;
 import data_structures.Step;
 import data_structures.VerificationResult;
@@ -566,16 +567,19 @@ public class PiGui extends JFrame {
 	 * that depend on having a basic path selected.
 	 */
 	public void nodeSelected(Object obj) {
-		piMenu.enableBasicPathHighlighter(obj instanceof BasicPath);
+		piMenu.enableBasicPathHighlighter((obj instanceof VerificationAtom) && (((VerificationAtom)obj).getBP()!=null));
 	}
 	
 	/**
 	 * Display the selected basic path over time.
 	 */
-	public void displaySelectedBasicPath() {
-		BasicPath basicPath = (BasicPath)piTree.getSelectedObject();		
-		BasicPathHighlighter basicPathHighlighter = new BasicPathHighlighter(basicPath);
-		basicPathHighlighter.start();
+	public void displaySelectedBasicPath() {//TODO-A: only allow to run if currently selected atom has a basic path
+		VerificationAtom atom = (VerificationAtom)piTree.getSelectedObject();
+		BasicPath bp = atom.getBP();
+		if(bp!=null){
+			BasicPathHighlighter basicPathHighlighter = new BasicPathHighlighter(bp);
+			basicPathHighlighter.start();
+		}
 	}
 	
 	/**

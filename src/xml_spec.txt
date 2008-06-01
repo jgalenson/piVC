@@ -105,8 +105,8 @@ Result node: server no errors:
 					        </var>
 					        // ...
 				        </counterexample>
+                                        //optional location. used for nonnegative atoms, which don't have basic paths
 			        </verification_atom>
-			        // more verification_atoms as siblings
 			</correctness>
 			<termination status="valid/invalid/unknown">
 				<decreasing status="valid/invalid/unknown">

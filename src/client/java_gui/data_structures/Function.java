@@ -4,11 +4,11 @@ public class Function {
 	
 	private String name;
 	private VerificationResult.validityT validity;
-	private Correctness correctness;
+	private VerificationAtomCollection correctness;
 	private Termination termination;
 	private Location location;
 	
-	public Function(String name, VerificationResult.validityT validity, Correctness correctness, Termination termination, Location location) {
+	public Function(String name, VerificationResult.validityT validity, VerificationAtomCollection correctness, Termination termination, Location location) {
 		this.name = name;
 		this.validity = validity;
 		this.correctness = correctness;
@@ -24,7 +24,7 @@ public class Function {
 		return validity;
 	}
 	
-	public Correctness getCorrectness() {
+	public VerificationAtomCollection getCorrectness() {
 		return correctness;
 	}
 	

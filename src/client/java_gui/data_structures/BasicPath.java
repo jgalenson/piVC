@@ -1,19 +1,10 @@
 package data_structures;
-
 import java.util.ArrayList;
-
 public class BasicPath {
-	
 	private ArrayList<Step> steps;
-	private VerificationCondition vc;
-	private VerificationResult.validityT validity;
-	private Counterexample counterexample;
 	
-	public BasicPath(ArrayList<Step> steps, VerificationCondition vc, VerificationResult.validityT validity, Counterexample counterexample) {
+	public BasicPath(ArrayList<Step> steps){
 		this.steps = steps;
-		this.vc = vc;
-		this.validity = validity;
-		this.counterexample = counterexample;
 	}
 	
 	public int getNumSteps() {
@@ -24,23 +15,11 @@ public class BasicPath {
 		return steps.get(index);
 	}
 	
-	public VerificationResult.validityT getValidity() {
-		return validity;
-	}
-	
-	public VerificationCondition getVC() {
-		return vc;
-	}
-	
 	public ArrayList<Location> getLocations() {
 		ArrayList<Location> locations = new ArrayList<Location>();
 		for (Step step: steps)
 			locations.add(step.getLocation());
 		return locations;
-	}
+	}	
 	
-	public Counterexample getCounterexample() {
-		return counterexample;
-	}
-
 }

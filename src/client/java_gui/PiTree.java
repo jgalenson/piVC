@@ -16,13 +16,14 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+
 import data_structures.BasicPath;
-import data_structures.BasicPathHolder;
-import data_structures.Correctness;
+import data_structures.VerificationAtom;
 import data_structures.Counterexample;
 import data_structures.Function;
 import data_structures.Step;
 import data_structures.Termination;
+import data_structures.VerificationAtomCollection;
 import data_structures.VerificationCondition;
 import data_structures.VerificationResult;
 
@@ -101,7 +102,7 @@ public class PiTree extends JPanel {
 					tree.expandPath(new TreePath(child.getPath()));
 				}
 				// Automatically expand basic paths and nonnegative VCs.
-				else if (expandedObj instanceof BasicPath || expandedObj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
+				else if (expandedObj instanceof VerificationAtom) {
 					for (int i = 0; i < expandedNode.getChildCount(); i++) {
 						DefaultMutableTreeNode child = (DefaultMutableTreeNode)expandedNode.getChildAt(i);
 						tree.expandPath(new TreePath(child.getPath()));
@@ -145,10 +146,10 @@ public class PiTree extends JPanel {
 			Function function = verificationResult.getFunction(i);
 			DefaultMutableTreeNode fnNode = new DefaultMutableTreeNode(function);
 			treeModel.insertNodeInto(fnNode, root, root.getChildCount());
-			Correctness correctness = function.getCorrectness();
+			VerificationAtomCollection correctness = function.getCorrectness();
 			DefaultMutableTreeNode correctnessNode = new DefaultMutableTreeNode(correctness);
 			treeModel.insertNodeInto(correctnessNode, fnNode, fnNode.getChildCount());
-			addBasicPaths(correctness, correctnessNode);
+			addVerificationAtomCollection(correctness, correctnessNode);
 			Termination termination = function.getTermination();
 			if (termination != null) {
 				DefaultMutableTreeNode terminationNode = new DefaultMutableTreeNode(termination);
@@ -162,25 +163,28 @@ public class PiTree extends JPanel {
 	/**
 	 * Adds the basic paths and VCs inside a function to the tree as its children.
 	 */
-	private void addBasicPaths(BasicPathHolder parent, DefaultMutableTreeNode parentNode) {
-		for (int i = 0; i < parent.getNumBasicPaths(); i++) {
-			BasicPath basicPath = parent.getBasicPath(i);
-			DefaultMutableTreeNode basicPathNode = new DefaultMutableTreeNode(basicPath);
+	private void addVerificationAtomCollection(VerificationAtomCollection parent, DefaultMutableTreeNode parentNode) {
+		for (int i = 0; i < parent.getNumAtoms(); i++) {
+			VerificationAtom atom = parent.getAtom(i);
+			DefaultMutableTreeNode basicPathNode = new DefaultMutableTreeNode(atom);
 			treeModel.insertNodeInto(basicPathNode, parentNode, parentNode.getChildCount());
 			//DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(basicPath.getVC());
 			//treeModel.insertNodeInto(vcNode, basicPathNode, basicPathNode.getChildCount());
-			addSteps(basicPath, basicPathNode);
-			if (basicPath.getValidity() == VerificationResult.validityT.INVALID)
-				addCounterexample(basicPath.getCounterexample(), basicPathNode);
+			BasicPath bp = atom.getBP();
+			if(bp!=null){
+				addSteps(bp, basicPathNode);
+			}
+			if (atom.getValidity() == VerificationResult.validityT.INVALID)
+				addCounterexample(atom.getCounterexample(), basicPathNode);
 		}		
 	}
 
 	/**
 	 * Adds the steps inside a basic path to the tree as its children.
 	 */
-	private void addSteps(BasicPath basicPath, DefaultMutableTreeNode basicPathNode) {
+	private void addSteps(BasicPath basicPath, DefaultMutableTreeNode atomNode) {
 		DefaultMutableTreeNode parentStepNode = new DefaultMutableTreeNode("Steps");
-		treeModel.insertNodeInto(parentStepNode, basicPathNode, basicPathNode.getChildCount());
+		treeModel.insertNodeInto(parentStepNode, atomNode, atomNode.getChildCount());
 		for (int i = 0; i < basicPath.getNumSteps(); i++) {
 			Step step = basicPath.getStep(i);
 			DefaultMutableTreeNode stepNode = new DefaultMutableTreeNode(step);
@@ -203,14 +207,18 @@ public class PiTree extends JPanel {
 	}
 	
 	private void addTermination(Termination termination, DefaultMutableTreeNode terminationNode) {
-		Termination.Decreasing decreasing = termination.getDecreasing();
+		VerificationAtomCollection decreasing = termination.getDecreasing();
 		DefaultMutableTreeNode decreasingNode = new DefaultMutableTreeNode(decreasing);
 		treeModel.insertNodeInto(decreasingNode, terminationNode, terminationNode.getChildCount());
-		addBasicPaths(decreasing, decreasingNode);
-		Termination.Nonnegative nonnegative = termination.getNonnegative();
+		addVerificationAtomCollection(decreasing, decreasingNode);
+		
+		VerificationAtomCollection nonnegative = termination.getNonnegative();
 		DefaultMutableTreeNode nonnegativeNode = new DefaultMutableTreeNode(nonnegative);
 		treeModel.insertNodeInto(nonnegativeNode, terminationNode, terminationNode.getChildCount());
-		for (int i = 0; i < nonnegative.getNumVCs(); i++) {
+		addVerificationAtomCollection(nonnegative, nonnegativeNode);
+		
+		/*
+		for (int i = 0; i < nonnegative.getNumAtoms(); i++) {
 			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = nonnegative.getNonnegativeVC(i);
 			DefaultMutableTreeNode nonnegativeVCNode = new DefaultMutableTreeNode(nonnegativeVC);
 			treeModel.insertNodeInto(nonnegativeVCNode, nonnegativeNode, nonnegativeNode.getChildCount());
@@ -218,7 +226,7 @@ public class PiTree extends JPanel {
 			//treeModel.insertNodeInto(vcNode, nonnegativeVCNode, nonnegativeVCNode.getChildCount());
 			if (nonnegativeVC.getCounterexample() != null)
 				addCounterexample(nonnegativeVC.getCounterexample(), nonnegativeVCNode);
-		}
+		}*/
 	}
 	
 	/**
@@ -230,8 +238,8 @@ public class PiTree extends JPanel {
 		if (obj instanceof Step) {
 			Step step = (Step)obj;
 			piCode.highlight(step.getLocation(), PiCode.yellowHP);
-		} else if (obj instanceof BasicPath) {
-			BasicPath basicPath = (BasicPath)obj;
+		} else if (obj instanceof VerificationAtom) {
+			VerificationAtom basicPath = (VerificationAtom)obj;
 			piCode.highlight(basicPath.getLocations(), PiCode.yellowHP);
 		} else if (obj instanceof Function) {
 			Function function = (Function)obj;
@@ -239,9 +247,6 @@ public class PiTree extends JPanel {
 		} else if (obj instanceof Counterexample.Variable) {
 			Counterexample.Variable variable = (Counterexample.Variable)obj;
 			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
-		} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
-			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
-			piCode.highlight(nonnegativeVC.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof String) {
 			String str = (String)obj;
 			if ("Steps".equals(str))
@@ -265,11 +270,8 @@ public class PiTree extends JPanel {
 				return null;
 			}
 			Object obj = curr.getUserObject();
-			if(obj instanceof BasicPath){
-				return ((BasicPath)obj).getVC();
-			}
-			else if(obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition){
-				return ((Termination.Nonnegative.NonnegativeVerificationCondition)obj).getVC();
+			if(obj instanceof VerificationAtom){
+				return ((VerificationAtom)obj).getVC();
 			}
 			else{
 				curr=(DefaultMutableTreeNode)curr.getParent();
@@ -359,32 +361,30 @@ public class PiTree extends JPanel {
 				Function function = (Function)obj;
 				setIcon(getProperIcon(function.getValidity()));
 				setText(function.getName());
-			} else if (obj instanceof Correctness) {
-				Correctness correctness = (Correctness)obj;
-				setIcon(getProperIcon(correctness.getValidity()));
-				setText("Correctness");
+			} else if (obj instanceof VerificationAtomCollection) {
+				VerificationAtomCollection vcCollection = (VerificationAtomCollection)obj;
+				setIcon(getProperIcon(vcCollection.getValidity()));
+				setText(vcCollection.getLabel());
 			} else if (obj instanceof Termination) {
 				Termination termination = (Termination)obj;
 				setIcon(getProperIcon(termination.getValidity()));
 				setText("Termination");
-			} else if (obj instanceof BasicPath) {
-				BasicPath basicPath = (BasicPath)obj;
-				setIcon(getProperIcon(basicPath.getValidity()));
-				setText("Basic path identifier goes here");
+			} else if (obj instanceof VerificationAtom) {
+				VerificationAtom atom = (VerificationAtom)obj;
+				setIcon(getProperIcon(atom.getValidity()));
+				setText(atom.getIdentifier());
 			} else if (obj instanceof Step) {
 				Step step = (Step)obj;
 				setIcon(null);
 				setText(step.getText());
-			} else if (obj instanceof VerificationCondition) {
+			} /*else if (obj instanceof VerificationCondition) { //VCs no longer go in tree, so this is commented out
 				VerificationCondition vc = (VerificationCondition)obj;
 				setIcon(getProperIcon(vc.getValidity()));
-				//setText("VC: " + vc.getVerificationCondition());
-				//TODO-J: do something here
-			} else if (obj instanceof Counterexample.Variable) {
+			}*/ else if (obj instanceof Counterexample.Variable) {
 				Counterexample.Variable variable = (Counterexample.Variable)obj;
 				setIcon(null);
 				setText(variable.getText());
-			} else if (obj instanceof Termination.Decreasing) {
+			} /*else if (obj instanceof Termination.Decreasing) {
 				Termination.Decreasing decreasing = (Termination.Decreasing)obj;
 				setIcon(getProperIcon(decreasing.getValidity()));
 				setText("Decreasing");
@@ -396,7 +396,7 @@ public class PiTree extends JPanel {
 				Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
 				setIcon(getProperIcon(nonnegativeVC.getValidity()));
 				setText("Nonnegative VC");
-			} else if (obj instanceof String) {
+			}*/ else if (obj instanceof String) {
 				setIcon(null);
 				setText((String)obj);
 			}
