@@ -59,11 +59,14 @@ public class PiGui extends JFrame {
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
 	private PiVCPane vcPane;
+
+	private static ImageIcon icon = new ImageIcon(Utils.getURL("images/Pi-symbol.png"));
 	
 	public PiGui() {
 		super(TITLE);
 		setLayout(new BorderLayout());
 		useSystemLookAndFeel();
+		setIconImage(icon.getImage());
 		
 		initDataPre();
 		installMain();
@@ -586,6 +589,10 @@ public class PiGui extends JFrame {
 			rightTabbedPane.setMnemonicAt(2, KeyEvent.VK_R);
 		} else if (rightTabbedPane.getTabCount() >= 3)
 			rightTabbedPane.removeTabAt(2);
+	}
+	
+	public static Icon getIcon() {
+		return icon;
 	}
 
 	/**
