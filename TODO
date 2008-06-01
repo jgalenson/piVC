@@ -21,6 +21,12 @@ Jason
         Bug: function locations not always correct
         Change function locations to prototype only
         Update README. Especially with information about email functionality.
+        Actions menu for compile/submission
+        Space between compile and submit icons
+        Bug: submit program dialog box doesn't center correctly
+        Report bug feature
+        Figure out why we crash on compiling an empty file.
+        
 
 
 Joel
@@ -35,9 +41,11 @@ Joel
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
+        About dialog box
+        pi logo in gui top-left corners
 
 Unassigned
-	Figure out why we crash on compiling an empty file.
+	
 
 --------------------
 Possible later TODOs
