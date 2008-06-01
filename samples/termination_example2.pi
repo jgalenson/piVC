@@ -1,0 +1,14 @@
+/* From email with Aaron 6/01/2008. */
+
+# (n, 2, n)
+@pre n >= 0
+@post true
+void foo(int n) {
+	for
+		# (n, 1, n-i)
+		@ n >= 0 && i >= 0 && i <= n
+       (int i := 0; i < n; i := i + 1)
+		{
+			foo(n-1);
+		}
+}

@@ -67,7 +67,10 @@ let rec yices_string_of_expr e =
 	begin
 	  match c with
 	    | ConstInt (loc, i) -> string_of_int i
-	    | ConstFloat (loc, f) -> string_of_float f
+	    | ConstFloat (loc, f) ->
+		let rational_str = Utils.rational_string_of_float f in
+		let parts = Str.split (Str.regexp "/") rational_str in
+		"(/ " ^ (List.nth parts 0) ^ " " ^ (List.nth parts 1) ^ ")"
 	    | ConstBool (loc, b) -> string_of_bool b
 	end
     | LValue (loc, lval) ->

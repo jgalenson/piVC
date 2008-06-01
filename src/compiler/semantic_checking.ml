@@ -471,104 +471,14 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
 
   | EmptyStmt -> ignore () ;;
 
-module Fndecl_set = Set.Make (struct
-				type t = fnDecl
-				let compare a b =
-				  let a_name = Ast.unique_fn_name a in
-				  let b_name = Ast.unique_fn_name b in
-				  String.compare a_name b_name
-                              end)
 let check_termination func scope_stack errors =
-  (* Gets the fnDecl from a call.
-     We return it as an option since there could be an error. *)
-  let get_fndecl_from_call c =
-    let ident = match c with
-      | Call (_, i, _) -> i
-      | _ -> assert false (* We should only ever call this on a Call expr. *)
-    in
-    let lookup_result = Scope_stack.lookup_decl ident.name scope_stack in
-    match lookup_result with
-      | None -> None
-      | Some (d) -> begin
-	  match d with
-	    | FnDecl (_, fd) -> Some (fd)
-	    | _ -> None
-	end
+  let get_fndecl_from_scope_stack c =
+    let called_fn = Ast_utils.get_called_function c in
+    Scope_stack.lookup_decl called_fn.name scope_stack
   in
-  (* Gets all the functions func calls.
-     We return one Call expr for each function we call. *)
-  let get_fn_calls func =
-    let rec get_calls_from_stmt s = match s with
-      | Expr (_, e) -> [Expr_utils.get_calls e]
-      | StmtBlock (_, st) -> List.concat (List.map get_calls_from_stmt st)
-      | IfStmt (_, _, s1, s2) -> (get_calls_from_stmt s1) @ (get_calls_from_stmt s2)
-      | WhileStmt (_, _, block, _, _) -> get_calls_from_stmt block
-      | ForStmt (_, _, _, _, block, _, _) -> get_calls_from_stmt block
-      | _ -> []
-    in
-    let calls_per_line = get_calls_from_stmt func.stmtBlock in
-    let all_calls = List.concat calls_per_line in
-    let num_occurrences elem list =
-      let elem_decl = get_fndecl_from_call elem in
-      if (Utils.is_none elem_decl) then
-	0
-      else begin
-	let calls_this_fn e =
-	  let this_decl = get_fndecl_from_call e in
-	  if (Utils.is_none this_decl) then
-	    false
-	  else
-	    (Utils.elem_from_opt this_decl) == (Utils.elem_from_opt elem_decl)
-	in
-	let occurrences = List.filter calls_this_fn list in
-	List.length occurrences
-      end
-    in
-    List.filter (fun e -> (num_occurrences e all_calls) == 1) all_calls
-  in
-  (* Checks whether a functions i recursive (directly or indirectly). *)
+  (* Checks whether a functions is recursive (directly or indirectly). *)
   let is_recursive func =
-    let visited = ref Fndecl_set.empty in
-    (* Checks whether caller calls callee. *)
-    let rec does_call caller callee depth =
-      let are_same_fn f1 f2 =
-	(Ast.unique_fn_name f1) == (Ast.unique_fn_name f2)
-      in
-      if (are_same_fn callee caller && depth > 0) then
-	true
-      else if (Fndecl_set.mem caller !visited) then
-	false
-      else begin
-	visited := Fndecl_set.add caller !visited;
-	let all_calls = get_fn_calls caller in
-	let all_calls_decls =
-	  let decl_opt_list = List.map get_fndecl_from_call all_calls in
-	  let some_decl_list = List.filter Utils.is_some decl_opt_list in
-	  List.map Utils.elem_from_opt some_decl_list
-	in
-	let map_fn x = does_call x callee (depth + 1) in
-	List.exists map_fn all_calls_decls
-      end
-    in
-    does_call func func 0
-  in
-  (* Gets a list of all the loops in a function. *)
-  let get_loops func =
-    let rec get_a_loop s = match s with
-      | StmtBlock (_, sl) -> List.concat (List.map get_a_loop sl)
-      | IfStmt (_, _, s1, s2) -> (get_a_loop s1) @ (get_a_loop s2)
-      | WhileStmt (_, _, block, _, _) -> [s] @ (get_a_loop block)
-      | ForStmt (_, _, _, _, block, _, _) -> [s] @ (get_a_loop block)
-      | _ -> []
-    in
-    let list_of_loops = get_a_loop func.stmtBlock in
-    list_of_loops
-  in
-  (* Gets the ranking annotation out of a loop. *)
-  let rec get_ranking_annotation s = match s with
-    | WhileStmt (_, _, _, _, ra) -> ra
-    | ForStmt (_, _, _, _, _, _, ra) -> ra
-    | _ -> assert false (* We should only call this on loops. *)
+    Ast_utils.calls func func get_fndecl_from_scope_stack
   in
   (* Gets whether or not the user is trying to prove that a function terminates.
      They are trying to prove a function terminates if they annotation
@@ -578,13 +488,15 @@ let check_termination func scope_stack errors =
     if (Utils.is_some func.fnRankingAnnotation) then
       true
     else begin
-      let loops = get_loops func in
-      let termination_args = List.map get_ranking_annotation loops in
-      let is_termination_arg = List.exists (Utils.is_some) termination_args in
+      let loops = Ast_utils.get_loops func in
+      let termination_args = List.map Ast_utils.get_loop_ranking_annotation loops in
+      let is_termination_arg = List.exists Utils.is_some termination_args in
       is_termination_arg
     end
   in
   if is_trying_to_prove_termination func then begin
+    let func_loops = Ast_utils.get_loops func in
+    let func_calls = Ast_utils.get_fn_calls func get_fndecl_from_scope_stack in
     (* If we're trying to prove termination, we need to ensure that all loops
        are annotated and that all calls are themselves proved to terminate.
        We also need to make sure that paths we will use have the same size annotations. *)
@@ -596,7 +508,7 @@ let check_termination func scope_stack errors =
     end;
     (* Ensure that all loops are annotated. *)
     let ensure_loop_ra s =
-      let ra = get_ranking_annotation s in
+      let ra = Ast_utils.get_loop_ranking_annotation s in
       if (Utils.is_none ra) then begin
 	let fn_name_str = string_of_identifier func.fnName in
 	let error_msg = "To prove that the function " ^ fn_name_str ^ " terminates, you must annotate this loop." in
@@ -604,14 +516,14 @@ let check_termination func scope_stack errors =
 	add_error SemanticError error_msg loc errors
       end
     in
-    List.iter ensure_loop_ra (get_loops func);
+    List.iter ensure_loop_ra func_loops;
     (* Ensure that all called functions are proved to terminate. *)
     let ensure_trying_to_prove_fn_termination call =
-      let fn_decl_opt = get_fndecl_from_call call in
+      let fn_decl_opt = Ast_utils.get_fndecl_from_call get_fndecl_from_scope_stack call in
       if (Utils.is_some fn_decl_opt) then
 	let fn_decl = Utils.elem_from_opt fn_decl_opt in
 	let is_trying = is_trying_to_prove_termination fn_decl in
-	let loops = get_loops fn_decl in
+	let loops = Ast_utils.get_loops fn_decl in
 	let doesnt_need_termination_arg = (not (is_recursive fn_decl) && (List.length loops) == 0) in
 	if not (is_trying || doesnt_need_termination_arg) then begin
 	  let caller = string_of_identifier func.fnName in
@@ -621,8 +533,48 @@ let check_termination func scope_stack errors =
 	  add_error SemanticError error_msg loc errors
 	end
     in
-    List.iter ensure_trying_to_prove_fn_termination (get_fn_calls func);
-    (* TODO: Ensure all paths have same size annotations. *)
+    List.iter ensure_trying_to_prove_fn_termination func_calls;
+    (* Ensure all paths have same size annotations. *)
+    let ensure_same_size_annotations () =
+      (* Get the size of the first tuple in the fn.
+	 We will compare all other sizes to it. *)
+      let tuple_size =
+	if (Utils.is_some func.fnRankingAnnotation) then
+	  let ra = Utils.elem_from_opt func.fnRankingAnnotation in
+	  List.length ra.tuple
+	else (* We must have at least one loop annotation since is_trying_to_prove_termination is true. *)
+	  let loop_ras = List.map Ast_utils.get_loop_ranking_annotation func_loops in
+	  let first_tuple_opt = List.find Utils.is_some loop_ras in
+	  let first_tuple = Utils.elem_from_opt first_tuple_opt in
+	  List.length first_tuple.tuple
+      in
+      let check_loop_ra_tuple_size l =
+	let ra_opt = Ast_utils.get_loop_ranking_annotation l in
+	if Utils.is_some ra_opt then
+	  let ra = Utils.elem_from_opt ra_opt in
+	  let my_length = List.length ra.tuple in
+	  if my_length != tuple_size then
+	    let error_msg = "The ranking annotation for this loop has size " ^ string_of_int my_length ^ " when other ranking annotations in this function have size " ^ string_of_int tuple_size ^ "." in
+	    let loc = Ast.location_of_stmt l in
+	    add_error SemanticError error_msg loc errors
+      in
+      let check_call_ra_tuple_size call =
+	let fndecl_opt = Ast_utils.get_fndecl_from_call get_fndecl_from_scope_stack call in
+	if Utils.is_some fndecl_opt then
+	  let fndecl = Utils.elem_from_opt fndecl_opt in
+	  let ra_opt = fndecl.fnRankingAnnotation in
+	  if (Utils.is_some ra_opt) then
+	    let ra = Utils.elem_from_opt ra_opt in
+	    let my_length = List.length ra.tuple in
+	    if (Ast_utils.calls fndecl func get_fndecl_from_scope_stack && my_length != tuple_size) then
+	      let error_msg = "The ranking annotation for this call has size " ^ string_of_int my_length ^ " when other ranking annotations in this function have size " ^ string_of_int tuple_size ^ "." in
+	      let loc = Ast.location_of_expr call in
+	      add_error SemanticError error_msg loc errors
+      in
+      List.iter check_loop_ra_tuple_size func_loops;
+      List.iter check_call_ra_tuple_size func_calls
+    in
+    ensure_same_size_annotations ()
   end ;;
 
 (* Ensures that a non-void function returns

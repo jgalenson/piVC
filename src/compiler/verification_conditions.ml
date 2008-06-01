@@ -229,6 +229,7 @@ let get_vc bp =
 	in
 	let rev_list = List.rev (List.tl (List.tl path)) in
 	let end_tuple = get_tuple (List.hd rev_list) in
+	assert ((List.length start_tuple) = (List.length end_tuple));
 	(* Get the Ast representation of < in the lexographic ordering of the two tuples. *)
 	let ordering_expr =
 	  (* Gets a single end<start ordering and combine it with the prev ones

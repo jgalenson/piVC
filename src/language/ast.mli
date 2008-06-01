@@ -192,6 +192,7 @@ val type_of_identifier : identifier -> varType
 val id_of_identifier : identifier -> string
 
 val varDecl_of_decl : decl -> varDecl
+val fnDecl_of_decl : decl -> fnDecl
 
 val identifier_of_array_expr : expr -> identifier   
 

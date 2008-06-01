@@ -53,8 +53,6 @@ let elem_from_opt opt = match opt with
 let queue_to_list q =
   Queue.fold (fun a b -> a @ [b]) [] q  ;;
 
-
-
 let rec trim str = 
   if str = "" || str = " " then str
   else
@@ -69,5 +67,14 @@ let rec trim str =
       if start_index = 0 && end_index = String.length str then
         str
       else
-        trim (String.sub str start_index (end_index-start_index))
+        trim (String.sub str start_index (end_index-start_index)) ;;
   
+let rational_string_of_float f =
+  let f_str = string_of_float f in
+  let parts = Str.split_delim (Str.regexp_string ".") f_str in
+  assert (List.length parts == 2);
+  let prefix = List.nth parts 0 in
+  let suffix = List.nth parts 1 in
+  let numerator = prefix ^ suffix in
+  let denominator = "1" ^ (String.make (String.length suffix) '0') in
+  numerator ^ "/" ^ denominator ;;

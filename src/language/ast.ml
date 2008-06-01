@@ -255,6 +255,10 @@ let varDecl_of_decl decl = match decl with
     VarDecl(loc, vd) -> vd
   | _ -> raise (Error "Not a varDecl")
 
+let fnDecl_of_decl decl = match decl with
+    FnDecl(loc, fd) -> fd
+  | _ -> raise (Error "Not a fnDecl")
+
 let name_of_decl decl =
   match decl with
       VarDecl(l, d) -> d.varName.name

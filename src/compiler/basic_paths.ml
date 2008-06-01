@@ -202,7 +202,20 @@ let generate_paths_for_func func program gen_runtime_asserts =
                         decl.var_id := Some(ident_name);
                         ident.decl := Some(decl);
                         temp_var_number := !temp_var_number + 1;
-                        add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ (get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)))) false (Some(CallEnding));
+			let termination_annotation =
+			  let called_decl_opt = Ast_utils.get_called_fndecl func program expr in
+			  if Utils.is_some called_decl_opt then
+			    let called_fndecl = Ast.fnDecl_of_decl (Utils.elem_from_opt called_decl_opt) in
+			    let get_fndecl x = Ast_utils.get_called_fndecl func program x in
+			    let should_add = Ast_utils.calls called_fndecl func get_fndecl in
+			    if should_add then
+			      get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)
+			    else
+			      []
+			  else
+			    []
+			in
+                        add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
                         new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
                         lval_for_new_ident
                     )

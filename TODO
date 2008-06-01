@@ -30,16 +30,13 @@ Jason
 
 
 Joel
-	Proof of termination (see Aaron's original PiVC email)
-		Remaining: check proving that you have termination args everywhere you need them, ensure that all ranking annotations are of the same size (in semantic checking or in vc generation?), only check paths that we need (e.g. not fn -> fn when the callee is not recursive, combine with ensuring same size), perhaps make more efficient (cache is_recursive and get_loops).
-		Verdict: make both (first two) compile errors
+	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Static analysis API
 	
 	Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
 	Timeouts.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
-	Deal with floats/doubles.  Also, Div and IDiv right now are equivalent.
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
 
 Unassigned

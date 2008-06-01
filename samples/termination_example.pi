@@ -1,9 +1,14 @@
-# (x)
+# (1, x)
 @pre x >= 0 && x < 42
 @post true
 void a(int x) {
 	if (x = 0) return;
-	b(x-1);
+	for
+		# (0, 42-i)
+		@ x > 0 && x < 42 && i <= 42
+		(int i := 0; i < 42; i := i + 1) {
+			b(x-1);
+		}
 	foo (x);
 }
 
