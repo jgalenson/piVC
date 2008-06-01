@@ -33,6 +33,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		addAnalyzeMenu();
 		addSubmitMenu();
 		addSettingsMenu();
+		addHelpMenu();
 	}
 	
 	/**
@@ -266,6 +267,29 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		
 		add(settingsMenu);
 	}
+	
+	private void addHelpMenu() {
+		JMenu helpMenu = new JMenu("Help");
+		helpMenu.setMnemonic(KeyEvent.VK_H);
+		
+		JMenuItem about = new JMenuItem("About");
+		about.setMnemonic(KeyEvent.VK_A);
+		about.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String aboutString = 
+					"<html>"
+					+ "PiVC" + "<p />"
+					+ "<a href='http://theory.stanford.edu/~arbrad/pivc/'>http://theory.stanford.edu/~arbrad/pivc/</a>" + "<p /><p />"
+					+ "Designed by Aaron Bradley and Zohar Manna." + "<br />"
+					+ "Written by Jason Auerbach and Joel Galenson." + "<p /><p />"
+					+ "Licensed under the GPL."
+					+ "</html>";
+				JOptionPane.showMessageDialog(piGui, aboutString, "About PiVC", JOptionPane.INFORMATION_MESSAGE, PiGui.getIcon());
+			}
+		});
+		helpMenu.add(about);
+		add(helpMenu);
+	}	
 	
 	/**
 	 * Called when some kind of change relating to undo/redo happened.
