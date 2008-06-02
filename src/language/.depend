@@ -3,9 +3,5 @@ parser.cmi: ast.cmi
 scope_stack.cmi: ast.cmi 
 ast.cmo: ../utils/utils.cmi ast.cmi 
 ast.cmx: ../utils/utils.cmx ast.cmi 
-lexer.cmo: parser.cmi lexer.cmi 
-lexer.cmx: parser.cmx lexer.cmi 
-parser.cmo: ast.cmi parser.cmi 
-parser.cmx: ast.cmx parser.cmi 
 scope_stack.cmo: ast.cmi scope_stack.cmi 
 scope_stack.cmx: ast.cmx scope_stack.cmi 

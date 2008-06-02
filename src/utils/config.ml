@@ -129,6 +129,9 @@ let set_server_type s_type = match s_type with
   | BothServers -> server_type := Some BothServers
   | Parser -> server_type := Some Parser ;;
 
+let get_server_type () =
+  !server_type ;;
+
 (* Parses the command-line arguments. *)
 let parse_cmd_line s_type =
   let usage_msg = "PiVC server command-line options:" in

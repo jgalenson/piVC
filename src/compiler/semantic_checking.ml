@@ -139,29 +139,33 @@ and check_for_same_type t1 t2 loc errors =
   else
     true
 
+(* Semantically check an annotation and assign its name. *)
 and check_annotation annotation scope_stack errors annotation_id func = 
   let annotation_type = check_and_get_return_type scope_stack annotation.ann errors (true, false, true) in
+  (* Ensure the annotation has type bool. *)
   begin
     if not (types_equal annotation_type (Bool(gdl()))) then
       let error_message = get_type_error_msg (string_of_expr annotation.ann) annotation_type "bool" in
       add_error SemanticError error_message (location_of_expr annotation.ann) errors
   end;
+  (* Assign the annotation's name. *)
   let name =
     match annotation.ann_type with
       | Normal (id) ->
+	  (* Use the user-provided annotation if provided, else generate our own. *)
 	  begin
 	    match id with
 	      | Some (x) -> string_of_identifier x
 	      | None ->
 		  begin
-		    let my_name = name_annotation func annotation_id annotation.ann_type in
+		    let my_name = Ast.name_annotation func annotation_id annotation.ann_type in
 		    incr annotation_id;
 		    my_name
 		  end
 	  end
-      | Precondition -> name_annotation func annotation_id Precondition
-      | Postcondition -> name_annotation func annotation_id Postcondition
-      | Runtime -> assert false (* We don't generate these until basic path generation. *)
+      | Precondition -> Ast.name_annotation func annotation_id Precondition
+      | Postcondition -> Ast.name_annotation func annotation_id Postcondition
+      | Runtime -> assert false (* We don't generate these annotations until basic path generation. *)
   in
   annotation.ann_name <- Some (name)
 
@@ -397,7 +401,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
   cagrt_full e (is_top_level) ;;
 
 (* Check a ranking annotation.  We ensure that all the things
-   in the tuples are integers. *)
+   in the tuples are integers. We also set its associated_annotation field. *)
 let check_ranking_annotation ra_opt associated_annotation scope_stack errors = match ra_opt with
     Some (ra) ->
       begin
@@ -474,6 +478,10 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
 
   | EmptyStmt -> ignore () ;;
 
+(* Check termination.
+   We ensure that all necessary termination arguments are present
+   and that all termination paths begin and end with annotations
+   of the same tuple size. *)
 let check_termination func scope_stack errors =
   let get_fndecl_from_scope_stack c =
     let called_fn = Ast_utils.get_called_function c in

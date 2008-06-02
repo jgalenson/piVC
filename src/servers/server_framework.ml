@@ -32,7 +32,14 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
 
 let start_server serv_fun port =
   let my_address = Unix.inet_addr_any in
-  print_endline ("Starting server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
+  let type_str =
+    let server_type = Config.get_server_type () in
+    match server_type with
+      | Some (Config.MainServer) -> "main "
+      | Some (Config.DPServer) -> "dp "
+      | _ -> ""
+  in
+  print_endline ("Starting " ^ type_str ^ "server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
 
 (* Runs a server using the specified callback function

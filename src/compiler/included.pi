@@ -1,5 +1,0 @@
-predicate sorted(int low, int high, int[] arr) := 
-             (forall a,b. ((low <= a && a <= b && b <= high) -> arr[a]<=arr[b]));	
-
-predicate partitioned(int low1, int high1, int low2, int high2, int[] arr) :=
-	        (forall a,b. ((low1 <= a && a <= high1 && low2 <= b && b <= high2)-> arr[a]<=arr[b]));

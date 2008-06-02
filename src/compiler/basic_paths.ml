@@ -138,6 +138,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
       | _ -> true
     in
     let path_without_ranking_annotations = List.filter is_not_ranking_annotation cur_path in
+    Queue.add (make_basic_path (path_without_ranking_annotations)) normal_paths;
     if (List.length cur_path) = ((List.length path_without_ranking_annotations) + 2) then
       (* Has starting and ending termination argument. *)
       begin
@@ -159,11 +160,8 @@ let generate_paths_for_func func program gen_runtime_asserts =
 	  assert (not (is_not_ranking_annotation (List.nth p ((List.length p) - 1))));
 	in
 	check_termination_path termination_path;
-	Queue.add (make_basic_path (path_without_ranking_annotations)) normal_paths;
 	Queue.add (TerminationPath (termination_path)) termination_paths
-      end
-    else (* Has zero or one termination arguments, so we ignore them. *)
-      Queue.add (make_basic_path (path_without_ranking_annotations)) normal_paths
+      end;
   in
   let generate_steps_for_expr (curr_path:path_step list) expr = 
     let (new_steps:path_step list ref) = ref [] in

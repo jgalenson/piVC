@@ -39,3 +39,5 @@ val get_cmd_line_value : string -> string
 (* Always prints the specified message.  Truncates if necessary. *)
 val always_print : string -> unit ;;
 
+val get_server_type : unit -> server_type option ;;
+

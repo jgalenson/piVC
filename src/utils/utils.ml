@@ -68,7 +68,9 @@ let rec trim str =
         str
       else
         trim (String.sub str start_index (end_index-start_index)) ;;
-  
+
+(* Turns a float into a string of its rational form
+   e.g. 3.14 -> 314/100.  We don't do any reducing. *)
 let rational_string_of_float f =
   let f_str = string_of_float f in
   let parts = Str.split_delim (Str.regexp_string ".") f_str in

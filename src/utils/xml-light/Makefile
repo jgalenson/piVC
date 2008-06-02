@@ -3,7 +3,7 @@
 .SUFFIXES : .ml .mli .cmo .cmx .cmi .mll .mly
 
 INSTALLDIR=`ocamlc -where`
-CFLAGS=
+CFLAGS= -g
 LFLAGS= -a
 LIBS=
 

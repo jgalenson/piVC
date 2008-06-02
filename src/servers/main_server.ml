@@ -17,12 +17,6 @@ exception InvalidXml of string ;;
  *)
 
 let rec compile vc_cache_and_lock ic oc =
-  (* Convert queue of errors into a string. *)
-  (*let get_error_string errors =
-    let buf = Buffer.create 1024 in
-    List.iter (fun e -> Buffer.add_string buf (Semantic_checking.string_of_error e)) errors;
-    Buffer.contents buf
-  in*)
 
   (* Parse the xml we get from the client. *)
   let parse_xml xml_str =
@@ -98,6 +92,7 @@ let rec compile vc_cache_and_lock ic oc =
     in
       (code, options, user_info, submission_info)
   in
+  
   let go_exception code options user ex =
     try
       let log_message = 
@@ -135,67 +130,64 @@ let rec compile vc_cache_and_lock ic oc =
             print_endline ("The exception within the exception was: " ^ (Exceptions.string_of_exception ex_inner))
           end
   in
-    begin
+  
+  begin
+    try
+      let xml_str = get_input ic in
       try
-        let xml_str = get_input ic in
-          try
-            let (code, options, user_info, submission_info) = parse_xml xml_str in
-              try          
-                (* Config.print_endline code; *)
-                let (program, errors) = Compile.parse_strings [("user-file", code)] in
-                  
-                let get_output_to_return_to_client = 
-                  let messages = ref [] in
-                    match errors with
-                        [] -> 
-                          begin
-                            let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
-                            let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
-                              begin
-                                match submission_info with
-                                    Some(s) -> 
-                                      let msg = Email.go_submit code s (elem_from_opt user_info) options (Some(verified_program_info)) [] in
-                                        messages := messages.contents @ [msg]
-                                  | None -> ignore()
-                              end;
-                              begin
-                                if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
-                                  messages := messages.contents @ [Constants.inductive_core_message]
-                              end;
-                              Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options messages.contents)
-                          end
-                      | _  -> 
-                          begin
-                            begin
-                              match submission_info with
-                                  Some(s) -> 
-                                    let msg = Email.go_submit code s (elem_from_opt user_info) options None errors in
-                                      messages := messages.contents @ [msg]
-                                | None -> ignore()
-                            end;
-                          end;
-                          Xml_generator.string_of_xml_node (xml_of_errors errors messages.contents)
-                in
-                  send_output oc get_output_to_return_to_client;
-                  Config.print "Compilation completed. Response sent back to client.";
-              with
-                  ex -> 
+        let (code, options, user_info, submission_info) = parse_xml xml_str in
+        try          
+          let (program, errors) = Compile.parse_strings [("user-file", code)] in
+          let get_output_to_return_to_client = 
+            let messages = ref [] in
+            match errors with
+                [] -> 
+                  begin
+                    let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
+                    let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
                     begin
-                      go_exception code (Some(options)) user_info ex
-                    end
-          with 
-              ex ->
-                begin
-                  go_exception ("Exception occured before XML parsing completed. XML is as follows.\n\n"^xml_str) None None ex
-                end
-      with ex ->
-        begin
-          go_exception ("Exception occured before transmission had been fully recieved.") None None ex
-        end
-    end;
-    flush stdout;
-    flush stderr;
-    flush oc
+                      match submission_info with
+                          Some(s) -> 
+                            let msg = Email.go_submit code s (elem_from_opt user_info) options (Some(verified_program_info)) [] in
+                            messages := messages.contents @ [msg]
+                        | None -> ignore()
+                    end;
+                    begin
+                      if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
+                        messages := messages.contents @ [Constants.inductive_core_message]
+                    end;
+                    Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options messages.contents)
+                  end
+              | _  -> 
+                  begin
+                    match submission_info with
+                        Some(s) -> 
+                          let msg = Email.go_submit code s (elem_from_opt user_info) options None errors in
+                          messages := messages.contents @ [msg]
+                      | None -> ignore()
+                  end;
+                  Xml_generator.string_of_xml_node (xml_of_errors errors messages.contents)
+          in
+          send_output oc get_output_to_return_to_client;
+          Config.print "Compilation completed. Response sent back to client.";
+        with
+            ex -> 
+              begin
+                go_exception code (Some(options)) user_info ex
+              end
+      with 
+          ex ->
+            begin
+              go_exception ("Exception occured before XML parsing completed. XML is as follows.\n\n"^xml_str) None None ex
+            end
+    with ex ->
+      begin
+        go_exception ("Exception occured before transmission had been fully recieved.") None None ex
+      end
+  end;
+  flush stdout;
+  flush stderr;
+  flush oc
       
 and xml_of_messages messages = 
   let messages_node = Xml_generator.create "messages" in

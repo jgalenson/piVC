@@ -61,8 +61,4 @@ let get_nonnegativity_vcs program =
     in
     List.fold_left single_implication [] all_ranking_annotations
   in
-  (*(* Debug printing code. *)
-  List.iter (function (ra, annot) -> print_endline ((Ast.string_of_ranking_annotation ra) ^ " with " ^ (Ast.string_of_expr annot))) all_ranking_annotations;
-  print_endline "";
-  List.iter (function e -> print_endline (Ast.string_of_expr e)) nonnegativity_implications;*)
   nonnegativity_implications ;;

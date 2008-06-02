@@ -126,8 +126,12 @@ and rankingAnnotation = {
 val create_annotation : expr -> identifier option -> annotation ;;
 val create_precondition : expr -> annotation ;;
 val create_postcondition : expr -> annotation ;;
+(* Call this if you're making a copy of an exist annotation
+   so we can copy over its name. *)
 val create_annotation_copy : expr -> annotation -> annotation ;;
 val create_ranking_annotation : expr list -> location -> rankingAnnotation ;;
+(* Call this if you're making a copy of an exist ranking
+   annotation so we can copy over its associated annotation. *)
 val create_ranking_annotation_copy : expr list -> rankingAnnotation -> rankingAnnotation ;;
 
 type fnDecl = {
