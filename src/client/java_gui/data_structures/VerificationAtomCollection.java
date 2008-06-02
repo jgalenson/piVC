@@ -6,7 +6,7 @@ public class VerificationAtomCollection {
 		
 	private VerificationResult.validityT validity;
 	private ArrayList<VerificationAtom> atoms;
-	String label;
+	private String label;
 	
 	public VerificationAtomCollection(VerificationResult.validityT validity, ArrayList<VerificationAtom> atoms, String label) {
 		this.validity = validity;

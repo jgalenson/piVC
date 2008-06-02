@@ -153,7 +153,7 @@ public class PiGui extends JFrame {
             BufferedReader in = new BufferedReader(new FileReader(selectedFile));
             piCode.read(in, null);
             piCode.openedNewFile();
-			piTree.clear();
+			piTree.openedNewFile();
 			piErrorOutput.clear();
 			vcPane.clear();
             if (curCompilation != null)
@@ -190,7 +190,7 @@ public class PiGui extends JFrame {
 			return;
 		piCode.clear();
         piCode.openedNewFile();
-		piTree.clear();
+		piTree.openedNewFile();
 		piErrorOutput.clear();
 		vcPane.clear();
 		// If we don't do this, next time you do open or save the las opened/saved filename will be there by default.

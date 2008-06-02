@@ -3,6 +3,8 @@ import java.awt.Component;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Comparator;
+import java.util.TreeSet;
 
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
@@ -15,6 +17,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import data_structures.BasicPath;
@@ -40,6 +43,8 @@ public class PiTree extends JPanel {
 	private PiGui piGui;
 	private PiCode piCode;
 	private DefaultMutableTreeNode selectedNode;
+	private TreeSet<TreePath> viewableObjects; // All of a viewable nodes parents are expanded, but may or may not be displayed
+	private boolean isExpandingNewlyAddedObjects;
 	
 	public PiTree(PiGui piGui, PiCode piCode) {
 		super();
@@ -49,6 +54,8 @@ public class PiTree extends JPanel {
 		this.piGui = piGui;
 	    this.piCode = piCode;
 	    selectedNode = null;
+	    viewableObjects = new TreeSet<TreePath>(new PiObjectComparator());
+	    isExpandingNewlyAddedObjects = false;
 		initTree();
 	}
 	
@@ -96,6 +103,9 @@ public class PiTree extends JPanel {
 				TreePath path = e.getPath();
 				DefaultMutableTreeNode expandedNode = (DefaultMutableTreeNode)path.getLastPathComponent();
 				Object expandedObj = expandedNode.getUserObject();
+				viewableObjects.add(path);
+				if (isExpandingNewlyAddedObjects)  // Don't magically expand things if we're just filling in what used to be expanded after a compile
+					return;
 				// If a Function has no termination arguments, automatically expand the "Correctness" node when we expand the function.
 				if (expandedObj instanceof Function && expandedNode.getChildCount() == 1) {
 					DefaultMutableTreeNode child = (DefaultMutableTreeNode)expandedNode.getChildAt(0);
@@ -109,8 +119,17 @@ public class PiTree extends JPanel {
 					}
 				}
 			}
-			// ignore collapsed messages.
-			public void treeCollapsed(TreeExpansionEvent e) {}
+			// On a collapse, this object and all its children from the list of expanded objects.
+			public void treeCollapsed(TreeExpansionEvent e) {
+				TreePath path = e.getPath();
+				hideObject((DefaultMutableTreeNode)path.getLastPathComponent());
+			}
+			
+			private void hideObject(DefaultMutableTreeNode node) {
+				viewableObjects.remove(new TreePath(node.getPath()));
+				for (int i = 0; i < node.getChildCount(); i++)
+					hideObject((DefaultMutableTreeNode)node.getChildAt(i));
+			}
 		});
 		// Draw icons next to things
 		tree.setCellRenderer(new MyTreeCellRenderer());
@@ -136,6 +155,7 @@ public class PiTree extends JPanel {
 		root = new DefaultMutableTreeNode(verificationResult);
 		treeModel.setRoot(root);
 		addFunctions(verificationResult);
+		expandPreviouslyExpandedNodes();
 	}
 	
 	/**
@@ -166,16 +186,14 @@ public class PiTree extends JPanel {
 	private void addVerificationAtomCollection(VerificationAtomCollection parent, DefaultMutableTreeNode parentNode) {
 		for (int i = 0; i < parent.getNumAtoms(); i++) {
 			VerificationAtom atom = parent.getAtom(i);
-			DefaultMutableTreeNode basicPathNode = new DefaultMutableTreeNode(atom);
-			treeModel.insertNodeInto(basicPathNode, parentNode, parentNode.getChildCount());
-			//DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(basicPath.getVC());
-			//treeModel.insertNodeInto(vcNode, basicPathNode, basicPathNode.getChildCount());
+			DefaultMutableTreeNode atomNode = new DefaultMutableTreeNode(atom);
+			treeModel.insertNodeInto(atomNode, parentNode, parentNode.getChildCount());
 			BasicPath bp = atom.getBP();
 			if(bp!=null){
-				addSteps(bp, basicPathNode);
+				addSteps(bp, atomNode);
 			}
 			if (atom.getValidity() == VerificationResult.validityT.INVALID)
-				addCounterexample(atom.getCounterexample(), basicPathNode);
+				addCounterexample(atom.getCounterexample(), atomNode);
 		}		
 	}
 
@@ -216,17 +234,33 @@ public class PiTree extends JPanel {
 		DefaultMutableTreeNode nonnegativeNode = new DefaultMutableTreeNode(nonnegative);
 		treeModel.insertNodeInto(nonnegativeNode, terminationNode, terminationNode.getChildCount());
 		addVerificationAtomCollection(nonnegative, nonnegativeNode);
-		
-		/*
-		for (int i = 0; i < nonnegative.getNumAtoms(); i++) {
-			Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = nonnegative.getNonnegativeVC(i);
-			DefaultMutableTreeNode nonnegativeVCNode = new DefaultMutableTreeNode(nonnegativeVC);
-			treeModel.insertNodeInto(nonnegativeVCNode, nonnegativeNode, nonnegativeNode.getChildCount());
-			//DefaultMutableTreeNode vcNode = new DefaultMutableTreeNode(nonnegativeVC.getVC());
-			//treeModel.insertNodeInto(vcNode, nonnegativeVCNode, nonnegativeVCNode.getChildCount());
-			if (nonnegativeVC.getCounterexample() != null)
-				addCounterexample(nonnegativeVC.getCounterexample(), nonnegativeVCNode);
-		}*/
+	}
+	
+	/**
+	 * After we compile, ensure that all previously-expanded nodes
+	 * are still expanded.
+	 * Note that we make a copy of the set so that we can clear out
+	 * nodes that were expanded but are now removed (such as Counterexamples
+	 * for things we verified succesfully).
+	 */
+	private void expandPreviouslyExpandedNodes() {
+		isExpandingNewlyAddedObjects = true;
+		TreeSet<TreePath> oldViewableObjects = new TreeSet<TreePath>(viewableObjects);
+		viewableObjects.clear();
+		recExpandPreviouslyExpandedNodes(root, oldViewableObjects);
+		isExpandingNewlyAddedObjects = false;
+	}
+	
+	/**
+	 * Recursively expand this node if it used to be expanded
+	 * and call ourself on its childen.
+	 */
+	private void recExpandPreviouslyExpandedNodes(DefaultMutableTreeNode node, TreeSet<TreePath> oldViewableObjects) {
+		TreePath pathToNode = new TreePath(node.getPath());
+		if (oldViewableObjects.contains(pathToNode))
+			tree.expandPath(pathToNode);
+		for (int i = 0; i < node.getChildCount(); i++)
+			recExpandPreviouslyExpandedNodes((DefaultMutableTreeNode)node.getChildAt(i), oldViewableObjects);
 	}
 	
 	/**
@@ -309,6 +343,14 @@ public class PiTree extends JPanel {
 	}
 	
 	/**
+	 * Call when we open a new file.
+	 */
+	public void openedNewFile() {
+		clear();
+		viewableObjects.clear();
+	}
+	
+	/**
 	 * A class that lets us customize how we draw nodes.
 	 * We can specify a node's text and image.
 	 */
@@ -378,26 +420,11 @@ public class PiTree extends JPanel {
 				Step step = (Step)obj;
 				setIcon(null);
 				setText(step.getText());
-			} /*else if (obj instanceof VerificationCondition) { //VCs no longer go in tree, so this is commented out
-				VerificationCondition vc = (VerificationCondition)obj;
-				setIcon(getProperIcon(vc.getValidity()));
-			}*/ else if (obj instanceof Counterexample.Variable) {
+			} else if (obj instanceof Counterexample.Variable) {
 				Counterexample.Variable variable = (Counterexample.Variable)obj;
 				setIcon(null);
 				setText(variable.getText());
-			} /*else if (obj instanceof Termination.Decreasing) {
-				Termination.Decreasing decreasing = (Termination.Decreasing)obj;
-				setIcon(getProperIcon(decreasing.getValidity()));
-				setText("Decreasing");
-			} else if (obj instanceof Termination.Nonnegative) {
-				Termination.Nonnegative nonnegative = (Termination.Nonnegative)obj;
-				setIcon(getProperIcon(nonnegative.getValidity()));
-				setText("Nonnegative");
-			} else if (obj instanceof Termination.Nonnegative.NonnegativeVerificationCondition) {
-				Termination.Nonnegative.NonnegativeVerificationCondition nonnegativeVC = (Termination.Nonnegative.NonnegativeVerificationCondition)obj;
-				setIcon(getProperIcon(nonnegativeVC.getValidity()));
-				setText("Nonnegative VC");
-			}*/ else if (obj instanceof String) {
+			} else if (obj instanceof String) {
 				setIcon(null);
 				setText((String)obj);
 			}
@@ -406,6 +433,96 @@ public class PiTree extends JPanel {
 
 			return this;
 		}
+	}
+	
+	/**
+	 * Compares our data structures.
+	 */
+	private static class PiObjectComparator implements Comparator<TreePath> {
+		
+		public int compare(TreePath aPath, TreePath bPath) {
+			Object a = ((DefaultMutableTreeNode)aPath.getLastPathComponent()).getUserObject();
+			Object b = ((DefaultMutableTreeNode)bPath.getLastPathComponent()).getUserObject();
+			return compare(a, b, aPath, bPath);
+		}
+
+		public int compare(Object a, Object b, TreePath aPath, TreePath bPath) {
+			String aClassName = a.getClass().getCanonicalName();
+			String bClassName = b.getClass().getCanonicalName();
+			if (aClassName.equals(bClassName)) {
+				if (a instanceof VerificationResult)
+					return ((VerificationResult)a).getFilename().compareTo(((VerificationResult)b).getFilename()); 
+				else if (a instanceof Function)
+					return ((Function)a).getName().compareTo(((Function)b).getName()); 
+				else if (a instanceof VerificationAtomCollection) {
+					Function aFunc = (Function)getLastObject(getParentPathFunction(aPath));
+					Function bFunc = (Function)getLastObject(getParentPathFunction(bPath));
+					String aIdent = aFunc.getName() + "." + ((VerificationAtomCollection)a).getLabel();
+					String bIdent = bFunc.getName() + "." + ((VerificationAtomCollection)b).getLabel();
+					return aIdent.compareTo(bIdent);
+				} else if (a instanceof Termination) {
+					TreePath aFunc = getParentPathFunction(aPath);
+					TreePath bFunc = getParentPathFunction(bPath);
+					return compare(getLastObject(aFunc), getLastObject(bFunc), aFunc, bFunc);
+				} else if (a instanceof VerificationAtom) {
+					int nameCmp = ((VerificationAtom)a).getIdentifier().compareTo(((VerificationAtom)b).getIdentifier());
+					if (nameCmp != 0)
+						return nameCmp;
+					else {
+						VerificationAtomCollection aParent = (VerificationAtomCollection)((DefaultMutableTreeNode)aPath.getParentPath().getLastPathComponent()).getUserObject();
+						VerificationAtomCollection bParent = (VerificationAtomCollection)((DefaultMutableTreeNode)bPath.getParentPath().getLastPathComponent()).getUserObject();
+						return aParent.getLabel().compareTo(bParent.getLabel());
+					}
+				} else if (a instanceof Step) {
+					TreePath aVa = getParentPathVerificationAtom(aPath);
+					TreePath bVa = getParentPathVerificationAtom(bPath);
+					int parentCmp = compare(getLastObject(aVa), getLastObject(bVa), aVa, bVa);
+					if (parentCmp != 0)
+						return parentCmp;
+					else
+						return ((Step)a).getText().compareTo(((Step)b).getText());
+				} else if (a instanceof Counterexample.Variable) {
+					int strCmp = ((Counterexample.Variable)a).getText().compareTo(((Counterexample.Variable)b).getText());
+					if (strCmp != 0)
+						return strCmp;
+					else
+						return compare(aPath.getParentPath(), bPath.getParentPath());
+				}else if (a instanceof String) {
+					int strCmp = ((String)a).compareTo((String)b);
+					if (strCmp != 0)
+						return strCmp;
+					else
+						return compare(aPath.getParentPath(), bPath.getParentPath());
+				} else
+					throw new RuntimeException("Invalid object in the tree.");
+			} else
+				return aClassName.compareTo(bClassName);
+		}
+		
+		private TreePath getParentPathFunction(TreePath path) {
+			if (path == null)
+				throw new RuntimeException("This path has no parent function.");
+			Object obj = getLastObject(path);
+			if (obj instanceof Function)
+				return path;
+			else
+				return getParentPathFunction(path.getParentPath());
+		}
+		
+		private TreePath getParentPathVerificationAtom(TreePath path) {
+			if (path == null)
+				throw new RuntimeException("This path has no parent verification atom.");
+			Object obj = getLastObject(path);
+			if (obj instanceof VerificationAtom)
+				return path;
+			else
+				return getParentPathVerificationAtom(path.getParentPath());
+		}
+		
+		private Object getLastObject(TreePath path) {
+			return ((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
+		}
+		
 	}
 
 }

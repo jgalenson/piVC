@@ -25,19 +25,17 @@ Jason
         Bug: submit program dialog box doesn't center correctly
         Report bug feature
         Figure out why we crash on compiling an empty file.
-        Fix locations of nonnegative atoms (discuss with Joel)
-        
+        Fix locations of nonnegative atoms (discuss with Joel)        
 
 
 Joel
-	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Static analysis API
 	
-	GUI tree usability improvements.
-	Timeouts.
-	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
-        Profiling (i.e. figure out what the hold up is)
+	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
+	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
+	Timeouts.
+
 
 Unassigned
 
