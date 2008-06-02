@@ -318,7 +318,7 @@ ForStmt   /* : T_For OptionalTermination T_Assert LocationOpt AnnotationExpr Stm
 }
 ;
 
-OptionalTermination : T_Termination T_LParen TerminationArgs T_RParen {Some ({ tuple = $3; location_ra = create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4) } )}
+OptionalTermination : T_Termination T_LParen TerminationArgs T_RParen {Some (Ast.create_ranking_annotation $3 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4))) }
                     | {None}
 		    ;
 

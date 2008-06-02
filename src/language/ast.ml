@@ -187,14 +187,16 @@ and annotation = {
 and rankingAnnotation = {
   tuple : expr list;
   location_ra : location;
+  mutable associated_annotation : annotation option
 }
 
 let create_annotation a t = { ann = a ; ann_type = Normal t ; ann_name = None }
 let create_precondition a = { ann = a; ann_type = Precondition ; ann_name = None }
 let create_postcondition a = { ann = a; ann_type = Postcondition ; ann_name = None }
 let create_annotation_copy a c = { ann = a; ann_type = c.ann_type ; ann_name = c.ann_name }
-let create_ranking_annotation t l = { tuple = t ; location_ra = l }
-
+let create_ranking_annotation t l = { tuple = t ; location_ra = l ; associated_annotation = None }
+let create_ranking_annotation_copy t c = { tuple = t ; location_ra = c.location_ra ; associated_annotation = c.associated_annotation }
+  
 type fnDecl = {
   fnName        : identifier;
   formals       : varDecl list;

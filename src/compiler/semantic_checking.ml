@@ -398,17 +398,20 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 
 (* Check a ranking annotation.  We ensure that all the things
    in the tuples are integers. *)
-let check_ranking_annotation ra_opt scope_stack errors = match ra_opt with
+let check_ranking_annotation ra_opt associated_annotation scope_stack errors = match ra_opt with
     Some (ra) ->
-      let check_ranking_expr e =
-	let my_type = check_and_get_return_type scope_stack e errors (false, true, true) in
-	if not (Ast.is_integral_type my_type) then
-	  begin
-	    let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
-	    add_error SemanticError error_msg (location_of_expr e) errors;
-	  end;
-      in
-      List.iter check_ranking_expr ra.tuple
+      begin
+	let check_ranking_expr e =
+	  let my_type = check_and_get_return_type scope_stack e errors (false, true, true) in
+	  if not (Ast.is_integral_type my_type) then
+	    begin
+	      let error_msg = ("Ranking annotation must be integral but instead is " ^ (string_of_type my_type)) in
+	      add_error SemanticError error_msg (location_of_expr e) errors;
+	    end;
+	in
+	List.iter check_ranking_expr ra.tuple;
+	ra.associated_annotation <- Some (associated_annotation)
+      end
   | None -> () ;;
 
 let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func stmt =
@@ -429,7 +432,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
 
   | WhileStmt (loc, test, block, annotation, ra) ->
       check_annotation annotation scope_stack errors annotation_id func;
-      check_ranking_annotation ra scope_stack errors;
+      check_ranking_annotation ra annotation scope_stack errors;
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
 	begin
@@ -440,7 +443,7 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
       
   | ForStmt (loc, init, test, incr, block, annotation, ra) ->
       check_annotation annotation scope_stack errors annotation_id func;
-      check_ranking_annotation ra scope_stack errors;      
+      check_ranking_annotation ra annotation scope_stack errors;      
       ignore (check_and_get_return_type scope_stack init errors (false, false, true));
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
       if not (is_boolean_type testType loc) then
@@ -609,7 +612,7 @@ let check_function func s errors =
   Scope_stack.enter_scope s;
   insert_var_decls s errors func.formals;
   check_annotation func.preCondition s errors ann_id func;
-  check_ranking_annotation func.fnRankingAnnotation s errors;
+  check_ranking_annotation func.fnRankingAnnotation func.preCondition s errors;
   check_termination func s errors;
   Scope_stack.enter_scope s;
   (*add rv to scope*)

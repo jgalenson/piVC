@@ -120,6 +120,7 @@ and annotation = {
 and rankingAnnotation = {
   tuple : expr list;
   location_ra : location;
+  mutable associated_annotation : annotation option
 }
     
 val create_annotation : expr -> identifier option -> annotation ;;
@@ -127,6 +128,7 @@ val create_precondition : expr -> annotation ;;
 val create_postcondition : expr -> annotation ;;
 val create_annotation_copy : expr -> annotation -> annotation ;;
 val create_ranking_annotation : expr list -> location -> rankingAnnotation ;;
+val create_ranking_annotation_copy : expr list -> rankingAnnotation -> rankingAnnotation ;;
 
 type fnDecl = {
   fnName       : identifier;

@@ -110,7 +110,7 @@ let gen_func_ranking_annotation_with_args_substitution func args =
     let ident_subs = get_replacement_list (get_idents_of_formals func) args in
     let map_fn e =  sub_idents_in_expr_while_preserving_original_location e ident_subs in
     let new_tuple = List.map map_fn ra.tuple in
-    Some (Ast.create_ranking_annotation new_tuple ra.location_ra)
+    Some (Ast.create_ranking_annotation_copy new_tuple ra)
   end ;;
 
 (* CODE SECTION: GENERATING PATHS *)
@@ -333,22 +333,37 @@ let generate_paths_for_func func program gen_runtime_asserts =
   generate_path ([func_pre_condition] @ (get_ranking_annotation func.fnRankingAnnotation)) (get_statement_list func.stmtBlock) [];
   (Utils.queue_to_list normal_paths, Utils.queue_to_list termination_paths) ;;
 
+(* Gets the name of a basic path. *)
 let name_of_basic_path path =
   let (steps, type_of_path) = match path with
     | NormalPath (s, _) -> (s, "")
     | RuntimeAssertPath (s) -> (s, "Runtime assertion")
     | TerminationPath (s) -> (s, "Termination")
   in
-  let generate_string prev cur =
+  (* If we're in a termination path, cut off the second elem, which is
+     a rankingAnnotation, since we'll already generate the name for its
+     associated annotation, the first elem of the path, and we don't
+     want to repeat it. *)
+  let steps_to_use =
+    if type_of_path = "Termination" then begin
+      assert ((type_of_step (List.hd (List.tl steps))) = "ranking annotation");
+      List.hd steps :: List.tl (List.tl steps)
+    end else
+      steps
+  in
+  let rec generate_string prev cur =
     let separate_if_necessary a b =
       if a = "" then b else (a ^ " \\u2192 " ^ b)
     in
     match cur with
-      | Annotation (e, s) -> 
+      | Annotation (e, _) -> 
 	  Exceptions.our_assert_str (lazy (assert (Utils.is_some e.ann_name))) "Annotation doesn't have a name";
 	  let ann_name = Utils.elem_from_opt (e.ann_name) in
 	  separate_if_necessary prev ann_name
+      | RankingAnnotation (ra) ->
+	  assert (Utils.is_some ra.associated_annotation); (* Everything should have an associated ann from semantic checking. *)
+	  generate_string prev (Annotation ((Utils.elem_from_opt ra.associated_annotation), ""))
       | Assume (e) -> separate_if_necessary prev ("assume " ^ (Ast.string_of_expr e))
       | _ -> prev
   in
-  List.fold_left generate_string "" steps
+  List.fold_left generate_string "" steps_to_use
