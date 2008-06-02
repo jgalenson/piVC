@@ -12,7 +12,7 @@ type manager =
       pid : int;
     }
 
-let max_man = 32
+let max_man = 5000
 let managers = A.make max_man None
 let managers_lock = Mutex.create ()
 
