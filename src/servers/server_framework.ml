@@ -3,7 +3,7 @@ open Utils
 open Ast
 open Semantic_checking
 
-let max_connections = 10 ;;
+let max_connections = 500 ;;
 
 (* Child/worker thread.  Handles one request. *)
 let compile_thread (sock, server_fun) =

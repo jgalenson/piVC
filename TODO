@@ -37,8 +37,10 @@ Joel
 	Timeouts.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
+        Profiling (i.e. figure out what the hold up is)
 
 Unassigned
+
 	
 
 --------------------
