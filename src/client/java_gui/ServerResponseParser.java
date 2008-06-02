@@ -252,6 +252,7 @@ public class ServerResponseParser {
 	 */
 	private VerificationAtom parseVerificationAtom(Node atom) {
 		String valid = atom.getAttributes().getNamedItem("status").getTextContent();
+		String name = atom.getAttributes().getNamedItem("name").getTextContent();
 		VerificationResult.validityT validity = validityStringToValidity(valid);
 		BasicPath bp = null;
 		VerificationCondition vc = null;
@@ -268,7 +269,7 @@ public class ServerResponseParser {
 		}
 		if (vc == null || (vc.getValidity() == VerificationResult.validityT.INVALID && counterexample == null))
 			throw new RuntimeException("Invalid verification_atom tag");
-		return new VerificationAtom(bp, vc, validity, counterexample, "Joel: put label here");
+		return new VerificationAtom(bp, vc, validity, counterexample, name);
 	}
 
 	/**

@@ -339,15 +339,16 @@ let name_of_basic_path path =
     | RuntimeAssertPath (s) -> (s, "Runtime assertion")
     | TerminationPath (s) -> (s, "Termination")
   in
-  let generate_string prev cur = match cur with
-    | Annotation (e, s) -> 
-	let separate_if_necessary a b =
-	  if a = "" then b else (a ^ " -> " ^ b)
-	in
-	Exceptions.our_assert_str (lazy (assert (Utils.is_some e.ann_name))) "Annotation doesn't have a name";
-	let ann_name = Utils.elem_from_opt (e.ann_name) in
-	separate_if_necessary prev ann_name
-    | Assume (e) -> prev ^ " -> assume " ^ (Ast.string_of_expr e)
-    | _ -> prev
+  let generate_string prev cur =
+    let separate_if_necessary a b =
+      if a = "" then b else (a ^ " \\u2192 " ^ b)
+    in
+    match cur with
+      | Annotation (e, s) -> 
+	  Exceptions.our_assert_str (lazy (assert (Utils.is_some e.ann_name))) "Annotation doesn't have a name";
+	  let ann_name = Utils.elem_from_opt (e.ann_name) in
+	  separate_if_necessary prev ann_name
+      | Assume (e) -> separate_if_necessary prev ("assume " ^ (Ast.string_of_expr e))
+      | _ -> prev
   in
   List.fold_left generate_string "" steps

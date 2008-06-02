@@ -372,7 +372,8 @@ public class PiTree extends JPanel {
 			} else if (obj instanceof VerificationAtom) {
 				VerificationAtom atom = (VerificationAtom)obj;
 				setIcon(getProperIcon(atom.getValidity()));
-				setText(atom.getIdentifier());
+				String name = atom.getIdentifier().replace("\\u2192", '\u2192' + "");
+				setText(name);
 			} else if (obj instanceof Step) {
 				Step step = (Step)obj;
 				setIcon(null);

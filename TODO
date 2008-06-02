@@ -33,7 +33,6 @@ Joel
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Static analysis API
 	
-	Path names generation (L1 -> assume this -> assume that -> L2)
 	GUI tree usability improvements.
 	Timeouts.
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).

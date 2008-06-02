@@ -100,6 +100,12 @@ let overall_validity validities =
   else
     Invalid ;;
 
+let name_of_verification_atom va =
+  if Utils.is_some va.bp then
+    Basic_paths.name_of_basic_path (Utils.elem_from_opt va.bp)
+  else
+    "TODO: Add name" ;;
+
 let instantiate_predicates expr program = 
   let get_predicate pred_ident = 
     let is_match decl = 

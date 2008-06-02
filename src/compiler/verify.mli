@@ -40,6 +40,8 @@ and verification_atom_temp = {
   bp_temp : Basic_paths.basic_path option;
 }
 
+val name_of_verification_atom : verification_atom -> string ;;
+    
 val get_all_info : program -> Utils.options -> (Ast.fnDecl * (Basic_paths.basic_path * expr) list * (Basic_paths.basic_path * expr) list * expr list) list
 
 val string_of_validity : validity -> string 
