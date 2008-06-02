@@ -328,7 +328,7 @@ let get_all_info program options =
   let get_vcs (fnName, (normal_paths, termination_paths)) =
     let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) normal_paths in
     let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) termination_paths in
-    let nonneg_vcs = Termination.get_nonnegativity_vcs program in
+    let nonneg_vcs = List.map fst (Termination.get_nonnegativity_vcs program) in
     (fnName, norm_vcs, term_vcs, nonneg_vcs)
   in
   let paths = get_basic_paths program in

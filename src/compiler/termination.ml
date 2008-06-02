@@ -57,7 +57,7 @@ let get_nonnegativity_vcs program =
       (* The acual implication: the annotation implies all the >=s. *)
       assert (Utils.is_some cur_ge);
       let cur_implication = Ast.Implies (ra.location_ra, annot.ann, Utils.elem_from_opt cur_ge) in
-      prev @ [ cur_implication ]
+      prev @ [ (cur_implication, ra) ]
     in
     List.fold_left single_implication [] all_ranking_annotations
   in
