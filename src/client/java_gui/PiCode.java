@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -7,6 +8,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 
 
+import javax.swing.JEditorPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -15,6 +19,11 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.TabSet;
+import javax.swing.text.TabStop;
 import javax.swing.undo.UndoManager;
 
 import data_structures.Location;
@@ -22,8 +31,11 @@ import data_structures.Location;
 /**
  * A class for the code section on the left-hand side.
  */
-public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
+//Note: syntax highlighting has temporarily been disabled. Replace the line with the commented-out line to reenable
+public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
+//public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
 
+	
 	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
 	public static DefaultHighlighter.DefaultHighlightPainter redHP = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
 	
@@ -38,7 +50,33 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
 		initCodePane();
+		setBackground(Color.WHITE);
+		setTabSize(4);
 	}
+	
+	//Note: this function is only here temporarily, for debugging purposes
+	//It was taken from http://forum.java.sun.com/thread.jspa?forumID=57&threadID=585006
+	//It should be removed before the actual piVC release
+	public void setTabSize(int charactersPerTab)
+	{
+		FontMetrics fm = getFontMetrics(getFont());
+		int charWidth = fm.charWidth( 'w' );
+		int tabWidth = charWidth * charactersPerTab;
+ 
+		TabStop[] tabs = new TabStop[10];
+ 
+		for (int j = 0; j < tabs.length; j++)
+		{
+			int tab = j + 1;
+			tabs[j] = new TabStop( tab * tabWidth );
+		}
+ 
+		TabSet tabSet = new TabSet(tabs);
+		SimpleAttributeSet attributes = new SimpleAttributeSet();
+		StyleConstants.setTabSet(attributes, tabSet);
+		int length = getDocument().getLength();
+		getStyledDocument().setParagraphAttributes(0, length, attributes, false);
+	}	
 	
 	/**
 	 * Overloaded as a hack to avoid the following bug:
@@ -48,6 +86,7 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 	public void read(Reader in, Object desc) throws IOException {
 		super.read(in, desc);
 		justLoaded = true;
+		setTabSize(4);
 	}
 	
 	/**
