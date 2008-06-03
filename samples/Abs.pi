@@ -1,0 +1,14 @@
+@pre  true
+@post forall ix. (0 <= ix && ix < length(rv) - 1 -> rv[ix] >= 0)
+int[] abs(int[] a_0) {
+  int[] a := a_0;
+  for
+    @ true
+    (int i := 0; i < length(a); i := i + 1) 
+  {
+    if (a[i] < 0) {
+      a[i] := -a[i];
+    }
+  }
+  return a;
+}

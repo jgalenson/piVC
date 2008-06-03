@@ -1,7 +1,0 @@
-@pre true
-@post true
-void foo(int x) {}
-
-@pre true
-@post true
-void bar(int x) {}

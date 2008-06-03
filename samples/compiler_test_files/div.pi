@@ -1,0 +1,5 @@
+@pre x = 1
+post rv = 42
+int foo(int x) {
+	return x div 2;
+}

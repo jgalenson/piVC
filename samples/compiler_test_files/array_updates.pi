@@ -1,3 +1,7 @@
+/*
+ * If you put in a lot more of these lines, we slot down a lot.
+ */
+
 @pre true
 @post true
 void foo() {
@@ -6,5 +10,4 @@ void foo() {
 	x[0] := x[0] + 1;
 	x[0] := x[0] + 1;
 	x[0] := x[0] + 1;
-	@ x[0] > 100;
 }

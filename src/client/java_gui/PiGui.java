@@ -193,7 +193,7 @@ public class PiGui extends JFrame {
 		piTree.openedNewFile();
 		piErrorOutput.clear();
 		vcPane.clear();
-		// If we don't do this, next time you do open or save the las opened/saved filename will be there by default.
+		// If we don't do this, next time you do open or save the last opened/saved filename will be there by default.
 		initFileChooser();
 		curFile = null;
 		filenameChanged();

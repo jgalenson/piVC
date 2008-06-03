@@ -3,6 +3,7 @@
 void foo() {
 	/* test */
 	int x;
-	/* test */
+	/* test
+            */
 	int y;
 }

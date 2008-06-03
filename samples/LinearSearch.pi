@@ -1,14 +1,12 @@
-/* As we don't yet have an array length operator, I hard-coded a length of 10
-    into the annotations */
-
-@pre true
-@post rv <-> (exists ix. (ix>=0 && ix<10 && arr[ix]=looking_for))
-bool LinearSearch(int[] arr, int looking_for) {
-	for @(i>=0 && i<=10 && forall j. ((j<i && j>=0) -> (arr[j]!=looking_for)))
-	(int i:=0; i<10;i:=i+1){
-		if(arr[i] = looking_for){
-			return true;
-		}
-	}
-	return false;
+@pre  0 <= l && u < |a|
+@post rv <-> exists ix. (l <= ix && ix <= u -> a[ix] = e)
+bool LinearSearch(int[] a, int l, int u, int e) {
+  for
+    @ true
+    (int i := l; i <= u; i := i + 1)
+  {
+    if (a[i] = e)
+      return true;
+  }
+  return false;
 }
