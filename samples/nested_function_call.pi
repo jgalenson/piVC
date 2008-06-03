@@ -1,0 +1,16 @@
+@pre true
+@post rv = 2
+int main(int x) {
+	int a := main3(main2());
+	return a;
+}
+@pre true
+@post rv = 2
+int main2() {
+	return 2;
+}
+@pre true
+@post rv=a
+int main3(int a) {
+	return a;
+}

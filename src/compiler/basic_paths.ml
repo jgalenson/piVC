@@ -192,6 +192,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
                     VarDecl(loc, vd) -> raise (BadDeclException)
                   | Predicate(loc, p) -> raise (BadDeclException)
                   | FnDecl(loc, callee) -> (
+                      let el = List.map gnfe el in
                       let ident_name = "_v" ^ string_of_int !temp_var_number in
                       let ident = create_identifier ident_name (get_dummy_location ()) in
                       let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
