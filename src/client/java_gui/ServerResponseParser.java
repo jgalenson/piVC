@@ -71,18 +71,17 @@ public class ServerResponseParser {
 				messages = parseMessages(child);
 			}			
 		}		
-		if(result==null){
-			throw new RuntimeException("Non-existant results tag");
-		}
-		String status = result.getAttributes().getNamedItem("status").getTextContent();
-		if (status.equals("valid") || status.equals("invalid") || status.equals("unknown")){
-			parseNormal(result, filename);
-		}
-		else if (status.equals("error")){
-			parseErrors(result);
-		}
-		else if (status.equals("compiler_error")){
-			parseCompilerError(result);
+		if(result!=null){
+			String status = result.getAttributes().getNamedItem("status").getTextContent();
+			if (status.equals("valid") || status.equals("invalid") || status.equals("unknown")){
+				parseNormal(result, filename);
+			}
+			else if (status.equals("error")){
+				parseErrors(result);
+			}
+			else if (status.equals("compiler_error")){
+				parseCompilerError(result);
+			}
 		}
 		return messages;
 	}

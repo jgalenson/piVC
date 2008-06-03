@@ -14,6 +14,14 @@ type user_info = {
 }
 
 
+type report_type = Bug_report | Feedback
+
+type report_info = {
+  report_type : report_type;
+  report_comment : string option;
+}
+
+
 let get_list_of_comma_delimited_strings comma_strings = 
   List.map Utils.trim (Str.split (Str.regexp ",") comma_strings)
       
@@ -48,7 +56,7 @@ let send_error_notification message =
           | _ ->
               begin
                 let to_addrs = get_list_of_comma_delimited_strings to_addrs_config_str in
-                  send_email "piVC" "nobody@nobody.com" to_addrs [] "piVC Exception" message
+                  send_email "piVC" "nobody@nobody.com" to_addrs [] "piVC exception" message
               end
     end
       
@@ -64,6 +72,11 @@ let email_segment_of_user user =
   email_heading "User" ^
     "Name: " ^ user.user_name ^ "\n" ^
     "Email address: " ^ user.user_email_addr ^ "\n"
+    
+let rec not_supported_error_message thing = 
+  not_supported_error_message_with_remedy thing "install sendmail and set the \"enable_email_functionality\" configuration variable to be true"
+and not_supported_error_message_with_remedy thing remedy = 
+  "Error: The server does not support this feature.\n\nYour " ^ thing ^ " was NOT submitted.\n\nTo enable this feature, the server administrator must\n" ^ remedy ^ "."  
     
 let go_submit code submission_info user_info options verified_program_info errors = 
   match Config.get_value_bool "enable_email_functionality" with
@@ -126,4 +139,60 @@ let go_submit code submission_info user_info options verified_program_info error
             send_email "piVC" "noreply@noreply.com" [user_info.user_email_addr] [] "Confirmation of piVC Submission" confirmation_email_text;
             message
         end
-    | false -> "Error: The server does not support the online submission feature.\n\nThe program was NOT submitted.\n\nTo enable this feature, the server administrator must install\nsendmail and set the \"enable_email_functionality\" configuration\nvariable to be true."
+    | false -> not_supported_error_message "program"
+        
+
+
+let string_of_report_type report_type =
+  match report_type with
+      Bug_report -> "bug report"
+    | Feedback -> "feedback"
+        
+let go_report report_info code user_info options  = 
+  match Config.get_value_bool "enable_email_functionality" with
+      true ->
+        begin
+          let email_addrs = (get_list_of_comma_delimited_strings (Config.get_value "report_addrs")) in
+            match List.length email_addrs with
+                0 -> 
+                  begin
+                    not_supported_error_message_with_remedy (string_of_report_type report_info.report_type) "populate the \"report_addrs\" configuration variable"
+                  end
+              | _ ->
+                  begin            
+                    let message = "Your " ^ string_of_report_type report_info.report_type ^ " was successfully submitted. Thank you!"
+                    in
+                    let email_text =
+                      begin
+                        match user_info with
+                            Some(user_info) -> email_segment_of_user user_info ^ "\n"
+                          | None -> ""
+                      end
+                      ^
+                        begin
+                          match report_info.report_comment with
+                              Some(comment) -> email_heading "Comments" ^ comment ^ "\n\n"
+                            | None -> ""
+                        end
+                      ^
+                        begin
+                          match options with
+                              Some(options) -> email_segment_of_options options ^ "\n"
+                            | None -> ""
+                        end
+                      ^
+                        begin
+                          match code with
+                              Some(code) -> email_heading "Code" ^ code
+                            | None -> ""
+                        end
+                    in
+                    let email_subject = "piVC " ^ string_of_report_type report_info.report_type
+                    in
+                      send_email "piVC" "noreply@noreply.com" email_addrs  [] email_subject email_text;
+                      message
+                  end
+        end
+    | false -> not_supported_error_message (string_of_report_type report_info.report_type)
+        
+                  

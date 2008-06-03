@@ -6,11 +6,6 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-
-
-import javax.swing.JEditorPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextPane;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -19,7 +14,6 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.PlainDocument;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.TabSet;
@@ -32,8 +26,8 @@ import data_structures.Location;
  * A class for the code section on the left-hand side.
  */
 //Note: syntax highlighting has temporarily been disabled. Replace the line with the commented-out line to reenable
-public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
-//public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
+//public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
+public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
 
 	
 	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
@@ -51,7 +45,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 		piGui.addDirtyChangedListener(this);
 		initCodePane();
 		setBackground(Color.WHITE);
-		setTabSize(4);
+		//setTabSize(4);
 	}
 	
 	//Note: this function is only here temporarily, for debugging purposes
@@ -86,7 +80,7 @@ public class PiCode extends JTextPane implements DocumentListener, DirtyChangedL
 	public void read(Reader in, Object desc) throws IOException {
 		super.read(in, desc);
 		justLoaded = true;
-		setTabSize(4);
+		//setTabSize(4);
 	}
 	
 	/**

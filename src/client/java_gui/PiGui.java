@@ -267,6 +267,21 @@ public class PiGui extends JFrame {
 	public void doSubmit() {
 		new PiSubmit(this);
 	}	
+
+	
+	public void doReport(PiReport.ReportType type) {
+		new PiReport(this,type);
+	}	
+
+	public void doReport(PiReport.ReportType type, String comment, boolean includeProgram) {
+		String code = null;
+		if(includeProgram){
+			code = piCode.getText();
+		}
+		curCompilation = new Compiler(type, code, comment, this);
+		compileStarted();
+		curCompilation.start();
+	}		
 	
 	/**
 	 * Sets up the GUI when we start a compile.
@@ -314,6 +329,9 @@ public class PiGui extends JFrame {
 		private PiGui gui;
 		private boolean alsoSubmit;
 		private String submissionComment;
+		private boolean isReport;
+		private PiReport.ReportType reportType;
+		private String reportComment;
 		
 		public Compiler(String code, boolean shouldGenerateRuntimeAssertions, boolean shouldFindInductiveCore, boolean alsoSubmit, String submissionComment, PiGui gui) {
 			this.code = code;
@@ -322,6 +340,15 @@ public class PiGui extends JFrame {
 			this.alsoSubmit = alsoSubmit;
 			this.submissionComment = submissionComment;
 			this.gui = gui;
+			this.isReport = false;
+		}
+		
+		public Compiler(PiReport.ReportType reportType, String code, String comment, PiGui gui) {
+			this.code = code;
+			this.reportComment = comment;
+			this.reportType = reportType;
+			this.isReport = true;
+			this.alsoSubmit = false;
 		}
 		
 		@Override
@@ -369,11 +396,31 @@ public class PiGui extends JFrame {
 				docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 	            Document doc = docBuilder.newDocument();
 	            Element rootNode = doc.createElement("piVC_transmission");
-	            rootNode.setAttribute("type", "program_submission_request");
+	            String transmissionType = null;
+	            if(isReport){
+	            	transmissionType = "report";
+	            }else{
+	            	transmissionType = "program_submission_request";	            	
+	            }
+	            rootNode.setAttribute("type", transmissionType);
 	            doc.appendChild(rootNode);
-	            Element codeNode = doc.createElement("code");
-	            codeNode.setTextContent(code);
-	            rootNode.appendChild(codeNode);
+	            
+	            if(code!=null){
+	            	Element codeNode = doc.createElement("code");
+	            	codeNode.setTextContent(code);
+	            	rootNode.appendChild(codeNode);
+	            }
+	            if(isReport){
+	            	String type = PiReport.stringOfReportType(reportType);
+	            	Element typeNode = doc.createElement("report_type");
+	            	typeNode.setTextContent(type);
+	            	rootNode.appendChild(typeNode);
+	            }
+	            if(reportComment!=null){
+	            	Element commentNode = doc.createElement("comment");
+	            	commentNode.setTextContent(reportComment);
+	            	rootNode.appendChild(commentNode);
+	            }
 	            
 	            String userName = Config.getValue("name");
 	            String userEmail = Config.getValue("email_address");
@@ -440,8 +487,6 @@ public class PiGui extends JFrame {
 		final PiGui gui = this; //this is so we can get the gui in the run() method
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
-				piTree.clear();
-				piErrorOutput.clear();
 				piCompilerOutput.setText(text);
 				String[] messages = serverResponseParser.parse(text, getCurFilename());
 				rightTabbedPane.repaint();
@@ -466,7 +511,6 @@ public class PiGui extends JFrame {
 		setStatusBarLabel();
 		statusProgressBar.setIndeterminate(false);
 		statusProgressBar.setVisible(false);
-		vcPane.setNothing();
 	}
 	
 	public void cancelCompile() {
@@ -475,13 +519,21 @@ public class PiGui extends JFrame {
 		compileEnded();
 	}
 	
+	public void clearPreviousCompilationResults(){
+		piTree.clear();
+		piErrorOutput.clear();
+		vcPane.clear();
+	}
+	
 	/**
 	 * Handles a response from the server that contains
 	 * verification conditions and basic paths.
 	 */
 	public void handleVerificationResult(VerificationResult verificationResult) {
+		clearPreviousCompilationResults();
 		piTree.handleVerificationResult(verificationResult);
 		rightTabbedPane.setSelectedIndex(0);
+		vcPane.setNothing();
 	}
 	
 	/**
@@ -489,11 +541,13 @@ public class PiGui extends JFrame {
 	 * a list of errors.
 	 */
 	public void handleError(ArrayList<PiError> errors) {
+		clearPreviousCompilationResults();
 		piErrorOutput.setErrors(errors);
 		rightTabbedPane.setSelectedIndex(1);
 	}
 	
 	public void handleCompilerError(PiError compilerError) {
+		clearPreviousCompilationResults();
 		piErrorOutput.setCompilerError(compilerError);
 		rightTabbedPane.setSelectedIndex(1);
 	}
@@ -573,7 +627,7 @@ public class PiGui extends JFrame {
 	/**
 	 * Display the selected basic path over time.
 	 */
-	public void displaySelectedBasicPath() {//TODO-A: only allow to run if currently selected atom has a basic path
+	public void displaySelectedBasicPath() {
 		VerificationAtom atom = (VerificationAtom)piTree.getSelectedObject();
 		BasicPath bp = atom.getBP();
 		if(bp!=null){

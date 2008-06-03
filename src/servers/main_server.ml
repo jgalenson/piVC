@@ -33,11 +33,8 @@ let rec compile vc_cache_and_lock ic oc =
     in
     (* Ensure the xml we got from the client has a valid root tag. *)
     let check_xml xml =
-      assert (Xml.tag xml = "piVC_transmission");
-      assert (has_child "code" xml);
-      assert (has_child "options" xml);      
       try
-	assert (Xml.attrib xml "type" = "program_submission_request");
+        assert (Xml.tag xml = "piVC_transmission");
       with _ -> raise (InvalidXml "No type attribute in xml from client.");
     in
     (* Gets the child node named tag from the node xml. *)
@@ -53,65 +50,86 @@ let rec compile vc_cache_and_lock ic oc =
       replace_bad_chars text
     in
     let xml = Xml.parse_string xml_str in
-    check_xml xml;
-    let code_node = get_child_node "code" xml in
-    let code = get_text_from_text_node code_node in
-    (* Gets the options. *)
-    let options_node = get_child_node "options" xml in
-    let options =
-      let should_generate_runtime_assertions = has_child "generate_runtime_assertions" options_node in
-      let should_find_inductive_core = has_child "find_inductive_core" options_node in
-	{generate_runtime_assertions = should_generate_runtime_assertions; find_inductive_core = should_find_inductive_core;}
-    in
-    let user_info = 
-      match has_child "user" xml with
-          false -> None
-        | true ->
-            begin
-              let user_node = get_child_node "user" xml in
-                Some({user_name = Xml.attrib user_node "name"; user_email_addr = Xml.attrib user_node "email_addr"})
-            end
-    in
-    let submission_info = 
-      match has_child "submit" options_node with
-          false -> None
-        | true ->
-            begin
-              let submit_node = get_child_node "submit" options_node in
-              let addrs_node = get_child_node "to_addrs" submit_node in
-              let to_addrs = ref [] in
-                List.iter
-                  (function node -> if Xml.tag node = "addr" then to_addrs := !to_addrs @ [get_text_from_text_node node])
-                  (Xml.children addrs_node);
-                let comment = match has_child "comment" submit_node with
-                    false -> None
-                  | true -> Some(get_text_from_text_node (get_child_node "comment" submit_node))
+      check_xml xml;
+      let code = 
+        match has_child "code" xml with
+            true -> let code_node = get_child_node "code" xml in
+              Some(get_text_from_text_node code_node)
+          | false -> None
+              (* Gets the options. *)
+      in
+      let (options,submission_info) =
+        match has_child "options" xml with
+            true -> 
+              begin
+                let options_node = get_child_node "options" xml in
+                let should_generate_runtime_assertions = has_child "generate_runtime_assertions" options_node in
+                let should_find_inductive_core = has_child "find_inductive_core" options_node in
+                let submission_info = 
+                  match has_child "submit" options_node with
+                      false -> None
+                    | true ->
+                        begin
+                          let submit_node = get_child_node "submit" options_node in
+                          let addrs_node = get_child_node "to_addrs" submit_node in
+                          let to_addrs = ref [] in
+                            List.iter
+                              (function node -> if Xml.tag node = "addr" then to_addrs := !to_addrs @ [get_text_from_text_node node])
+                              (Xml.children addrs_node);
+                            let comment = match has_child "comment" submit_node with
+                                false -> None
+                              | true -> Some(get_text_from_text_node (get_child_node "comment" submit_node))
+                            in
+                              Some({to_addrs=to_addrs.contents; comment=comment})
+                        end
                 in
-                  Some({to_addrs=to_addrs.contents; comment=comment})
-            end
-    in
-      (code, options, user_info, submission_info)
-  in
-  
-  let go_exception code options user ex =
+	          (Some({generate_runtime_assertions = should_generate_runtime_assertions; find_inductive_core = should_find_inductive_core;}), submission_info)
+              end
+          | false -> (None,None)
+      in
+      let user_info = 
+        match has_child "user" xml with
+            false -> None
+          | true ->
+              begin
+                let user_node = get_child_node "user" xml in
+                  Some({user_name = Xml.attrib user_node "name"; user_email_addr = Xml.attrib user_node "email_addr"})
+              end
+      in
+      let report_info = 
+        match has_child "report_type" xml with
+            false -> None
+          | true ->
+              begin
+                let report_type_node = get_child_node "report_type" xml in
+                let report_type =
+                  match get_text_from_text_node report_type_node with
+                      "bug" -> Bug_report
+                    | "feedback" -> Feedback
+                    | _ -> assert false
+                in
+                let report_comment =
+                  match has_child "comment" xml with
+                      false -> None
+                    | true ->
+                        begin
+                          let report_comment_node = get_child_node "comment" xml in
+                            Some(get_text_from_text_node report_comment_node)
+                        end
+                in
+                  Some({report_type = report_type; report_comment = report_comment})
+              end
+      in
+        (code, options, user_info, submission_info, report_info)
+  in    
+  let go_exception xml_str ex =
     try
       let log_message = 
         "An exception has occured.\n\n" ^
           Email.email_heading "Exception" ^
           Exceptions.string_of_exception ex ^
           "\n\n" ^
-          begin
-            match options with
-                Some(options) -> Email.email_segment_of_options options ^ "\n"
-              | None -> ""
-          end ^
-          begin
-            match user with
-                Some(user) -> Email.email_segment_of_user user ^ "\n"
-              | None -> ""
-          end ^
-          Email.email_heading "Code" ^ 
-          code
+          Email.email_heading "Request XML" ^ xml_str
       in
         send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
         Config.print ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex));
@@ -130,64 +148,66 @@ let rec compile vc_cache_and_lock ic oc =
             print_endline ("The exception within the exception was: " ^ (Exceptions.string_of_exception ex_inner))
           end
   in
-  
-  begin
-    try
-      let xml_str = get_input ic in
+    begin
       try
-        let (code, options, user_info, submission_info) = parse_xml xml_str in
-        try          
-          let (program, errors) = Compile.parse_strings [("user-file", code)] in
-          let get_output_to_return_to_client = 
-            let messages = ref [] in
-            match errors with
-                [] -> 
-                  begin
-                    let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
-                    let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
-                    begin
-                      match submission_info with
-                          Some(s) -> 
-                            let msg = Email.go_submit code s (elem_from_opt user_info) options (Some(verified_program_info)) [] in
-                            messages := messages.contents @ [msg]
-                        | None -> ignore()
-                    end;
-                    begin
-                      if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
-                        messages := messages.contents @ [Constants.inductive_core_message]
-                    end;
-                    Xml_generator.string_of_xml_node (xml_of_verified_program verified_program_info options messages.contents)
-                  end
-              | _  -> 
-                  begin
-                    match submission_info with
-                        Some(s) -> 
-                          let msg = Email.go_submit code s (elem_from_opt user_info) options None errors in
-                          messages := messages.contents @ [msg]
-                      | None -> ignore()
-                  end;
-                  Xml_generator.string_of_xml_node (xml_of_errors errors messages.contents)
-          in
-          send_output oc get_output_to_return_to_client;
-          Config.print "Compilation completed. Response sent back to client.";
-        with
-            ex -> 
-              begin
-                go_exception code (Some(options)) user_info ex
-              end
-      with 
-          ex ->
-            begin
-              go_exception ("Exception occured before XML parsing completed. XML is as follows.\n\n"^xml_str) None None ex
-            end
-    with ex ->
-      begin
-        go_exception ("Exception occured before transmission had been fully recieved.") None None ex
-      end
-  end;
-  flush stdout;
-  flush stderr;
-  flush oc
+        let xml_str = get_input ic in
+          try
+            let xml_to_return =
+              let (code, options, user_info, submission_info, report_info) = parse_xml xml_str in
+                match report_info with 
+                    Some(report_info) -> xml_of_messages_transmission [go_report report_info code user_info options]
+                  | None ->
+                      begin
+                        let messages = ref [] in
+                        let options = Utils.elem_from_opt options in
+                        let code = Utils.elem_from_opt code in
+                        let (program, errors) = Compile.parse_strings [("user-file", code)] in
+                          match errors with
+                              [] -> 
+                                begin
+                                  let program_info = Verify.get_all_info (Utils.elem_from_opt program) options in
+                                  let verified_program_info = Verify.verify_program program_info (Utils.elem_from_opt program) vc_cache_and_lock options in
+                                    begin
+                                      match submission_info with
+                                          Some(s) -> 
+                                            let msg = Email.go_submit code s (elem_from_opt user_info) options (Some(verified_program_info)) [] in
+                                              messages := messages.contents @ [msg]
+                                        | None -> ignore()
+                                    end;
+                                    begin
+                                      if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
+                                        messages := messages.contents @ [Constants.inductive_core_message]
+                                    end;
+                                    xml_of_verified_program verified_program_info messages.contents
+                                end
+                            | _  -> 
+                                begin
+                                  begin
+                                    match submission_info with
+                                        Some(s) -> 
+                                          let msg = Email.go_submit code s (elem_from_opt user_info) options None errors in
+                                            messages := messages.contents @ [msg]
+                                      | None -> ignore()
+                                  end;
+                                  xml_of_errors errors messages.contents
+                                end
+                      end
+            in
+              send_output oc (string_of_xml_node xml_to_return);
+              Config.print "Compilation completed. Response sent back to client.";
+          with 
+              ex ->
+                begin
+                  go_exception xml_str ex
+                end
+      with ex ->
+        begin
+          go_exception "No XML is available. The exception occured before the transmission had been fully recieved." ex
+        end
+    end;
+    flush stdout;
+    flush stderr;
+    flush oc
       
 and xml_of_messages messages = 
   let messages_node = Xml_generator.create "messages" in
@@ -245,7 +265,14 @@ and xml_of_errors errors messages =
         Xml_generator.add_child result_node transmission_node;
         transmission_node
         
-and xml_of_verified_program fns options messages =
+and xml_of_messages_transmission messages = 
+  let transmission_node = Xml_generator.create "piVC_transmission" in
+    add_attribute ("type", "messages") transmission_node;
+    let messages_node = xml_of_messages messages in
+      add_child messages_node transmission_node;
+      transmission_node
+        
+and xml_of_verified_program fns messages =
   (*Now we have the xml generation functions for the various levels*)
   let rec xml_of_function (fn) = 
     let function_node = Xml_generator.create "function" in

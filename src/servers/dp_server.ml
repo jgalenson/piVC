@@ -33,29 +33,29 @@ let verify ic oc =
   begin
     try
       let input = get_input ic in
-      Config.print ("dp got input: " ^ input); (* input contains its own endline. *)
-      Ci_yices.init ();
-      let id = Ci_yices.new_context () in
-      Ci_yices.send id input;
-      Ci_yices.wait id;
-      let (response, counterexample_opt) = getresponse id in
-      Ci_yices.delete_context id;
-      assert ((response = "sat") = (Utils.is_some counterexample_opt));
-      let response_str = response ^ (if (Utils.is_some counterexample_opt) then (" with " ^ (Utils.elem_from_opt counterexample_opt)) else "") in
-      Config.print ("Got response: " ^ response_str);
-      send_output oc response;
-      if (response = "sat") then
-        send_output oc (Utils.elem_from_opt counterexample_opt);
+        Config.print ("dp got input: " ^ input); (* input contains its own endline. *)
+        Ci_yices.init ();
+        let id = Ci_yices.new_context () in
+          Ci_yices.send id input;
+          Ci_yices.wait id;
+          let (response, counterexample_opt) = getresponse id in
+            Ci_yices.delete_context id;
+            assert ((response = "sat") = (Utils.is_some counterexample_opt));
+            let response_str = response ^ (if (Utils.is_some counterexample_opt) then (" with " ^ (Utils.elem_from_opt counterexample_opt)) else "") in
+              Config.print ("Got response: " ^ response_str);
+              send_output oc response;
+              if (response = "sat") then
+                send_output oc (Utils.elem_from_opt counterexample_opt)
     with
 	ex ->
 	  begin
 	    let error_str = Printexc.to_string ex in
-            send_output oc "error";
-            send_output oc error_str;
+              send_output oc "error";
+              send_output oc error_str
 	  end 
   end;
-  flush oc ;;
-
+  flush oc 
+    
 let start_dp_server () =
   Config.set_server_type Config.DPServer;
   Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path);

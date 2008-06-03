@@ -272,7 +272,28 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		JMenu helpMenu = new JMenu("Help");
 		helpMenu.setMnemonic(KeyEvent.VK_H);
 		
-		JMenuItem about = new JMenuItem("About");
+		
+		JMenuItem reportBug = new JMenuItem("Report a Bug");
+		reportBug.setMnemonic(KeyEvent.VK_R);
+		reportBug.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doReport(PiReport.ReportType.bug);
+			}
+		});
+		helpMenu.add(reportBug);
+
+		JMenuItem feedback = new JMenuItem("Give Feedback on PiVC");
+		feedback.setMnemonic(KeyEvent.VK_F);
+		feedback.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doReport(PiReport.ReportType.feedback);
+			}
+		});
+		helpMenu.add(feedback);		
+		
+		helpMenu.addSeparator();
+		
+		JMenuItem about = new JMenuItem("About PiVC");
 		about.setMnemonic(KeyEvent.VK_A);
 		about.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -280,14 +301,18 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 					"<html>"
 					+ "PiVC" + "<p />"
 					+ "<a href='http://theory.stanford.edu/~arbrad/pivc/'>http://theory.stanford.edu/~arbrad/pivc/</a>" + "<p /><p />"
-					+ "Designed by Aaron Bradley and Zohar Manna." + "<br />"
-					+ "Written by Jason Auerbach and Joel Galenson." + "<p /><p />"
+					+ "Jason Auerbach, Aaron Bradley," + "<br />"
+					+ "Joel Galenson, Zohar Manna" + "<p /><p />"
 					+ "Licensed under the GPL."
 					+ "</html>";
 				JOptionPane.showMessageDialog(piGui, aboutString, "About PiVC", JOptionPane.INFORMATION_MESSAGE, PiGui.getIcon());
 			}
 		});
 		helpMenu.add(about);
+		
+		
+
+				
 		add(helpMenu);
 	}	
 	

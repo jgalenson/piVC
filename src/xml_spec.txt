@@ -23,7 +23,26 @@ Client -> Server
 </piVC_transmission>
 
 
+
+<piVC_transmission type="report">
+        <report_type>bug/feedback</report_type>
+        <user> ... </user>//optional
+	<code> ... </code>//optional
+	<options> ... </options>//optional
+        <comment> ... </optional>
+</piVC_transmission>
+
+
 Server -> Client
+
+
+<piVC_transmission type="messages" >
+        <messages>//optional
+                <message>Hi there. Nice job.</message>
+                <message>There can be more than one custom message.</message>
+        </messages>
+</piVC_transmission>
+
 <piVC_transmission type="program_submission_response" >
         <messages>//optional
                 <message>Hi there. Nice job.</message>

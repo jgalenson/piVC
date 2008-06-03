@@ -3,7 +3,7 @@ import java.awt.event.*;
 
 import javax.swing.*;
 
-public class PiSubmit extends Dialog {
+public class PiSubmit extends PiDialog {
 
 	private static final Dimension FIELD_SIZE = new Dimension(250,28);
 	private static final Dimension LABEL_SIZE_WITHOUT_SUBMIT_TO = new Dimension(130,28);
@@ -13,10 +13,13 @@ public class PiSubmit extends Dialog {
 	JTextField userNameField;
 	JTextField userEmailField;
 	JTextPane comments;
+	
 	PiGui gui;
 	
 	public PiSubmit(PiGui parent){		
-		super(parent, "Submit Program", true);
+		super(parent, "Submit Program");
+		
+		this.gui = parent;
 		
 		Dimension LABEL_SIZE;
 		if(Config.enviornmentKeyExists("submit_to_email_address")){
@@ -25,27 +28,8 @@ public class PiSubmit extends Dialog {
 			LABEL_SIZE = LABEL_SIZE_WITH_SUBMIT_TO;					
 		}
 		
-		this.gui = parent;
-		setLocationRelativeTo(parent);
-		addWindowListener(new WindowListener() {
-			public void windowActivated(WindowEvent arg0) {
-			}
-			public void windowClosed(WindowEvent arg0) {
-			}
-			public void windowClosing(WindowEvent arg0) {
-				setVisible(false);
-			}
-			public void windowDeactivated(WindowEvent arg0) {
-			}
-			public void windowDeiconified(WindowEvent arg0) {
-			}
-			public void windowIconified(WindowEvent arg0) {
-			}
-			public void windowOpened(WindowEvent arg0) {	
-			}
-		});	
-		BoxLayout layout = new BoxLayout(this,BoxLayout.Y_AXIS);
-		this.setLayout(layout);
+		JPanel all = new JPanel();	
+		all.setLayout(new BoxLayout(all,BoxLayout.Y_AXIS));
 
 		JPanel userInfo = new JPanel();
 		userInfo.setLayout(new BoxLayout(userInfo,BoxLayout.Y_AXIS));
@@ -107,12 +91,7 @@ public class PiSubmit extends Dialog {
         buttons.setLayout(new FlowLayout(FlowLayout.RIGHT));
         JButton submit = new JButton("Submit");
         
-        JButton cancel = new JButton("Cancel");
-        cancel.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent arg0) {
-				setVisible(false);		
-			}
-        });
+        JButton cancel = getCancelButton();
         
         submit.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0) {
@@ -129,45 +108,39 @@ public class PiSubmit extends Dialog {
         alsoCompileMessage1.setAlignmentX(Component.CENTER_ALIGNMENT);
         alsoCompileMessage2.setAlignmentX(Component.CENTER_ALIGNMENT);        
         
-		add(userInfo);
+		all.add(userInfo);
 		
 		if(!Config.enviornmentKeyExists("submit_to_email_address")){
-			add(submissionInfo);
+			all.add(submissionInfo);
 		}
-		add(commentsScroll);
+		all.add(commentsScroll);
 
-		add(alsoCompileMessage1);
-		add(alsoCompileMessage2);		
+		all.add(alsoCompileMessage1);
+		all.add(alsoCompileMessage2);		
 		
-		add(buttons);
+		all.add(buttons);
+		
+		add(all);
         
-		pack();
-		setLocation((parent.getLocation().x+parent.getSize().width)/2-getSize().width/2,(parent.getLocation().y+parent.getSize().height)/2 - getSize().height/2);
-		setResizable(false);
-		setVisible(true);
+		launch();	
+
 	}
 	
 	
 	
 	private void goSubmit(){
 		
-		//I assemble a regexp to recognize valid email addresses
-		//Note that escape sequences must be double-escaped. We want to a '\' character fed to the reg-ex, but this
-		//requires a '\\' in the string to escape the escape character.
-		String validAddrSection = "[a-zA-Z0-9\\!\\#\\$\\%\\*\\/\\?\\|\\^\\{\\}\\`\\~\\&\\'\\+\\-\\=\\_]+";
-		String validLHSOrRHS = "("+validAddrSection + "\\.)*"+validAddrSection;		
-		String emailAddressRegExp = validLHSOrRHS + "\\@" + validLHSOrRHS;
-		
-		if(!userNameField.getText().matches("\\S+")){
-			JOptionPane.showMessageDialog(gui,"The 'Name' field cannot be empty.","Error",JOptionPane.ERROR_MESSAGE);
+
+		if(!Utils.nameFieldIsWellFormatted(userNameField.getText())){
+			JOptionPane.showMessageDialog(this,"The 'Name' appears malformatted.","Error",JOptionPane.ERROR_MESSAGE);
+			return;
+		}	
+		if(!Utils.emailAddressIsWellFormatted(userEmailField.getText())){
+			JOptionPane.showMessageDialog(this,"The 'Email address' appears malformatted.","Error",JOptionPane.ERROR_MESSAGE);
 			return;
 		}
-		if(!userEmailField.getText().matches(emailAddressRegExp)){
-			JOptionPane.showMessageDialog(gui,"The 'Email address' appears malformatted.","Error",JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-		if(submitToField!=null && !submitToField.getText().matches(emailAddressRegExp)){
-			JOptionPane.showMessageDialog(gui,"The 'Email address to submit to' field appears malformated.","Error",JOptionPane.ERROR_MESSAGE);
+		if(submitToField!=null && !Utils.emailAddressIsWellFormatted(submitToField.getText())){
+			JOptionPane.showMessageDialog(this,"The email address to submit to appears malformatted.","Error",JOptionPane.ERROR_MESSAGE);
 			return;
 		}		
 
@@ -177,7 +150,7 @@ public class PiSubmit extends Dialog {
 			Config.setValue("submit_to_email_address", submitToField.getText());
 		}
 		
-		setVisible(false);
+		close();
 		String submissionComments = null;
 		if(comments.getText().length()>0){
 			submissionComments = comments.getText();
