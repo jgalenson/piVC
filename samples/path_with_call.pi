@@ -1,15 +1,15 @@
 @pre true
 @post rv > x && rv > y
-int incr(int x, int y) {
-	return x + y + 1;
+int larger(int x, int y) {
+	if (x > y)
+		return x + 1;
+	else
+		return y + 1;
 }
 
 @pre true
 @post true
-void main() {
-	int x;
-	x := 42;
-	int y;
-	y := incr(x, 2 * x);
-	@ y > x;
+void main(int x) {
+	int y := larger(x, 2 * x);
+	@ y > 2*x;
 }
