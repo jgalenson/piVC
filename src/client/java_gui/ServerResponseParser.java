@@ -331,7 +331,7 @@ public class ServerResponseParser {
 			if ("location".equals(child.getNodeName()))
 				location = parseLocation(child);
 		}
-		if (text == null || location == null)
+		if (text == null)
 			throw new RuntimeException("Invalid var tag");
 		return new Counterexample.Variable(text, location);
 	}

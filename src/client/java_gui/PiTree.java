@@ -279,7 +279,8 @@ public class PiTree extends JPanel {
 			piCode.highlight(function.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof Counterexample.Variable) {
 			Counterexample.Variable variable = (Counterexample.Variable)obj;
-			piCode.highlight(variable.getLocation(), PiCode.yellowHP);
+			if (variable.getLocation() != null) // some variables have null locations
+			    piCode.highlight(variable.getLocation(), PiCode.yellowHP);
 		} else if (obj instanceof String) {
 			String str = (String)obj;
 			if ("Steps".equals(str))

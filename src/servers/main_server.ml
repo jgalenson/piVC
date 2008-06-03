@@ -368,7 +368,9 @@ and xml_of_verified_program fns messages =
     let process_var ex =
       let var_node = Xml_generator.create "var" in
       add_attribute ("text", Counterexamples.example_to_string ex) var_node;
-      add_child (xml_of_location (Counterexamples.location_of_example ex)) var_node;
+      let loc = Counterexamples.location_of_example ex in
+      if Utils.is_some loc then
+	add_child (xml_of_location (Utils.elem_from_opt loc)) var_node;
       add_child var_node counterexample_node;
       ()
     in
