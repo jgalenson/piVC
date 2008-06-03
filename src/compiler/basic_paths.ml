@@ -81,22 +81,21 @@ let create_rv_decl t ident =
   {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified; is_param = false;}
 
 
-
-
-let gen_func_precondition_with_args_substitution func args =
-  let rec get_replacement_list remaining_formals remaining_actuals = match remaining_formals with
-      [] -> [] 
-    | e :: l -> (List.hd remaining_formals, List.hd remaining_actuals) :: (get_replacement_list (List.tl remaining_formals) (List.tl remaining_actuals))
-  in 
+let rec get_replacement_list formals actuals = match formals with
+    [] -> [] 
+  | e :: l -> (List.hd formals, List.hd actuals) :: (get_replacement_list (List.tl formals) (List.tl actuals))
+      
+      
+let gen_func_precondition_with_args_substitution func args =  
   let ident_subs = get_replacement_list (get_idents_of_formals func) args in
     sub_idents_in_expr_while_preserving_original_location func.preCondition.ann ident_subs
-
-let gen_func_postcondition_with_rv_substitution func rv_sub =
+      
+let gen_func_postcondition_with_rv_substitution func rv_sub args =
   let rv_ident = (create_identifier "rv" (Ast.get_dummy_location())) in
     rv_ident.decl := Some(create_rv_decl func.returnType rv_ident)
-  ;
-  let ident_subs = [(rv_ident, rv_sub)] in
-    sub_idents_in_expr_while_preserving_original_location func.postCondition.ann ident_subs ;;
+    ;
+    let ident_subs = get_replacement_list (get_idents_of_formals func) args @ [(rv_ident, rv_sub)] in
+      sub_idents_in_expr_while_preserving_original_location func.postCondition.ann ident_subs ;;
 
 let gen_func_ranking_annotation_with_args_substitution func args =
   if (Utils.is_none func.fnRankingAnnotation) then
@@ -214,7 +213,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
 			    []
 			in
                         add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
-                        new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident)::!new_steps;
+                        new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident el)::!new_steps;
                         lval_for_new_ident
                     )
               )
