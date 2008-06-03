@@ -1,0 +1,8 @@
+@pre true
+@post true
+void foo(int[] x) {
+	for
+		# (i+1)
+		@ i >= 0 && i <= |x|
+		(int i := |x|; i > 0; i := i - 1) {}
+}
