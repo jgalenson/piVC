@@ -31,8 +31,10 @@ semantic_checking.cmo: ../utils/utils.cmi ../language/scope_stack.cmi \
     ast_utils.cmi ../language/ast.cmi semantic_checking.cmi 
 semantic_checking.cmx: ../utils/utils.cmx ../language/scope_stack.cmx \
     ast_utils.cmx ../language/ast.cmx semantic_checking.cmi 
-termination.cmo: ../utils/utils.cmi ../language/ast.cmi termination.cmi 
-termination.cmx: ../utils/utils.cmx ../language/ast.cmx termination.cmi 
+termination.cmo: verification_conditions.cmi ../utils/utils.cmi \
+    ../language/ast.cmi termination.cmi 
+termination.cmx: verification_conditions.cmx ../utils/utils.cmx \
+    ../language/ast.cmx termination.cmi 
 test_parser.cmo: verify.cmi verification_conditions.cmi ../utils/utils.cmi \
     semantic_checking.cmi ../utils/constants.cmi ../utils/config.cmi \
     compile.cmi basic_paths.cmi ../language/ast.cmi test_parser.cmi 

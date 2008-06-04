@@ -6,62 +6,62 @@ open Ast
 
 exception InvalidPath of string ;;
 
+let get_new_length_identifier expr = 
+  match expr with 
+      Length(loc,exp) -> 
+        begin
+          let ident = identifier_of_array_expr exp in
+          let new_ident = Ast.create_length_identifier ("|" ^ ident.name ^ "|") (gdl()) in
+          let vd = Ast.create_varDecl (Int(gdl())) new_ident (varDecl_of_identifier ident).location_vd in
+          vd.var_id := Some("_length_"^id_of_identifier ident);
+          new_ident.decl := Some(vd);
+          new_ident
+        end
+    | _ -> assert(false) ;;
+
+let get_new_length_expr expr = 
+  Ast.LValue(Ast.gdl(),Ast.NormLval(Ast.gdl(),get_new_length_identifier expr)) ;;
+
+let replace_length_with_var expr = 
+  let rec rlwv expr = match expr with
+      Assign(loc,f,t) -> Assign(loc,f,rlwv t)
+    | Constant (loc,c) -> expr
+    | LValue (loc,l) -> expr
+    | Call (loc,s, el) ->
+        begin
+          let new_args = List.map rlwv el in
+          Call(loc,s,new_args)
+        end
+    | Plus (loc,t1, t2) -> Plus(loc,rlwv t1, rlwv t2)
+    | Minus (loc,t1, t2) -> Minus(loc,rlwv t1, rlwv t2)
+    | Times (loc,t1, t2) -> Times(loc,rlwv t1, rlwv t2)
+    | Div (loc,t1, t2) -> Div(loc,rlwv t1, rlwv t2)
+    | IDiv (loc,t1, t2) -> IDiv(loc,rlwv t1, rlwv t2)
+    | Mod (loc,t1, t2) -> Mod(loc,rlwv t1, rlwv t2)
+    | UMinus (loc,t) -> UMinus(loc,rlwv t)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,rlwv e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,rlwv e)
+    | ArrayUpdate (loc,exp,assign_to,assign_val) -> ArrayUpdate(loc,rlwv exp, rlwv assign_to, rlwv assign_val)
+    | LT (loc,t1, t2) -> LT(loc,rlwv t1, rlwv t2)
+    | LE (loc,t1, t2) -> LE(loc,rlwv t1, rlwv t2)
+    | GT (loc,t1, t2) -> GT(loc,rlwv t1, rlwv t2)
+    | GE (loc,t1, t2) -> GE(loc,rlwv t1, rlwv t2)
+    | EQ (loc,t1, t2) -> EQ(loc,rlwv t1, rlwv t2)
+    | NE (loc,t1, t2) -> NE(loc,rlwv t1, rlwv t2)
+    | And (loc,t1, t2) -> And(loc,rlwv t1, rlwv t2)
+    | Or (loc,t1, t2) -> Or(loc,rlwv t1, rlwv t2)
+    | Not (loc,t) -> Not(loc,rlwv t)
+    | Iff (loc,t1, t2) -> Iff(loc,rlwv t1, rlwv t2)
+    | Implies (loc,t1, t2) -> Implies(loc,rlwv t1, rlwv t2)
+    | Length (loc, t) -> get_new_length_expr expr
+    | EmptyExpr  -> expr
+  in
+  rlwv expr ;;
+
 (* Converts all length() nodes to specially named idents.
    Adds a length assignment step to complement each array assignment step.
 *)
 let convert_basic_path_to_acceptable_form path = 
-  let get_new_length_identifier expr = 
-    match expr with 
-        Length(loc,exp) -> 
-          begin
-            let ident = identifier_of_array_expr exp in
-            let new_ident = Ast.create_length_identifier ("|" ^ ident.name ^ "|") (gdl()) in
-            let vd = Ast.create_varDecl (Int(gdl())) new_ident (varDecl_of_identifier ident).location_vd in
-              vd.var_id := Some("_length_"^id_of_identifier ident);
-              new_ident.decl := Some(vd);
-              new_ident
-          end
-      | _ -> assert(false)
-  in
-  let get_new_length_expr expr = 
-    Ast.LValue(Ast.gdl(),Ast.NormLval(Ast.gdl(),get_new_length_identifier expr))
-  in
-  let replace_length_with_var expr = 
-    let rec rlwv expr = match expr with
-        Assign(loc,f,t) -> Assign(loc,f,rlwv t)
-      | Constant (loc,c) -> expr
-      | LValue (loc,l) -> expr
-      | Call (loc,s, el) ->
-          begin
-            let new_args = List.map rlwv el in
-              Call(loc,s,new_args)
-          end
-      | Plus (loc,t1, t2) -> Plus(loc,rlwv t1, rlwv t2)
-      | Minus (loc,t1, t2) -> Minus(loc,rlwv t1, rlwv t2)
-      | Times (loc,t1, t2) -> Times(loc,rlwv t1, rlwv t2)
-      | Div (loc,t1, t2) -> Div(loc,rlwv t1, rlwv t2)
-      | IDiv (loc,t1, t2) -> IDiv(loc,rlwv t1, rlwv t2)
-      | Mod (loc,t1, t2) -> Mod(loc,rlwv t1, rlwv t2)
-      | UMinus (loc,t) -> UMinus(loc,rlwv t)
-      | ForAll (loc,decls,e) -> ForAll(loc,decls,rlwv e)
-      | Exists (loc,decls,e) -> Exists(loc,decls,rlwv e)
-      | ArrayUpdate (loc,exp,assign_to,assign_val) -> ArrayUpdate(loc,rlwv exp, rlwv assign_to, rlwv assign_val)
-      | LT (loc,t1, t2) -> LT(loc,rlwv t1, rlwv t2)
-      | LE (loc,t1, t2) -> LE(loc,rlwv t1, rlwv t2)
-      | GT (loc,t1, t2) -> GT(loc,rlwv t1, rlwv t2)
-      | GE (loc,t1, t2) -> GE(loc,rlwv t1, rlwv t2)
-      | EQ (loc,t1, t2) -> EQ(loc,rlwv t1, rlwv t2)
-      | NE (loc,t1, t2) -> NE(loc,rlwv t1, rlwv t2)
-      | And (loc,t1, t2) -> And(loc,rlwv t1, rlwv t2)
-      | Or (loc,t1, t2) -> Or(loc,rlwv t1, rlwv t2)
-      | Not (loc,t) -> Not(loc,rlwv t)
-      | Iff (loc,t1, t2) -> Iff(loc,rlwv t1, rlwv t2)
-      | Implies (loc,t1, t2) -> Implies(loc,rlwv t1, rlwv t2)
-      | Length (loc, t) -> get_new_length_expr expr
-      | EmptyExpr  -> expr
-    in
-      rlwv expr
-  in
   let replace_length_with_var_in_step step = 
     match step with
         Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_with_var e)
