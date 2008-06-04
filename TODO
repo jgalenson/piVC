@@ -19,7 +19,7 @@ Jason
 	Allow termination arguments after annotation, not just before.
         Bug: function locations not always correct
         Change function locations to prototype only
-        Update README. Especially with information about email functionality.
+        Update README. Especially with information about email functionality.  Also talk about coloring of things in VC pane and the inductive core.
         Actions menu for compile/submission
         Space between compile and submit icons
         Bug: submit program dialog box doesn't center correctly
@@ -39,8 +39,9 @@ Joel
 
 
 Unassigned
-
-	
+	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?
+	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.
+	Investigate mysterious undo/redo code pane crash of doom.
 
 --------------------
 Possible later TODOs

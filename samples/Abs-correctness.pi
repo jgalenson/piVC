@@ -1,9 +1,9 @@
 @pre  true
-@post forall ix. (0 <= ix && ix < |rv| - 1 -> rv[ix] >= 0)
+@post forall ix. (0 <= ix && ix < |rv| -> rv[ix] >= 0)
 int[] abs(int[] a_0) {
   int[] a := a_0;
   for
-    @ true
+    @ forall ix. (0 <= ix && ix < i -> a[ix] >= 0)
     (int i := 0; i < |a|; i := i + 1) 
   {
     if (a[i] < 0) {
