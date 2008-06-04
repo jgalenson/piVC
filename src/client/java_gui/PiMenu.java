@@ -29,9 +29,8 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		piGui.addDirtyChangedListener(this);
 		addFileMenu();
 		addEditMenu();
-		addCompileMenu();
+		addActionsMenu();
 		addAnalyzeMenu();
-		addSubmitMenu();
 		addSettingsMenu();
 		addHelpMenu();
 	}
@@ -97,7 +96,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	
 	private void addEditMenu() {
 		JMenu editMenu = new JMenu("Edit");
-		editMenu.setMnemonic(KeyEvent.VK_F);
+		editMenu.setMnemonic(KeyEvent.VK_E);
 		
 		undo = new JMenuItem("Undo");
 		undo.setMnemonic(KeyEvent.VK_U);
@@ -158,9 +157,9 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		add(editMenu);
 	}
 	
-	private void addCompileMenu() {
-		JMenu compileMenu = new JMenu("Compile");
-		compileMenu.setMnemonic(KeyEvent.VK_O);
+	private void addActionsMenu() {
+		JMenu actionsMenu = new JMenu("Actions");
+		actionsMenu.setMnemonic(KeyEvent.VK_A);
 		
 		compileMenuItem = new JMenuItem("Compile");
 		compileMenuItem.setMnemonic(KeyEvent.VK_C);
@@ -170,7 +169,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 				piGui.doCompile();
 			}
 		});
-		compileMenu.add(compileMenuItem);
+		actionsMenu.add(compileMenuItem);
 		
 		cancelCompileMenuItem = new JMenuItem("Cancel compile");
 		cancelCompileMenuItem.addActionListener(new ActionListener() {
@@ -179,14 +178,26 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 			}
 		});
 		cancelCompileMenuItem.setEnabled(false);
-		compileMenu.add(cancelCompileMenuItem);	
+		actionsMenu.add(cancelCompileMenuItem);
+		
+		actionsMenu.addSeparator();
+		
+		submit = new JMenuItem("Submit");
+		submit.setMnemonic(KeyEvent.VK_S);
+		submit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
+		submit.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doSubmit();
+			}
+		});
+		actionsMenu.add(submit);	
 				
-		add(compileMenu);
+		add(actionsMenu);
 	}
 	
 	private void addAnalyzeMenu() {
 		JMenu analyzeMenu = new JMenu("Analyze");
-		analyzeMenu.setMnemonic(KeyEvent.VK_A);
+		analyzeMenu.setMnemonic(KeyEvent.VK_Z);
 		
 		displayPath = new JMenuItem("Display selected basic path");
 		displayPath.setMnemonic(KeyEvent.VK_D);
@@ -202,25 +213,9 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		add(analyzeMenu);
 	}
 	
-	private void addSubmitMenu() {
-		JMenu submitMenu = new JMenu("Submit");
-		submitMenu.setMnemonic(KeyEvent.VK_S);
-		
-		submit = new JMenuItem("Submit");
-		submit.setMnemonic(KeyEvent.VK_S);
-		submit.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T, ActionEvent.CTRL_MASK));
-		submit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				piGui.doSubmit();
-			}
-		});
-		submitMenu.add(submit);
-		add(submitMenu);
-	}	
-	
 	private void addSettingsMenu() {
 		JMenu settingsMenu = new JMenu("Settings");
-		settingsMenu.setMnemonic(KeyEvent.VK_T);
+		settingsMenu.setMnemonic(KeyEvent.VK_S);
 		
 		runtimeAssertions = new JCheckBoxMenuItem("Generate runtime assertions");
 		runtimeAssertions.addActionListener(new ActionListener() {

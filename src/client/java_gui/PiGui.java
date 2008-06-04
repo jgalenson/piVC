@@ -759,6 +759,8 @@ public class PiGui extends JFrame {
 	private void installTop() {
 		Box box = Box.createHorizontalBox();
 		
+		box.add(Box.createHorizontalStrut(10));
+		
 		compileButton = new JButton("Compile");
 		compileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -766,6 +768,8 @@ public class PiGui extends JFrame {
 			}
 		});
 		box.add(compileButton);
+		
+		box.add(Box.createHorizontalStrut(20));
 		
 		submitButton = new JButton("Submit");
 		submitButton.addActionListener(new ActionListener() {
