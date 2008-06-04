@@ -519,21 +519,15 @@ public class PiGui extends JFrame {
 		compileEnded();
 	}
 	
-	public void clearPreviousCompilationResults(){
-		piTree.clear();
-		piErrorOutput.clear();
-		vcPane.clear();
-	}
-	
 	/**
 	 * Handles a response from the server that contains
 	 * verification conditions and basic paths.
 	 */
 	public void handleVerificationResult(VerificationResult verificationResult) {
-		clearPreviousCompilationResults();
+		piErrorOutput.clear();
+		vcPane.setNothing();
 		piTree.handleVerificationResult(verificationResult);
 		rightTabbedPane.setSelectedIndex(0);
-		vcPane.setNothing();
 	}
 	
 	/**
@@ -541,13 +535,15 @@ public class PiGui extends JFrame {
 	 * a list of errors.
 	 */
 	public void handleError(ArrayList<PiError> errors) {
-		clearPreviousCompilationResults();
+		piTree.clear();
+		vcPane.clear();
 		piErrorOutput.setErrors(errors);
 		rightTabbedPane.setSelectedIndex(1);
 	}
 	
 	public void handleCompilerError(PiError compilerError) {
-		clearPreviousCompilationResults();
+		piTree.clear();
+		vcPane.clear();
 		piErrorOutput.setCompilerError(compilerError);
 		rightTabbedPane.setSelectedIndex(1);
 	}

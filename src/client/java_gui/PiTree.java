@@ -41,9 +41,10 @@ public class PiTree extends JPanel {
 	private DefaultMutableTreeNode root;
 	private PiGui piGui;
 	private PiCode piCode;
-	private DefaultMutableTreeNode selectedNode;
+	private DefaultMutableTreeNode selectedNode, prevSelectedNode;
 	private TreeSet<TreePath> viewableObjects; // All of a viewable nodes parents are expanded, but may or may not be displayed
 	private boolean isExpandingNewlyAddedObjects;
+	private static PiObjectComparator piObjectComparator = new PiObjectComparator();
 	
 	public PiTree(PiGui piGui, PiCode piCode) {
 		super();
@@ -52,8 +53,8 @@ public class PiTree extends JPanel {
 	    tree = new JTree(treeModel);
 		this.piGui = piGui;
 	    this.piCode = piCode;
-	    selectedNode = null;
-	    viewableObjects = new TreeSet<TreePath>(new PiObjectComparator());
+	    selectedNode = prevSelectedNode = null;
+	    viewableObjects = new TreeSet<TreePath>(piObjectComparator);
 	    isExpandingNewlyAddedObjects = false;
 		initTree();
 	}
@@ -77,6 +78,7 @@ public class PiTree extends JPanel {
 				}
 				// If they clicked elsewhere, we unselect and unhighlight.
 				else if (e.getX() > bounds.getMaxX() || e.getY() > bounds.getMaxY() || e.getX() < bounds.getMinX() - ROW_LEFT_GRACE_SPACE) {
+					prevSelectedNode = selectedNode;
 					selectedNode = null;
 					tree.clearSelection();
 					nodeSelected(null);
@@ -88,6 +90,7 @@ public class PiTree extends JPanel {
 		tree.addTreeSelectionListener(new TreeSelectionListener() {
 			public void valueChanged(TreeSelectionEvent e) {
 		        DefaultMutableTreeNode node = (DefaultMutableTreeNode)tree.getLastSelectedPathComponent();
+		        prevSelectedNode = selectedNode;
 		        selectedNode = node;
 		        Object obj = (node == null ? null : node.getUserObject());
 		        piGui.nodeSelected(obj);
@@ -237,10 +240,11 @@ public class PiTree extends JPanel {
 	
 	/**
 	 * After we compile, ensure that all previously-expanded nodes
-	 * are still expanded.
+	 * are still expanded.  We also try to select the node that
+	 * was selected before, if we can.
 	 * Note that we make a copy of the set so that we can clear out
 	 * nodes that were expanded but are now removed (such as Counterexamples
-	 * for things we verified succesfully).
+	 * for things we verified successfully).
 	 */
 	private void expandPreviouslyExpandedNodes() {
 		isExpandingNewlyAddedObjects = true;
@@ -252,12 +256,20 @@ public class PiTree extends JPanel {
 	
 	/**
 	 * Recursively expand this node if it used to be expanded
-	 * and call ourself on its childen.
+	 * and call ourself on its children.  Select the node that
+	 * used to be selected.
 	 */
 	private void recExpandPreviouslyExpandedNodes(DefaultMutableTreeNode node, TreeSet<TreePath> oldViewableObjects) {
 		TreePath pathToNode = new TreePath(node.getPath());
 		if (oldViewableObjects.contains(pathToNode))
 			tree.expandPath(pathToNode);
+		if (prevSelectedNode != null && piObjectComparator.compare(new TreePath(prevSelectedNode.getPath()), pathToNode) == 0) {
+			prevSelectedNode = selectedNode;
+			selectedNode = node;
+			nodeSelected(node.getUserObject());
+			piGui.nodeSelected(node.getUserObject());
+			tree.getSelectionModel().addSelectionPath(pathToNode);
+		}
 		for (int i = 0; i < node.getChildCount(); i++)
 			recExpandPreviouslyExpandedNodes((DefaultMutableTreeNode)node.getChildAt(i), oldViewableObjects);
 	}
@@ -339,6 +351,7 @@ public class PiTree extends JPanel {
 	public void clear() {
 		root = null;
 		treeModel.setRoot(root);
+		prevSelectedNode = selectedNode;
 		selectedNode = null;
 	}
 	
