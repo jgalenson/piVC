@@ -139,4 +139,4 @@ rule lang =  parse
   | '%'					 {updateLocation(lexbuf); T_Mod}
   | ':'                                  {updateLocation(lexbuf); T_Colon}
   | eof					 {T_EOF} (*if we update here, it's going to need the current filename, but there is none, because we're at eof*)
-  | _ as token                           {updateLocation(lexbuf); print_endline ("read unknown token" ^ (Char.escaped token)); T_Unknown}
+  | _ as token                           {updateLocation(lexbuf); Config.print ("read unknown token: " ^ (Char.escaped token)); T_Unknown}
