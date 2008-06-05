@@ -205,13 +205,14 @@ let add_to_cache cache key result =
    Either returns the validity and a counterexample option
    or returns whatever exception was thrown. *)
 let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
-  try
-    let vc = instantiate_predicates vc_with_preds program in
+  let begin_time = Unix.time () in
+    try
+      let vc = instantiate_predicates vc_with_preds program in      
       (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
-    Mutex.lock cache_lock;
-    if (Hashtbl.mem vc_cache unique_vc_str) then
-      begin
+      Mutex.lock cache_lock;
+      if (Hashtbl.mem vc_cache unique_vc_str) then
+        begin
         let (result,_) = Hashtbl.find vc_cache unique_vc_str in
         Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
         Mutex.unlock cache_lock;
@@ -228,7 +229,19 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
       (*let vc_no_quants_array_lengths_geq_0 = (*Verification_conditions.add_array_length_greater_than_0_to_expr*) vc_no_quants in*)
       (*let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in*)
 
-      let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
+      (*Utils.debug_print_time_diff begin_time (Unix.time ()) "before vc final: ";*)
+
+      let before_vc_time = Unix.time () -. begin_time in
+        
+        let before_final_vc_time = Unix.time () in
+
+        let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
+
+        let after_vc_time = Unix.time () -. begin_time in
+        let vc_time = Unix.time () -. before_final_vc_time in
+          
+          (*print_endline ("before vc time: " ^ (string_of_float before_vc_time) ^ "\nafter vc time : " ^ (string_of_float after_vc_time) ^ "\nvc time : " ^ (string_of_float vc_time) ^ "\n\n\n\n");*)
+          
 
 (*  
   print_endline ("*********************************");
@@ -240,6 +253,8 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
   (*print_string ("And got a response of: " ^ response ^ "\n");*)
   print_endline ("*********************************");
 *) 
+
+
 
       let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
       let (sock, inchan, outchan) =
@@ -564,8 +579,13 @@ let verify_vcs vcs vc_cache_and_lock program_ast mode =
     in
       List.map make_new_vc_from_thread threads
   in
+(*  let process_one_atom atom =
+    let threads = threads_of_vcs [atom] in
+      List.hd (make_new_vcs_from_threads threads)
+  in*)
   let threads = threads_of_vcs vcs in
-    make_new_vcs_from_threads threads
+        make_new_vcs_from_threads threads
+    (*List.map process_one_atom vcs*)
 
 
 

@@ -788,9 +788,10 @@ public class PiGui extends JFrame {
 		box.add(statusBarLabel);
 		
 		box.add(Box.createHorizontalGlue());
-		box.add(Box.createHorizontalStrut(600));
+		box.add(Box.createHorizontalStrut(300));
 		
 		statusProgressBar = new JProgressBar();
+		//statusProgressBar.setMinimumSize(new Dimension(200,50));
 		statusProgressBar.setVisible(false);
 		box.add(statusProgressBar);
 		
