@@ -33,6 +33,7 @@ Joel
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
 	Log server error messages.  Also add command line option to change its directory.
+	Bug: tree selection after compile: selects two different steps with same text (Assert !(y=0), try Ackermann).
 
 Unassigned
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?
@@ -40,6 +41,7 @@ Unassigned
 	Investigate mysterious undo/redo code pane crash of doom.
 	Should we support things like (l <= i <= u) as a convenience?
 	Document the built-in predicates somewhere, probably the README.
+	Remove built-in support for the length() function.
 
 --------------------
 Possible later TODOs
