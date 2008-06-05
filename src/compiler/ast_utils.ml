@@ -42,30 +42,24 @@ let get_fn_calls func get_fndecl =
   let rec get_calls_from_stmt s = match s with
     | Expr (_, e) -> [Expr_utils.get_calls e]
     | StmtBlock (_, st) -> List.concat (List.map get_calls_from_stmt st)
-    | IfStmt (_, _, s1, s2) -> (get_calls_from_stmt s1) @ (get_calls_from_stmt s2)
-    | WhileStmt (_, _, block, _, _) -> get_calls_from_stmt block
-    | ForStmt (_, _, _, _, block, _, _) -> get_calls_from_stmt block
+    | IfStmt (_, test, s1, s2) -> [Expr_utils.get_calls test] @ (get_calls_from_stmt s1) @ (get_calls_from_stmt s2)
+    | WhileStmt (_, test, block, _, _) -> [Expr_utils.get_calls test] @ get_calls_from_stmt block
+    | ForStmt (_, init, test, incr, block, _, _) -> [Expr_utils.get_calls init] @ [Expr_utils.get_calls test] @ [Expr_utils.get_calls incr] @ get_calls_from_stmt block
+    | ReturnStmt (_, e) -> [Expr_utils.get_calls e]
     | _ -> []
   in
   let calls_per_line = get_calls_from_stmt func.stmtBlock in
   let all_calls = List.concat calls_per_line in
-  let num_occurrences elem list =
-    let elem_decl = get_fndecl_from_call get_fndecl elem in
-    if (Utils.is_none elem_decl) then
-      0
-    else begin
-      let calls_this_fn e =
-	let this_decl = get_fndecl_from_call get_fndecl e in
-	if (Utils.is_none this_decl) then
-	  false
-	else
-	  (Utils.elem_from_opt this_decl) == (Utils.elem_from_opt elem_decl)
-      in
-      let occurrences = List.filter calls_this_fn list in
-      List.length occurrences
-    end
+  let make_unique prev cur =
+    let equals x =
+      x == cur
+    in
+    if (List.exists equals prev) then
+      prev
+    else
+      prev @ [cur]
   in
-  List.filter (fun e -> (num_occurrences e all_calls) == 1) all_calls ;;
+  List.fold_left make_unique [] all_calls ;;
 
 (* Gets a list of all the loops in a function. *)
 let get_loops func =
