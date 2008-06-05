@@ -1,0 +1,17 @@
+/* PiVC generates the inductive core of your annotations
+   and notifies you if simply removing some annotations
+   will prove the program correct. */
+
+@pre  0 <= l && u < |a|
+@post rv <-> exists ix. (l <= ix && ix <= u && a[ix] = e)
+bool LinearSearch(int[] a, int l, int u, int e) {
+	for
+		@ l <= i && i <= u &&
+		  forall ix. (l <= ix && ix < i -> a[ix] != e)
+		(int i := l; i <= u; i := i + 1)
+	{
+		if (a[i] = e)
+			return true;
+	}
+	return false;
+}

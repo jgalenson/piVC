@@ -1,0 +1,16 @@
+/* PiVC allows you to define and use your own predicates. */
+
+predicate contains(int[] arr, int l, int u, int e) := exists ix. (l <= ix && ix <= u && arr[ix] = e);
+
+@pre  0 <= l && u < |a|
+@post rv <-> contains(a, l, u, e)
+bool LinearSearch(int[] a, int l, int u, int e) {
+	for
+		@ l <= i && forall ix. (l <= ix && ix < i -> a[ix] != e)
+		(int i := l; i <= u; i := i + 1)
+	{
+		if (a[i] = e)
+			return true;
+	}
+	return false;
+}
