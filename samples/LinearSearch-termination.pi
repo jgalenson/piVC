@@ -1,13 +1,13 @@
 @pre  0 <= l && u < |a|
 @post true
 bool LinearSearch(int[] a, int l, int u, int e) {
-  for
-    # (|a| + l - i)
-    @ 0 <= l && u < |a| && (i <= u + 1 || i <= l)
-    (int i := l; i <= u; i := i + 1)
-  {
-    if (a[i] = e)
-      return true;
-  }
-  return false;
+	for
+		# (|a| + l - i)
+		@ 0 <= l && u < |a| && (i <= u + 1 || i <= l)
+		(int i := l; i <= u; i := i + 1)
+	{
+		if (a[i] = e)
+			return true;
+	}
+	return false;
 }

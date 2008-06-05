@@ -1,21 +1,21 @@
 @pre  true
 @post sorted(rv, 0, |rv| - 1)
 int[] InsertionSort(int[] a_0) {
-  int[] a := a_0;
-  for
-    @ true
-    (int i := 1; i < length(a); i := i + 1)
-  {
-    int t := a[i];
-    int j;
-    for
-      @ true
-      (int j := i - 1; j >= 0; j := j - 1)
-    {
-      if (a[j] <= t) break;
-      a[j + 1] := a[j];
-    }
-    a[j + 1] := t;
-  }
-  return a;
+	int[] a := a_0;
+	for
+		@ true
+		(int i := 1; i < |a|; i := i + 1)
+	{
+		int t := a[i];
+		int j;
+		for
+			@ true
+			(j := i - 1; j >= 0; j := j - 1)
+		{
+			if (a[j] <= t) break;
+			a[j + 1] := a[j];
+		}
+		a[j + 1] := t;
+	}
+	return a;
 }

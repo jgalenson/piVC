@@ -1,14 +1,14 @@
 @pre  true
 @post forall ix. (0 <= ix && ix < |rv| -> rv[ix] >= 0)
 int[] abs(int[] a_0) {
-  int[] a := a_0;
-  for
-    @ forall ix. (0 <= ix && ix < i -> a[ix] >= 0)
-    (int i := 0; i < |a|; i := i + 1) 
-  {
-    if (a[i] < 0) {
-      a[i] := -a[i];
-    }
-  }
-  return a;
+	int[] a := a_0;
+	for
+		@ forall ix. (0 <= ix && ix < i -> a[ix] >= 0)
+		(int i := 0; i < |a|; i := i + 1) 
+	{
+		if (a[i] < 0) {
+			a[i] := -a[i];
+		}
+	}
+	return a;
 }

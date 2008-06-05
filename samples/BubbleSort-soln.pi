@@ -1,22 +1,24 @@
-@pre true
+@pre  true
 @post sorted(rv,0,|rv|-1)
 int[] BubbleSort(int[] arr_0) {
 	int[] arr := arr_0;
 	for
-	@ 	sorted(arr,i,|arr|-1) &&
-	   	((-1) <=i) && (i < |arr|) &&
- 		partitioned(arr,0,i,i+1,|arr|-1)	
-	(int i := |arr|-1; i>0; i := i - 1){
+	@ 	sorted(arr, i, |arr| - 1) &&
+	   	-1 <= i && i < |arr| &&
+ 		partitioned(arr, 0, i, i+1, |arr|-1)	
+	(int i := |arr| - 1; i > 0; i := i - 1)
+	{
 		for
-		@ 	partitioned(arr,0,i,i+1,|arr|-1) &&	
-			(1 <= i && i < |arr| && 0 <=j && j<=i) &&
-	         sorted(arr,i,|arr|-1) && 
- 			partitioned(arr,0,j-1,j,j)
-		(int j:=0; j<i; j := j + 1){
-			if (arr[j] > arr[j+1]){
+		@ 	partitioned(arr, 0, i, i + 1, |arr| - 1) &&	
+			1 <= i && i < |arr| && 0 <= j && j <= i &&
+	       sorted(arr, i, |arr| - 1) && 
+ 			partitioned(arr, 0, j - 1, j, j)
+		(int j := 0; j < i; j := j + 1)
+		{
+			if (arr[j] > arr[j + 1]) {
 				int temp := arr[j];
-				arr[j] := arr[j+1];
-				arr[j+1] := temp;
+				arr[j] := arr[j + 1];
+				arr[j + 1] := temp;
 			}
 		}
 	}

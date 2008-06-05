@@ -1,21 +1,21 @@
 @pre  true
-@post sorted(rv, 0, length(rv) - 1)
+@post sorted(rv, 0, |rv| - 1)
 int[] BubbleSort(int[] a_0) {
-  int[] a := a_0;
-  for
-    @ true
-    (int i := length(a) - 1; i > 0; i := i - 1)
-  {
-    for
-      @ true
-      (int j := 0; j < i; j := j + 1)
-    {
-      if (a[j] > a[j + 1]) {
-        int t := a[j];
-        a[j] := a[j + 1];
-        a[j + 1] := t;
-      }
-    }
-  }
-  return a;
+	int[] a := a_0;
+	for
+		@ true
+		(int i := |a| - 1; i > 0; i := i - 1)
+	{
+		for
+			@ true
+			(int j := 0; j < i; j := j + 1)
+		{
+			if (a[j] > a[j + 1]) {
+				int t := a[j];
+				a[j] := a[j + 1];
+				a[j + 1] := t;
+			}
+		}
+	}
+	return a;
 }
