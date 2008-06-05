@@ -42,12 +42,15 @@ Unassigned
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?
 	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.
 	Investigate mysterious undo/redo code pane crash of doom.
+	Should we support things like (l <= i <= u) as a convenience?
+	Document the built-in predicates somewhere, probably the README.
 
 --------------------
 Possible later TODOs
 --------------------
 
-Auto-indent in GUI (especially for assertions).
+Auto-indent in GUI (especially for assertions).  And maybe emacs-style tab support.
 Better syntax highlighting?
-Add support for warnings?  Asserts in Pi?
+Add support for warnings (:= vs =, postcondition that uses a parameter and not comparing it to rv (e.g. sorted(a, 0, |a|)))?  Asserts in Pi?
 Running code/debugging.
+Add an analysis that will propgate VCs?  Or maybe make it a heuristic?
