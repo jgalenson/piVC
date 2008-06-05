@@ -32,9 +32,6 @@ Joel
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
-        Get rid of length nodes in termination non-negative stuff. i.e. fix crashing.pi
-        Space between compile and submit icons
-        Actions menu for compile/submission
 	Log server error messages.  Also add command line option to change its directory.
 
 Unassigned
