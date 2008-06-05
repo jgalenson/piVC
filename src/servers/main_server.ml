@@ -178,6 +178,10 @@ let rec compile vc_cache_and_lock ic oc =
                                       if (Verify.overall_validity_of_function_validity_information_list verified_program_info != Valid) && options.find_inductive_core && Verify.inductive_core_good_enough verified_program_info then
                                         messages := messages.contents @ [Constants.inductive_core_message]
                                     end;
+                                    begin
+                                      if Verify.contains_unknown_vc verified_program_info then
+                                        messages := messages.contents @ [Constants.unknown_message]
+                                    end;
                                     xml_of_verified_program verified_program_info messages.contents
                                 end
                             | _  -> 

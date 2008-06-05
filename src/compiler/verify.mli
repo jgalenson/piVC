@@ -76,3 +76,5 @@ val verify_vc : verification_atom_temp *
     
 
 val overall_validity_of_function_validity_information_list : function_validity_information list -> validity ;;
+
+val contains_unknown_vc : function_validity_information list -> bool ;;

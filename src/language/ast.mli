@@ -151,6 +151,8 @@ val unique_fn_name : fnDecl -> string ;;
 val name_annotation : fnDecl -> int ref -> annotation_type -> string ;;
 val create_runtime_assertion : expr -> fnDecl -> int ref -> annotation ;;
 
+val quantification_of_identifier : identifier -> quantification ;;
+
 type predicate = {
   predName   : identifier;
   formals_p  : varDecl list;

@@ -117,7 +117,7 @@ Result node: server no errors:
 				        </vc>
 				        <counterexample>  // optional tag (only there if invalid)
 					        <var text="var1 = val1">
-					             <location> ... </location>
+					             <location> ... </location>  // optional tag, only if there is a location.
 					        </var>
 					        <var text="var2 = val2">
 					             <location> ... </location>

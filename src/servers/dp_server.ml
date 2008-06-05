@@ -30,6 +30,7 @@ let rec getresponse id =
 	assert false ;;
 
 let verify ic oc =
+  (*print_endline "dp server begin";*)
   begin
     try
       let input = get_input ic in
@@ -54,6 +55,7 @@ let verify ic oc =
               send_output oc error_str
 	  end 
   end;
+  (*print_endline "dp server end";*)
   flush oc 
     
 let start_dp_server () =

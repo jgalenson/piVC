@@ -369,7 +369,10 @@ let string_of_quantification_of_identifier_if_available ident =
   match !(ident.decl) with
       Some(d) -> string_of_quantification(d.quant)
     | None -> ""
-
+        
+let quantification_of_identifier ident = 
+  (Utils.elem_from_opt (ident.decl.contents)).quant
+    
 let string_of_identifier id =
   id.name (*^ "<" ^ string_of_quantification_of_identifier_if_available id ^ ">"*)
 

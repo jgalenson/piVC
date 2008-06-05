@@ -3,7 +3,7 @@ open Ast
 exception CantReplaceLValueWithExpr
 exception NotLValueExpr
 exception InvalidFormula
-
+exception OutsideFragment
 
 (* CODE SECTION: SUBSTITUTING VARIABLE NAMES IN EXPRS *)
 
@@ -211,8 +211,30 @@ let change_quantifier old_decls old_expr new_quant =
   let new_expr = sub_idents_in_expr_while_preserving_original_location old_expr replacement_pairs in
     (new_decls,new_expr)
     
-
-let rec nnf expr = 
+      
+let rec cnf expr = 
+  nnf_to_cnf (nnf expr)
+    
+and nnf_to_cnf expr =
+  match expr with
+    | And(loc,t1,t2) ->
+        begin
+          let (t1,t2) = (nnf_to_cnf t1, nnf_to_cnf t2) in
+            match t1 with
+              | Or(loc,u1,u2) -> Or(gdl(),And(gdl(),u1,t2),And(gdl(),u2,t2))
+              | _ -> 
+                  begin
+                    match t2 with
+                      | Or(loc,u1,u2) -> Or(gdl(),And(gdl(),t1,u1),And(gdl(),t1,u2))
+                      | _ -> expr
+                  end
+        end
+    | Or(loc,t1,t2) -> Or(gdl(),nnf_to_cnf t1, nnf_to_cnf t2)
+    | ForAll (loc,decls,e) -> ForAll(loc,decls,nnf_to_cnf e)
+    | Exists (loc,decls,e) -> Exists(loc,decls,nnf_to_cnf e)
+    | _ -> expr
+        
+and nnf expr = 
   match expr with
     | Assign (loc,l, e) -> assert(false)
     | Constant (loc,c) -> expr
@@ -353,132 +375,301 @@ let remove_duplicates_from_list exprs =
   let new_list = Expr_set.elements s in    
     new_list
 
+
+type part = Index_guard | Value_constraint | Value_constraint_index | Uncommitted
+    
+
 let get_index_set exp = 
-  let contains_universal_quantification exp =
-    let rec cuq exp = 
-      match exp with
-        | Constant (loc,c) -> false
-        | LValue (loc,l) ->
-            begin
-              match l with
-                  NormLval(loc,id) -> ((varDecl_of_identifier id).quant == Universal)
-                | ArrayLval(loc,arr,index) -> false
-            end
-        | Plus (loc,t1, t2) -> cuq t1 or cuq t2
-        | Minus (loc,t1, t2) -> cuq t1 or cuq t2
-        | Times (loc,t1, t2) -> cuq t1 or cuq t2
-        | Div (loc,t1, t2) -> cuq t1 or cuq t2
-        | IDiv (loc,t1, t2) -> cuq t1 or cuq t2
-        | Mod (loc,t1, t2) -> cuq t1 or cuq t2
-        | UMinus (loc,t) -> cuq t
-        | ForAll (loc,decls,e) -> cuq e
-        | Exists (loc,decls,e) ->  cuq e
-        | ArrayUpdate (loc, exp, assign_to, assign_val) -> cuq assign_to or cuq assign_val
-        | LT (loc,t1, t2) -> cuq t1 or cuq t2
-        | LE (loc,t1, t2) -> cuq t1 or cuq t2
-        | GT (loc,t1, t2) -> cuq t1 or cuq t2
-        | GE (loc,t1, t2) -> cuq t1 or cuq t2
-        | EQ (loc,t1, t2) -> cuq t1 or cuq t2
-        | NE (loc,t1, t2) -> cuq t1 or cuq t2
-        | And (loc,t1, t2) -> cuq t1 or cuq t2
-        | Or (loc,t1, t2) -> cuq t1 or cuq t2
-        | Not (loc,t) -> cuq t
-        | Iff (loc,t1, t2) -> cuq t1 or cuq t2
-        | Implies (loc,t1, t2) -> cuq t1 or cuq t2
-        | EmptyExpr -> false
-        | _ -> raise InvalidFormula
-    in
-      cuq exp
+  let rec is_int_constant exp = 
+    match exp with
+      | Constant (loc,c) -> true
+      | Plus (loc,t1, t2) -> is_int_constant t1 && is_int_constant t2
+      | Minus (loc,t1, t2) -> is_int_constant t1 && is_int_constant t2
+      | Times (loc,t1, t2) -> is_int_constant t1 && is_int_constant t2
+      | IDiv (loc,t1, t2) -> is_int_constant t1 && is_int_constant t2
+      | Mod (loc,t1, t2) -> is_int_constant t1 && is_int_constant t2
+      | UMinus (loc,t) -> is_int_constant t
+      | _ -> false
   in
-  let get_array_indices exp = 
-    let rec gai exp = 
+  let rec is_pexpr exp = 
+    if is_int_constant exp then true
+    else
       match exp with
-        | Constant (loc,c) -> []
-        | LValue (loc,l) ->
+        | Constant (loc,c) ->
+            begin match c with
+                ConstInt(_,_) -> true
+              | _ -> false
+            end
+        | LValue (loc,l) -> 
             begin
               match l with 
-                  ArrayLval(loc,arr,index) -> 
+                  NormLval(loc,id) -> 
                     begin
-                      let inside = gai arr in
-                        if (contains_universal_quantification index) then inside else inside @ [index]
+                      match quantification_of_identifier id with
+                          Unquantified -> true
+                        | Existential -> true
+                        | Universal -> false
                     end
-                | _ -> []
+                | ArrayLval(_,_,_1) -> false
             end
-        | Plus (loc,t1, t2) -> gai t1 @ gai t2
-        | Minus (loc,t1, t2) -> gai t1 @ gai t2
-        | Times (loc,t1, t2) -> gai t1 @ gai t2
-        | Div (loc,t1, t2) -> gai t1 @ gai t2
-        | IDiv (loc,t1, t2) -> gai t1 @ gai t2
-        | Mod (loc,t1, t2) -> gai t1 @ gai t2
-        | UMinus (loc,t) -> gai t
-        | ForAll (loc,decls,e) -> gai e
-        | Exists (loc,decls,e) -> gai e
-        | ArrayUpdate (loc, exp, assign_to, assign_val) -> if (contains_universal_quantification assign_to) then [] else [assign_to]
-        | LT (loc,t1, t2) -> gai t1 @ gai t2
-        | LE (loc,t1, t2) -> gai t1 @ gai t2
-        | GT (loc,t1, t2) -> gai t1 @ gai t2
-        | GE (loc,t1, t2) -> gai t1 @ gai t2
-        | EQ (loc,t1, t2) -> gai t1 @ gai t2
-        | NE (loc,t1, t2) -> gai t1 @ gai t2
-        | And (loc,t1, t2) -> gai t1 @ gai t2
-        | Or (loc,t1, t2) -> gai t1 @ gai t2
-        | Not (loc,t) -> gai t
-        | Iff (loc,t1, t2) -> gai t1 @ gai t2
-        | Implies (loc,t1, t2) -> gai t1 @ gai t2
-        | EmptyExpr -> []
-        | _ -> raise InvalidFormula
-    in gai exp
-  in(*
-  let get_guards exp  = 
-    (*Returns list with single element of exp if exp is not universally quantified.
-      Otherwise, returns an empty list.*)
-    let gl exp = 
-      if contains_universal_quantification exp then [] else [exp]
+        | Plus (loc,t1, t2) -> is_pexpr t1 && is_pexpr t2
+        | Minus (loc,t1, t2) -> is_pexpr t1 && is_pexpr t2
+        | Times (loc,t1, t2) -> (is_int_constant t1 && is_pexpr t2) || (is_int_constant t2 && is_pexpr t1)
+        | IDiv (loc,t1, t2) -> (is_int_constant t1 && is_pexpr t2) || (is_int_constant t2 && is_pexpr t1)
+        | UMinus (loc,t) -> is_pexpr t
+        | ForAll (loc,decls,e) -> is_pexpr e
+        | Exists (loc,decls,e) -> is_pexpr e
+        | EmptyExpr -> true
+        | _ -> false
+  in
+  let rec is_uvar exp =
+    match exp with
+      | LValue (loc,l) ->
+          begin
+            match l with 
+                NormLval(loc,id) -> 
+                  begin
+                    match quantification_of_identifier id with
+                        Unquantified -> false
+                      | Existential -> false
+                      | Universal -> true
+                  end
+              | ArrayLval(_,_,_1) -> false
+          end
+      | ForAll (loc,decls,e) -> is_uvar e
+      | Exists (loc,decls,e) -> is_uvar e
+      | _ -> false
+  in
+  let rec get_index_set exp part = 
+    let rec get_index_set_for_disjuncts exp = 
+      let exp_is_value_constraint exp = 
+        try
+          ignore(get_index_set exp Value_constraint);
+          true
+        with OutsideFragment -> false
+      in
+      let exp_is_index_guard exp = 
+        try
+          ignore(get_index_set (nnf (Not(gdl(), exp))) Index_guard);
+          true
+        with OutsideFragment -> false
+      in        
+      let rec group_disjuncts exp = 
+        match exp with
+            Or(loc,t1,t2) ->
+              begin
+                let (index_guard_t1, value_constraint_t1) = group_disjuncts t1 in
+                let (index_guard_t2, value_constraint_t2) = group_disjuncts t2 in
+                  (index_guard_t1 @ index_guard_t2, value_constraint_t1 @ value_constraint_t2)
+              end
+          | _ ->
+              begin
+                if exp_is_index_guard exp then ((*print_endline ("***" ^ string_of_expr exp ^ " is in index guard");*)([exp],[]))
+                else if exp_is_value_constraint exp then ((*print_endline ("***" ^ string_of_expr exp ^ " is in value constraint");*)([],[exp]))
+                else ((*print_endline "12";print_endline (string_of_expr exp);*) raise OutsideFragment)
+              end
+      in
+      let (index_guard_disjuncts,value_constraint_disjuncts) = group_disjuncts exp in
+      let index_set = ref [] in
+      let process_value_constraint_disjunct disjunct = 
+        index_set := !index_set @ get_index_set disjunct Value_constraint
+      in
+      let process_index_guard_disjunct disjunct = 
+        index_set := !index_set @ get_index_set (nnf (Not(gdl(),disjunct))) Index_guard
+      in
+        List.iter process_index_guard_disjunct index_guard_disjuncts;
+        List.iter process_value_constraint_disjunct value_constraint_disjuncts;
+        !index_set
     in
-    let rec gg exp = 
+    let process_binary_operator t1 t2 =
+      if is_uvar t1 || is_uvar t2 then
+        ((*print_endline "1";*)raise OutsideFragment)
+      else
+        match part with
+            Index_guard -> assert(false)
+          | Value_constraint -> get_index_set t1 part @ get_index_set t2 part
+          | Value_constraint_index -> get_index_set t1 part @ get_index_set t2 part
+          | Uncommitted -> get_index_set t1 part @ get_index_set t2 part
+    in
+    let process_unary_minus t1 = 
+      if is_uvar t1 then
+        ((*print_endline "2";*)raise OutsideFragment)
+      else
+        match part with
+            Index_guard -> assert(false)
+          | Value_constraint -> get_index_set t1 part
+          | Value_constraint_index -> get_index_set t1 part 
+          | Uncommitted -> get_index_set t1 part 
+    in
+    let process_eq_or_le t1 t2 = 
+      match part with
+          Index_guard -> 
+            begin
+              begin
+                if is_pexpr t1 then
+                  [t1]
+                else if is_uvar t1 then
+                  []
+                else ((*print_endline "3";*)raise OutsideFragment)
+              end @
+              begin
+                if is_pexpr t2 then
+                  [t2]
+                else if is_uvar t2 then
+                  []
+                else ((*print_endline "4";*)raise OutsideFragment)
+              end;
+            end
+        | Value_constraint -> get_index_set t1 Value_constraint @ get_index_set t2 Value_constraint
+        | Value_constraint_index -> assert(false)
+        | Uncommitted -> get_index_set t1 part @ get_index_set t2 part
+    in
       match exp with
-        | Constant (loc,c) -> []
-        | LValue (loc,l) -> []
-        | Plus (loc,t1, t2) -> []
-        | Minus (loc,t1, t2) -> []
-        | Times (loc,t1, t2) -> []
-        | Div (loc,t1, t2) -> []
-        | IDiv (loc,t1, t2) -> []
-        | Mod (loc,t1, t2) -> []
-        | UMinus (loc,t) -> []
-        | ForAll (loc,decls,e) -> gg e
-        | Exists (loc,decls,e) -> gg e
-        | ArrayUpdate (loc, exp, assign_to, assign_val) -> []
-        | LT (loc,t1, t2) -> gl t1 @ gl t2
-        | LE (loc,t1, t2) -> gl t1 @ gl t2
-        | GT (loc,t1, t2) -> gl t1 @ gl t2
-        | GE (loc,t1, t2) -> gl t1 @ gl t2
-        | EQ (loc,t1, t2) -> gl t1 @ gl t2
-        | NE (loc,t1, t2) -> gl t1 @ gl t2
-        | And (loc,t1, t2) -> gg t1 @ gg t2
-        | Or (loc,t1, t2) -> gg t1 @ gg t2
-        | Not (loc,t) -> gg t
-        | Iff (loc,t1, t2) -> gg t1 @ gg t2
-        | Implies (loc,t1, t2) -> gg t1 @ gg t2
-        | EmptyExpr -> []
-        | _ -> raise InvalidFormula
-    in
-      gg exp
-  in*)
-    remove_duplicates_from_list (get_array_indices exp (*@ get_guards exp*) @ [Constant(gdl(),ConstInt(gdl(),0))])
-    (*We always include 0 in the index set. Technically, 0 needs only be included if the index
-      set would be otherwise empty. However, because we don't always have the formula in the
-      simple implication form used by the DP, we use heuristics to decide what to put in the
-      index set. Our index will always be a superset of what it needs to be, so it's never
-      a problem. It is possible that the index set should only contain the 0 element, but
-      because our index set is over-sized, we do not realize it would be empty (apart from
-      the 0 element), and hence we might not include the 0 element. To prevent this from
-      happening, we always include the 0 element, regardless of whether or not it needs
-      to be there.*)
-      
+      | Constant (loc,c) ->
+          begin
+            match part with
+                Index_guard -> []
+              | Value_constraint -> []
+              | Value_constraint_index -> []
+              | Uncommitted -> []
+          end
+      | LValue (loc,l) ->
+          begin
+            match l with
+                NormLval(loc,id) ->
+                  begin
+                    match part with
+                        Index_guard -> assert(false)
+                      | Value_constraint -> 
+                          begin
+                            match quantification_of_identifier id with
+                                Universal -> ((*print_endline "5";*)raise OutsideFragment)
+                              | Existential -> ((*print_endline "6";*)raise OutsideFragment)
+                              | Unquantified -> []
+                          end
+                      | Value_constraint_index -> []
+                      | Uncommitted -> []
+                  end
+              | ArrayLval(loc,arr,index) ->
+                  begin
+                    match part with
+                        Index_guard -> ((*print_endline "7";*)raise OutsideFragment)
+                      | Value_constraint ->
+                          begin
+                            ignore (get_index_set index Value_constraint_index);
+                            (if is_uvar index then [] else [index]) @ (get_index_set arr part)
+                          end
+                      | Value_constraint_index -> 
+                          begin
+                            ignore (get_index_set index Value_constraint_index);
+                            ignore (get_index_set arr Value_constraint_index);
+                            []
+                          end
+                      | Uncommitted -> (assert(not (is_uvar index));[index])
+                  end
+          end
+      | Plus (loc,t1, t2) -> process_binary_operator t1 t2
+      | Minus (loc,t1, t2) -> process_binary_operator t1 t2
+      | Times (loc,t1, t2) -> process_binary_operator t1 t2
+      | IDiv (loc,t1, t2) -> process_binary_operator t1 t2
+      | Mod (loc,t1, t2) -> process_binary_operator t1 t2
+      | UMinus (loc,t) -> process_unary_minus t
+      | ForAll (loc,decls,e) -> get_index_set_for_disjuncts e
+      | Exists (loc,decls,e) -> get_index_set e part
+      | ArrayUpdate (loc, exp, assign_to, assign_val) ->
+          begin
+            begin
+              match is_pexpr assign_to with
+                  true ->
+                    begin
+                      (get_index_set assign_val Value_constraint)
+                      @ [Plus(gdl(), assign_to, Ast.Constant(gdl(),ConstInt(gdl(), 1)))]
+                      @ [Minus(gdl(), assign_to, Ast.Constant(gdl(),ConstInt(gdl(), 1)))]
+                    end
+                | false -> ((*print_endline "8";*)raise OutsideFragment)
+            end
+            @ get_index_set exp part
+          end
+      | LT (loc,t1, t2) ->
+          begin
+            match part with
+                Index_guard -> 
+                  begin
+                    if is_pexpr t1 then
+                      let lhs_term = Plus(gdl(), t1, Ast.Constant(gdl(),ConstInt(gdl(), 1))) in
+                        if is_pexpr t2 then
+                          [lhs_term; t2]
+                        else if is_uvar t2 then
+                          [lhs_term]
+                        else ((*print_endline "9";*)raise OutsideFragment)
+                    else if is_pexpr t2 then
+                      let rhs_term = Minus(gdl(), t2, Ast.Constant(gdl(),ConstInt(gdl(), 1))) in
+                        if is_uvar t1 then
+                          [rhs_term]
+                        else ((*print_endline "10";*)raise OutsideFragment)
+                    else ((*print_endline "11";*)(*print_endline (string_of_expr exp);*)raise OutsideFragment)
+                  end
+              | Value_constraint -> get_index_set t1 Value_constraint @ get_index_set t2 Value_constraint
+              | Value_constraint_index -> assert(false)
+              | Uncommitted -> get_index_set t1 part @ get_index_set t2 part
+          end
+      | LE (loc,t1, t2) -> process_eq_or_le t1 t2
+      | GT (loc,t1, t2) -> get_index_set (LT(loc,t2,t1)) part
+      | GE (loc,t1, t2) -> get_index_set (LE(loc,t2,t1)) part
+      | EQ (loc,t1, t2) -> process_eq_or_le t1 t2
+      | NE (loc,t1, t2) -> get_index_set (Not(gdl(), EQ(gdl(),t1,t2))) part
+      | And (loc,t1, t2) -> get_index_set t1 part @ get_index_set t2 part
+      | Or (loc,t1, t2) -> get_index_set t1 part @ get_index_set t2 part
+      | Not (loc,t) ->
+          begin
+            match part with
+                Index_guard ->
+                  begin
+                    let replacement_expr = 
+                      match t with
+                          LT(loc,t1,t2) -> GE(loc,t1,t2)
+                        | LE(loc,t1,t2) -> GT(loc,t1,t2)
+                        | GT(loc,t1,t2) -> LE(loc,t1,t2)
+                        | GE(loc,t1,t2) -> LT(loc,t1,t2)
+                        | EQ(loc,t1,t2) -> Or(gdl(),LT(gdl(),t1,t2),GT(gdl(),t1,t2))
+                        | NE(loc,t1,t2) -> EQ(loc,t1,t2)
+                        | _ -> assert(false)
+                    in get_index_set replacement_expr part
+                  end
+              | Value_constraint -> get_index_set t part
+              | Value_constraint_index -> assert(false)
+              | Uncommitted -> get_index_set t part
+          end
+      | Iff (loc,t1, t2) -> assert(false)
+      | Implies (loc,t1, t2) -> assert(false)
+      | EmptyExpr -> []
+      | _ -> assert(false)    
+  in    
+  let index_set = remove_duplicates_from_list (get_index_set (nnf exp) Uncommitted)
+  in
+    match List.length index_set with
+        0 -> [Constant(gdl(),ConstInt(gdl(),0))]
+      | _ -> index_set
+          
+
 let remove_quantification_from_vc_with_array_dp exp_orig = 
-  let nnf_exp_orig = nnf exp_orig in
-  let index_set = get_index_set nnf_exp_orig in
+
+  let nnf_exp_orig = cnf exp_orig in
+
+(*    print_endline ("before: " ^ string_of_expr exp_orig);    *)
+(*    print_endline ("nnf: " ^ string_of_expr (nnf exp_orig));*)
+(*    print_endline ("cnf: " ^ string_of_expr (cnf exp_orig));*)
+    
+    (*  let index_set = get_index_set cnf_exp_orig in*)
+  let index_set = get_index_set exp_orig in
+(*
+  let print_exp exp = 
+    print_endline (string_of_expr exp) 
+  in
+    print_endline "index set begin";
+    List.iter print_exp index_set;
+    print_endline "index set begin";
+*)
   let rec rq exp = match exp with
     | Constant (loc,c) -> Constant(loc,c)
     | LValue (loc,l) -> LValue(loc,l)

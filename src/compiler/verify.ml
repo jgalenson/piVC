@@ -290,7 +290,9 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
             Mutex.unlock cache_lock;
             Normal (fst result, snd result)
       end
-  with ex -> Exceptional (ex) ;;
+  with
+      Expr_utils.OutsideFragment -> Normal(Unknown,None)
+    | ex -> Exceptional (ex)
 
 let overall_validity_status list_of_things extraction_func = 
   let is_validity extraction_func test actual = (test==(extraction_func actual)) in
@@ -786,6 +788,20 @@ and verify_program program_info program_ast vc_cache_and_lock options =
     list_of_map !func_map
 
 
+
+let contains_unknown_vc function_validity_information_list =
+  let function_contains_unknown function_validity_information = 
+    let atom_contains_unknown atom =
+      atom.valid = Unknown
+    in
+      List.exists atom_contains_unknown function_validity_information.correctness_result.vcs ||
+        match function_validity_information.termination_result with
+            None -> false
+          | Some(term) ->
+              List.exists atom_contains_unknown term.decreasing_paths ||
+                List.exists atom_contains_unknown term.nonnegative_vcs
+  in
+    List.exists function_contains_unknown function_validity_information_list
 
 let inductive_core_good_enough function_validity_information_list =
   let important_vc_implies_all_rhs_conjuncts_in_inductive_core vc = 

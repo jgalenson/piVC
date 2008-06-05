@@ -1,5 +1,5 @@
 @pre  0 <= l && u < |a| && sorted(a, 0, |a| - 1)
-@post rv <-> exists ix. (l <= ix && ix < u -> a[ix] = e)
+@post rv <-> exists ix. (l <= ix && ix <= u && a[ix] = e)
 bool BinarySearch(int[] a, int l, int u, int e) {
   if (l > u) 
     return false;

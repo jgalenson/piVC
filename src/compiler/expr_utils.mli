@@ -1,5 +1,7 @@
 open Ast ;;
 
+exception OutsideFragment
+
 val nnf : expr -> expr
 val sub_idents_in_expr_while_preserving_original_location : expr -> (identifier * expr) list -> expr ;;
 val sub_idents : expr -> (identifier -> expr option) -> expr ;;
