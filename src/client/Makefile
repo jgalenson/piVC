@@ -30,6 +30,7 @@ gui :
 	cd temp_files_for_compilation; jar xf ../java_gui/libraries/*
 	mkdir -p temp_files_for_compilation/images
 	cp java_gui/images/*.jpg temp_files_for_compilation/images
+	cp java_gui/images/*.png temp_files_for_compilation/images
 	cp java_gui/MANIFEST.MF temp_files_for_compilation
 	cp java_gui/ENVIRONMENT temp_files_for_compilation
 	cd temp_files_for_compilation; jar cfm PiGui.jar MANIFEST.MF `find . -name "*.class"` images ENVIRONMENT
