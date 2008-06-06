@@ -33,11 +33,12 @@ let send_email from_name from_addr to_addrs cc_addrs subject content =
       | _ -> List.hd strs ^ "," ^ comma_delimited_list_of_strings (List.tl strs)
   in
   let get_raw_email_text_for_sendmail () =
-    "From: \"" ^ from_name ^ "\" <" ^ from_addr ^ ">\n" ^ 
-      (if List.length to_addrs>0 then "To: " ^ comma_delimited_list_of_strings to_addrs ^ "\n" else "") ^
-      (if List.length cc_addrs>0 then "Cc: " ^ comma_delimited_list_of_strings cc_addrs ^ "\n" else "") ^
-      "Subject: " ^ subject ^ "\n" ^
-      content
+    let escaped_content = Str.global_replace (Str.regexp "\"") "\\\"" (Str.global_replace (Str.regexp "\\\\") "\\\\" content) in
+      "From: \"" ^ from_name ^ "\" <" ^ from_addr ^ ">\n" ^ 
+        (if List.length to_addrs>0 then "To: " ^ comma_delimited_list_of_strings to_addrs ^ "\n" else "") ^
+        (if List.length cc_addrs>0 then "Cc: " ^ comma_delimited_list_of_strings cc_addrs ^ "\n" else "") ^
+        "Subject: " ^ subject ^ "\n" ^
+        escaped_content
   in
     match Sys.command ("echo \""^get_raw_email_text_for_sendmail ()^"\" | " ^ Config.get_value "sendmail_path" ^ " " ^ comma_delimited_list_of_strings (to_addrs@cc_addrs)) with
         0 -> ignore()
