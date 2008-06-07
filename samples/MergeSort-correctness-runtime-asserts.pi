@@ -5,7 +5,7 @@ int[] MergeSort(int[] a)
 	return ms(a, 0, |a| - 1);
 }
 
-@pre  true
+@pre  l>=0 && |a_0| > u
 @post sorted(rv, l, u) && |rv| = |a_0| && forall ix. (ix < l || ix > u -> rv[ix] = a_0[ix])
 int[] ms(int[] a_0, int l, int u) {
 	int[] a := a_0;
@@ -21,7 +21,7 @@ int[] ms(int[] a_0, int l, int u) {
 	}
 }
 
-@pre  sorted(a_0, l, m) && sorted(a_0, m + 1, u) && l <= m + 1 && m <= u
+@pre  sorted(a_0, l, m) && sorted(a_0, m + 1, u) && l <= m + 1 && m <= u && |a_0|>u && l>=0 && m>=0 && l>=0
 @post sorted(rv, l, u) && forall ix. (ix < l || ix > u -> rv[ix] = a_0[ix]) && |rv| = |a_0|
 int[] merge(int[] a_0, int l, int m, int u) {
 	int[] buf := new int[u-l+1];
@@ -34,7 +34,8 @@ int[] merge(int[] a_0, int l, int m, int u) {
 		  (k > 0 -> ((i <= m -> buf[k - 1] <= a_0[i]) && (j <= u -> buf[k - 1] <= a_0[j]))) &&
 		  j >= m + 1 && j <= u + 1 && i >= l && i <= m + 1 && (i - l) + (j - m - 1) = k &&
 		  k >= 0 && k <= u - l + 1 &&
-		  forall ix. (ix < l || ix > u -> a[ix] = a_0[ix]) && |a| = |a_0|
+           |buf| = u-l+1 && |a|=|a_0| && |a_0| >u && j >= 0 && i>=0 && l>=0 &&
+		  forall ix. (ix < l || ix > u -> a[ix] = a_0[ix])
 		(int k := 0; k < u - l + 1; k := k + 1)
 	{
 		if (i > m) {
@@ -58,7 +59,8 @@ int[] merge(int[] a_0, int l, int m, int u) {
 	for 
 		@ sorted(buf, 0, u - l) && sorted(a, l, l + k - 1) &&
 		  k >= 0 && k <= u - l + 1 && (k > 0 && k <= u - l -> buf[k] >= a[l + k - 1]) &&
-		  forall ix. (ix < l || ix > u -> a[ix] = a_0[ix]) && |a| = |a_0|
+		  forall ix. (ix < l || ix > u -> a[ix] = a_0[ix]) && |a| = |a_0| &&
+           l >= 0 && |buf| = u-l+1 && |a_0| > u
 		(int k := 0; k < u - l + 1; k := k + 1)
 	{
 		a[l + k] := buf[k];
