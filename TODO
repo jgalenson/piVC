@@ -6,11 +6,10 @@ Jason
 	Classes
 	defines and typedefs (see Aaron's first email 1/23/08)
 	
-	Arrays DP: check remaining TODOs, don't run arrays DP on VCs not in the fragment, fix index set construction
+	Arrays DP long term work
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
 	Bug: Fix _v0 highlighting (i.e. _v0 node in basic path has weird highlighting)
-	Email stuff.
 	Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Server on startup should ensure yices, included.pi, etc. are there and fail if not.
 	Put filename into xml and ocaml data structures.
@@ -23,7 +22,7 @@ Jason
         Fix locations of nonnegative atoms (discuss with Joel)        
 	Bug: we get a syntax error if the last line is a C++-style comment (see samples/bad_end_comment.pi or samples/compiler_test_files/bad_return.pi).
 	Add names for nonnegative nodes.
-        Support for creating new arrays
+
 
 Joel
 	Static analysis API
@@ -34,6 +33,7 @@ Joel
 	Timeouts.
 	Log server error messages.  Also add command line option to change its directory.
 	Bug: tree selection after compile: selects two different steps with same text (Assert !(y=0), try Ackermann).
+        Can't compile after "yices doesn't exist" error mesasge, even when yices does in fact exist
 
 Unassigned
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?

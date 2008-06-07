@@ -184,41 +184,57 @@ let generate_paths_for_func func program gen_runtime_asserts =
     | Constant (loc,c) -> expr
     | LValue (loc,l) -> LValue (loc, gnfl l)
     | Call (loc,s, el) ->
-        (   
-            match (Ast.get_root_decl program s.name) with 
+        begin
+          match (Ast.get_root_decl program s.name) with 
               None -> raise (NoDeclException)
-            | Some(callee_prob) -> (
-                match callee_prob with
-                    VarDecl(loc, vd) -> raise (BadDeclException)
-                  | Predicate(loc, p) -> raise (BadDeclException)
-                  | FnDecl(loc, callee) -> (
-                      let el = List.map gnfe el in
-                      let ident_name = "_v" ^ string_of_int !temp_var_number in
-                      let ident = create_identifier ident_name (get_dummy_location ()) in
-                      let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
-                      let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
-                        decl.var_id := Some(ident_name);
-                        ident.decl := Some(decl);
-                        temp_var_number := !temp_var_number + 1;
-			let termination_annotation =
-			  let called_decl_opt = Ast_utils.get_called_fndecl func program expr in
-			  if Utils.is_some called_decl_opt then
-			    let called_fndecl = Ast.fnDecl_of_decl (Utils.elem_from_opt called_decl_opt) in
-			    let get_fndecl x = Ast_utils.get_called_fndecl func program x in
-			    let should_add = Ast_utils.calls called_fndecl func get_fndecl in
-			    if should_add then
-			      get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)
-			    else
-			      []
-			  else
-			    []
-			in
-                        add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
-                        new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident el)::!new_steps;
-                        lval_for_new_ident
-                    )
-              )
-        )
+            | Some(callee_prob) -> 
+                begin
+                  match callee_prob with
+                      VarDecl(loc, vd) -> raise (BadDeclException)
+                    | Predicate(loc, pd) -> raise (BadDeclException)
+                    | ClassDecl(loc, cd) -> raise (BadDeclException)
+                    | FnDecl(loc, callee) -> 
+                        begin
+                          let el = List.map gnfe el in
+                          let ident_name = "_v" ^ string_of_int !temp_var_number in
+                          let ident = create_identifier ident_name (get_dummy_location ()) in
+                          let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
+                          let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+                            decl.var_id := Some(ident_name);
+                            ident.decl := Some(decl);
+                            temp_var_number := !temp_var_number + 1;
+			    let termination_annotation =
+			      let called_decl_opt = Ast_utils.get_called_fndecl func program expr in
+			        if Utils.is_some called_decl_opt then
+			          let called_fndecl = Ast.fnDecl_of_decl (Utils.elem_from_opt called_decl_opt) in
+			          let get_fndecl x = Ast_utils.get_called_fndecl func program x in
+			          let should_add = Ast_utils.calls called_fndecl func get_fndecl in
+			            if should_add then
+			              get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)
+			            else
+			              []
+			        else
+			          []
+			    in
+                              add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
+                              new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident el)::!new_steps;
+                              lval_for_new_ident
+                        end
+                end
+        end
+    | NewArray (loc, t, e) -> 
+        begin
+          let array_size = gnfe e in
+          let ident_name = "_v" ^ string_of_int !temp_var_number in
+          let ident = create_identifier ident_name (get_dummy_location ()) in
+          let decl = create_varDecl (Ast.Array(t, gdl())) ident (Ast.get_dummy_location ()) in
+          let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+            decl.var_id := Some(ident_name);
+            ident.decl := Some(decl);
+            temp_var_number := !temp_var_number + 1;
+            new_steps := Assume(EQ(gdl(),Length(gdl(),lval_for_new_ident),array_size))::!new_steps;
+            lval_for_new_ident
+        end
     | Plus (loc,t1, t2) -> Plus(loc, gnfe t1, gnfe t2)
     | Minus (loc,t1, t2) -> Minus(loc, gnfe t1, gnfe t2)
     | Times (loc,t1, t2) -> Times(loc, gnfe t1, gnfe t2)

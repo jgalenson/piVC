@@ -23,6 +23,7 @@ let rec insert_decl decl s =
           end
       | FnDecl(loc, fd) -> ignore()
       | Predicate(loc, pd) -> ignore()
+      | ClassDecl(loc, cd) -> ignore()
   end;
   insert_decl_without_setting_id decl s
 

@@ -37,6 +37,7 @@ type temp_expr =
   | Iff of Ast.location * temp_expr * temp_expr
   | Implies of Ast.location * temp_expr * temp_expr
   | Length of Ast.location * temp_expr
+  | NewArray of Ast.location * varType * temp_expr
   | EmptyExpr
 
 let loc start_token end_token = create_location (Parsing.rhs_start_pos start_token) (Parsing.rhs_end_pos end_token)
@@ -109,6 +110,7 @@ and condition_from_temp_expr = function
     | Length (loc, t) -> raise NoCondition
     | Iff (loc,t1, t2) -> condition_from_temp_expr t2
     | Implies (loc,t1, t2) -> condition_from_temp_expr t2
+    | NewArray(loc,t,e) -> raise NoCondition
     | EmptyExpr -> raise NoCondition
 
 (* "has_condition" reflects whether this expression is followed by a while loop condition.
@@ -148,6 +150,7 @@ and expr_from_temp_expr has_condition = function
     | Length (loc, t) -> Ast.Length(loc, expr_from_temp_expr false t)
     | Iff (loc,t1, t2) -> Ast.Iff(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
     | Implies (loc,t1, t2) -> Ast.Implies(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
+    | NewArray(loc,t,e) -> Ast.NewArray(loc, t, expr_from_temp_expr false e)
     | EmptyExpr -> Ast.EmptyExpr
 
 
@@ -158,6 +161,7 @@ and expr_from_temp_expr has_condition = function
 %token T_Pre T_Post
 %token T_Pre T_Post
 %token T_Bool T_Void T_Int T_Float T_String T_Predicate
+%token T_New
 %token <int> T_IntConstant
 %token <float> T_FloatConstant
 %token <bool> T_BoolConstant
@@ -376,6 +380,7 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | T_Not Expr             { Not (loc 1 2, $2) }
 	 | T_Bar Expr T_Bar       { Length (loc 1 3, $2) }
 	 | T_Length T_LParen Expr T_RParen { Length (loc 1 3,$3) }
+	 | T_New Type T_LSquareBracket Expr T_RSquareBracket { NewArray (loc 1 5,$2, $4) }
 ;
 
 LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }

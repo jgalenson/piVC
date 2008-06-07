@@ -157,6 +157,7 @@ and expr =
   | Iff of location * expr * expr
   | Implies of location * expr * expr
   | Length of location * expr
+  | NewArray of location * varType * expr
   | EmptyExpr
 
     
@@ -209,6 +210,10 @@ type fnDecl = {
 }
 let create_fnDecl name formals returnType stmtBlock preCondition postCondition rankingAnnotation location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; fnRankingAnnotation = rankingAnnotation; location_fd = location;}
 
+type classDecl = {
+  className : identifier;
+}
+
 type predicate = {
   predName   : identifier;
   formals_p  : varDecl list;
@@ -245,6 +250,7 @@ let replace_loc_of_expr expr new_loc=
     | Length (loc, t) -> Length(new_loc,t)
     | Iff (loc,t1, t2) -> Iff(new_loc,t1,t2)
     | Implies (loc,t1, t2) -> Implies(new_loc,t1,t2)
+    | NewArray (loc, t, e) -> NewArray(new_loc,t,e)
     | EmptyExpr -> assert(false)
 
 
@@ -252,6 +258,7 @@ type decl =
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
   | Predicate of location * predicate
+  | ClassDecl of location * classDecl
 
 let varDecl_of_decl decl = match decl with
     VarDecl(loc, vd) -> vd
@@ -266,12 +273,14 @@ let name_of_decl decl =
       VarDecl(l, d) -> d.varName.name
     | FnDecl(l, d) -> d.fnName.name
     | Predicate(l,d) -> d.predName.name
+    | ClassDecl(l,d) -> d.className.name
 
 let type_of_decl = function
   | VarDecl (loc, d) -> d.varType
   | FnDecl (loc, d) -> d.returnType
   | Predicate (loc, p) -> Bool(gdl())
-
+  | ClassDecl (loc, p) -> raise (Error "Class decls don't have types")
+      
 type program = {
   decls : decl list;
   location : location;
@@ -304,6 +313,8 @@ let location_of_decl decl =
       VarDecl(l,d) -> l
     | FnDecl(l,d) -> l
     | Predicate(l,d) -> l
+    | ClassDecl(l,d) -> l        
+
 
 let location_of_stmt = function
   | Expr (loc, e) -> loc
@@ -344,6 +355,7 @@ let location_of_expr = function
     | Length (loc, t) -> loc
     | Iff (loc,t1, t2) -> loc
     | Implies (loc,t1, t2) -> loc
+    | NewArray (loc, t, e) -> loc
     | EmptyExpr -> get_dummy_location ()
 
 
@@ -443,6 +455,7 @@ and string_of_expr e =
     | Iff (loc,t1, t2) -> "(" ^ (soe t1) ^ ") <-> (" ^ (soe t2) ^ ")"
     | Implies (loc,t1, t2) -> "(" ^ (soe t1) ^ ") -> (" ^ (soe t2) ^ ")"
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"
+    | NewArray (loc, t, e) -> "new " ^ string_of_type t ^ "[" ^ soe e ^ "]"
     | EmptyExpr  -> ""
   in
   soe e
@@ -529,7 +542,8 @@ let tabbed_string_of_decl d num_tabs = match d with
       "predicate " ^ string_of_identifier d.predName ^ "("
       ^ (String.concat ", " (List.map string_of_var_decl d.formals_p)) ^ ") = "
       ^ (string_of_expr d.expr)
-
+  | ClassDecl (loc, d) -> "/*Classes not yet implemented. This is a placeholder*/"
+      
 let string_of_decl d = tabbed_string_of_decl d 0 ;;
 	
 let string_of_program p =

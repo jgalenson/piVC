@@ -46,6 +46,12 @@ val create_existential_varDecl : varType -> identifier -> location -> varDecl
 val create_universal_varDecl : varType -> identifier -> location -> varDecl
 val create_param_varDecl : varType -> identifier -> location -> varDecl
 
+
+type classDecl = {
+  className : identifier;
+}
+
+
 val is_integral_type : varType -> bool ;;
 
 (*val set_quantification_on_varDecl_List : varDecl list -> quantification -> unit*)
@@ -91,6 +97,7 @@ and expr =
   | Iff of location * expr * expr
   | Implies of location * expr * expr
   | Length of location * expr
+  | NewArray of location * varType * expr
   | EmptyExpr
     
 and stmt =
@@ -123,6 +130,8 @@ and rankingAnnotation = {
   mutable associated_annotation : annotation option
 }
     
+
+
 val create_annotation : expr -> identifier option -> annotation ;;
 val create_precondition : expr -> annotation ;;
 val create_postcondition : expr -> annotation ;;
@@ -164,6 +173,7 @@ type decl =
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
   | Predicate of location * predicate
+  | ClassDecl of location * classDecl
 
 val name_of_decl : decl -> string
 

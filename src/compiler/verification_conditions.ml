@@ -27,11 +27,12 @@ let replace_length_with_var expr =
       Assign(loc,f,t) -> Assign(loc,f,rlwv t)
     | Constant (loc,c) -> expr
     | LValue (loc,l) -> expr
-    | Call (loc,s, el) ->
+    | Call (loc,s, el) -> (*calls should have been stripped previously, but there may still be predicates*)
         begin
           let new_args = List.map rlwv el in
-          Call(loc,s,new_args)
+            Call(loc,s,new_args)
         end
+    | NewArray(loc, t, e) -> assert(false) (*should have been stripped out previously*)
     | Plus (loc,t1, t2) -> Plus(loc,rlwv t1, rlwv t2)
     | Minus (loc,t1, t2) -> Minus(loc,rlwv t1, rlwv t2)
     | Times (loc,t1, t2) -> Times(loc,rlwv t1, rlwv t2)
@@ -135,6 +136,7 @@ let add_array_length_greater_than_0_to_expr expr =
     | Or (loc,t1, t2) -> gl t1 @ gl t2
     | Not (loc,t) -> gl t
     | Length (loc, t) -> assert(false)
+    | NewArray (loc, t, e) -> assert(false)
     | Iff (loc,t1, t2) -> gl t1 @ gl t2
     | Implies (loc,t1, t2) -> gl t1 @ gl t2
     | EmptyExpr -> []

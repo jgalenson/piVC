@@ -79,9 +79,10 @@ rule lang =  parse
   | "post"				 {updateLocation(lexbuf); T_Post}
   | "bool"              		 {updateLocation(lexbuf); T_Bool}
   | "void"			 	 {updateLocation(lexbuf); T_Void}
-  | "true"				 {updateLocation(lexbuf); T_True}
+  | "true"           			 {updateLocation(lexbuf); T_True}
   | "false"				 {updateLocation(lexbuf); T_False}
   | "[]"				 {updateLocation(lexbuf); T_Dims}
+  | "new"				 {updateLocation(lexbuf); T_New}
   | ":="				 {updateLocation(lexbuf); T_Assign}
   | "<="				 {updateLocation(lexbuf); T_LessEqual}
   | ">="				 {updateLocation(lexbuf); T_GreaterEqual}

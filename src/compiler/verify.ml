@@ -157,6 +157,7 @@ let instantiate_predicates expr program =
       | Iff (loc,t1, t2) -> Iff(loc,ip t1, ip t2)
       | Implies (loc,t1, t2) -> Implies(loc,ip t1, ip t2)
       | Length (loc, t) -> assert(false);
+      | NewArray (loc, t, e) -> assert(false);
       | EmptyExpr  -> expr        
   in
   let result = ip expr in
@@ -205,7 +206,7 @@ let add_to_cache cache key result =
    Either returns the validity and a counterexample option
    or returns whatever exception was thrown. *)
 let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
-  let begin_time = Unix.time () in
+  (*let begin_time = Unix.time () in*)
     try
       let vc = instantiate_predicates vc_with_preds program in      
       (* Use cached version if we can. *)
@@ -231,14 +232,14 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
 
       (*Utils.debug_print_time_diff begin_time (Unix.time ()) "before vc final: ";*)
 
-      let before_vc_time = Unix.time () -. begin_time in
+      (*let before_vc_time = Unix.time () -. begin_time in*)
         
-        let before_final_vc_time = Unix.time () in
+        (*let before_final_vc_time = Unix.time () in*)
 
         let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
 
-        let after_vc_time = Unix.time () -. begin_time in
-        let vc_time = Unix.time () -. before_final_vc_time in
+        (*let after_vc_time = Unix.time () -. begin_time in*)
+        (*let vc_time = Unix.time () -. before_final_vc_time in*)
           
           (*print_endline ("before vc time: " ^ (string_of_float before_vc_time) ^ "\nafter vc time : " ^ (string_of_float after_vc_time) ^ "\nvc time : " ^ (string_of_float vc_time) ^ "\n\n\n\n");*)
           
@@ -331,6 +332,7 @@ let get_all_info program options =
           VarDecl (loc, vd) -> None
         | Predicate (loc, p) -> None
 	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program options.generate_runtime_assertions))
+        | ClassDecl (loc, cd) -> assert(false) (*TODO-A: not yet implemented*)
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =

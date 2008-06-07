@@ -8,7 +8,7 @@ let yices_name id name = "__" ^ (string_of_int id) ^ "_" ^ name;;
    We make the name based on the id of the identifier.
    We use the var_names hash table to cache these names
    and their associated types. *)
-let rename_and_replace_id ident var_names rev_var_names =
+let rename_and_replace_id ident var_names rev_var_names = 
   let id = id_of_identifier ident in
   let new_name = 
     if (Hashtbl.mem var_names id) then
@@ -48,6 +48,7 @@ let rec parse_expr e var_names rev_var_names =
     | Or (loc, t1, t2) -> Or (loc, pe t1, pe t2)
     | Not (loc, t) -> Not (loc, pe t)
     | Length (loc, t) -> Length (loc, pe t)
+    | NewArray (loc, t, e) -> NewArray (loc, t, pe e)
     | Iff (loc, t1, t2) -> Iff (loc, pe t1, pe t2)
     | Implies (loc, t1, t2) -> Implies (loc, pe t1, pe t2)
     | EmptyExpr -> EmptyExpr

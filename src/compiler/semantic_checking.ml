@@ -75,6 +75,11 @@ and is_numeric_type t1 = match t1 with
   | Identifier (t, loc) -> true (* TODO finish off like above *)
   | _ -> false
 
+and is_int_type t1 = match t1 with
+  | Int (loc) -> true
+  | ErrorType -> true (* So cascading errors work *)
+  | _ -> false
+      
 and is_error_type t1 = match t1 with
   | ErrorType -> true
   | _ -> false
@@ -168,6 +173,34 @@ and check_annotation annotation scope_stack errors annotation_id func =
       | Runtime -> assert false (* We don't generate these annotations until basic path generation. *)
   in
   annotation.ann_name <- Some (name)
+
+
+and check_type t scope_stack errors =
+  match t with
+    | Bool(loc) -> ignore ()
+    | Int(loc) -> ignore ()
+    | Float(loc) -> ignore ()
+    | Identifier (ident, loc) -> 
+        begin
+	  let lookup_result = (Scope_stack.lookup_decl ident.name scope_stack) in
+	    match lookup_result with
+	      | None ->
+		  let error_msg = "Undefined type '" ^ (string_of_identifier ident) ^ "'" in
+		    add_error SemanticError error_msg loc errors
+	      | Some (d) ->
+                  begin
+                    match d with
+                        ClassDecl (l, cd) -> ignore ()
+                      | _ ->
+                          begin
+		            let error_msg = "The identifier '" ^ (string_of_identifier ident) ^ "' does not refer to a class" in
+		              add_error SemanticError error_msg loc errors
+                          end
+	          end
+        end
+    | Array (t, loc) -> check_type t scope_stack errors
+    | Void(loc) -> ignore ()
+    | ErrorType -> ignore () 
 
 and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn, is_top_level) =
   
@@ -329,6 +362,16 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 		                  add_error SemanticError error_msg loc errors; ErrorType
 		              | false -> check_formals fd.formals; fd.returnType
                           end
+		      | ClassDecl (loc, cd) -> 
+                          begin
+                            let what_it_should_be = 
+                              match is_annotation with
+                                  true -> "predicate"
+                                | false -> "function"
+                            in
+                            let error_msg = "'" ^ (string_of_identifier cd.className) ^ "' is not a " ^ what_it_should_be in
+		              add_error SemanticError error_msg loc errors; ErrorType
+                          end
 	          end          
         end
     | Plus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
@@ -395,6 +438,14 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	    add_error SemanticError error_msg loc errors;
 	  end;
 	Int(loc)
+    | NewArray(loc,t,e) -> 
+        check_type t scope_stack errors;
+	let size_type = cagrt e in
+          begin
+	    if not (is_int_type size_type) then
+	      (add_error SemanticError "Array initialization size is not an int" loc) errors
+          end;
+	  Array(t,gdl())
     | EmptyExpr -> Void (Ast.get_dummy_location ())
   and cagrt e = cagrt_full e (false)
   in
@@ -418,11 +469,12 @@ let check_ranking_annotation ra_opt associated_annotation scope_stack errors = m
       end
   | None -> () ;;
 
+        
 let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func stmt =
   match stmt with
     Expr (loc, e) -> ignore (check_and_get_return_type scope_stack e errors (false, false, true))
 
-  | VarDeclStmt(loc,d) -> (insert_decl scope_stack errors (VarDecl(loc,d))) 
+  | VarDeclStmt(loc,d) -> check_type d.varType scope_stack errors; insert_decl scope_stack errors (VarDecl(loc,d))
 
   | IfStmt (loc, test, then_block, else_block) ->
       let testType = check_and_get_return_type scope_stack test errors (false, false, true) in
@@ -654,11 +706,13 @@ let check_program program errors =
   let s = Scope_stack.create () in
   Scope_stack.enter_scope s;
   insert_decls s errors program.decls;
-  let check_decl_if_necessary decl = 
+  let check_decl decl = 
     match decl with
 	FnDecl(l, d) -> check_function d s errors
       | Predicate(l,p) -> check_predicate p s errors
-      | VarDecl(l,v) -> print_string("")
+      | VarDecl(l,v) -> check_type v.varType s errors
+      | ClassDecl(l,c) -> ignore ()
   in
-  List.iter (check_decl_if_necessary) program.decls;
-  Scope_stack.exit_scope s
+    List.iter check_decl program.decls;
+    Scope_stack.exit_scope s
+      
