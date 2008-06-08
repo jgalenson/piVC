@@ -5,22 +5,17 @@ TODOs
 Jason
 	Classes
 	defines and typedefs (see Aaron's first email 1/23/08)
-	
 	Arrays DP long term work
+
 	Bug: Fix syntax errors that are permitted due to temp_expr stuff but are not caught
 	Bug: Lots of consecutive array updates kills vc generation, but old PiVC handles them just fine (see samples/array_updates.pi).
-	Bug: Fix _v0 highlighting (i.e. _v0 node in basic path has weird highlighting)
 	Fix xml-lite problems. xml-lite appears to remove sucessive \n's, and also to remove spaces at the beginning of a newline. weird.
 	Server on startup should ensure yices, included.pi, etc. are there and fail if not.
 	Put filename into xml and ocaml data structures.
 	Bug: Remove stupid a,b counterexample nodes (look for filename field in the location)
-	Allow termination arguments after annotation, not just before.
-        Bug: function locations not always correct
-        Change function locations to prototype only
         Update README. Especially with information about email functionality.  Also talk about coloring of things in VC pane and the inductive core.
         Figure out why we crash on compiling an empty file.
-        Fix locations of nonnegative atoms (discuss with Joel)        
-	Bug: we get a syntax error if the last line is a C++-style comment (see samples/bad_end_comment.pi or samples/compiler_test_files/bad_return.pi).
+        Fix locations of nonnegative atoms (discuss with Joel)
 	Add names for nonnegative nodes.
 
 

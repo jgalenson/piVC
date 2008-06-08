@@ -8,7 +8,6 @@ exception NoCondition
 exception ExprNotIdent
 exception UnexpectedStmt
 
-
 type temp_expr =
   | Assign of Ast.location * Ast.lval * temp_expr
   | Constant of Ast.location * Ast.constant
@@ -77,17 +76,48 @@ let rec expr_list_of_temp_expr_list = function
      | [] -> []
      | x :: l -> expr_from_temp_expr false x :: expr_list_of_temp_expr_list l
 
+and condition_from_call_interior el = 
+  match List.hd el with
+      TempVarDeclAndAssign(s,e) -> (Some(s), e::List.tl (expr_list_of_temp_expr_list el))
+    | _ -> (None, expr_list_of_temp_expr_list el)
+
+and location_of_temp_expr = function
+    | Assign (loc,l, e) -> loc
+    | Constant (loc,c) -> loc
+    | LValue (loc,l) -> loc
+    | TempVarDeclAndAssign(l,s) -> location_union (location_of_stmt l) (location_of_expr s)
+    | TempCall (loc,s, el) -> loc
+    | Plus (loc,t1, t2) -> loc
+    | Minus (loc,t1, t2) -> loc
+    | Times (loc,t1, t2) -> loc
+    | Div (loc,t1, t2) -> loc
+    | IDiv (loc,t1, t2) -> loc
+    | Mod (loc,t1, t2) -> loc
+    | UMinus (loc,t) -> loc
+    | ForAll (loc,decls,e) -> loc
+    | Exists (loc,decls,e) -> loc
+    | ArrayUpdate (loc,exp,assign_to,assign_val) -> loc
+    | LT (loc,t1, t2) -> loc
+    | LE (loc,t1, t2) -> loc
+    | GT (loc,t1, t2) -> loc
+    | GE (loc,t1, t2) -> loc
+    | EQ (loc,t1, t2) -> loc
+    | NE (loc,t1, t2) -> loc
+    | And (loc,t1, t2) -> loc
+    | Or (loc,t1, t2) -> loc
+    | Not (loc,t) -> loc
+    | Length (loc, t) -> loc
+    | Iff (loc,t1, t2) -> loc
+    | Implies (loc,t1, t2) -> loc
+    | NewArray(loc,t,e) -> loc
+    | EmptyExpr -> gdl ()
+
 and condition_from_temp_expr = function
     | Assign (loc,l, e) -> raise NoCondition
     | Constant (loc,c) -> raise NoCondition
     | LValue (loc,l) -> raise NoCondition
     | TempVarDeclAndAssign(l,s) -> raise NoCondition
-    | TempCall (loc,s, el) -> 
-        begin
-          match List.hd el with
-              TempVarDeclAndAssign(s,e) -> (Some(s), e::List.tl (expr_list_of_temp_expr_list el))
-            | _ -> (None, expr_list_of_temp_expr_list el)
-        end
+    | TempCall (loc,s, el) -> condition_from_call_interior el
     | Plus (loc,t1, t2) -> condition_from_temp_expr t2
     | Minus (loc,t1, t2) -> condition_from_temp_expr t2
     | Times (loc,t1, t2) -> condition_from_temp_expr t2
@@ -113,46 +143,59 @@ and condition_from_temp_expr = function
     | NewArray(loc,t,e) -> raise NoCondition
     | EmptyExpr -> raise NoCondition
 
+
 (* "has_condition" reflects whether this expression is followed by a while loop condition.
    We don't know whether the condition is a condition or an argument of a function call until
    after we're well advanced in the parsing, so we put the condition in the expression. When we
    reach the end, we yank out the final condition and put it as the loop condition.
 *)
-and expr_from_temp_expr has_condition = function
-    | Assign (loc,l, e) -> Ast.Assign(loc,l,expr_from_temp_expr has_condition e)
-    | Constant (loc,c) -> Ast.Constant(loc,c)
-    | LValue (loc,l) -> Ast.LValue(loc, l)
-    | TempCall (loc,s, el) -> (
-                              match has_condition with
-                                 true  -> expr_from_temp_expr false s
-                               | false -> Ast.Call(loc,identifier_of_expression s, expr_list_of_temp_expr_list el)
-                              )
-    | TempVarDeclAndAssign(s,e) -> e
-    | Plus (loc,t1, t2) -> Ast.Plus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Minus (loc,t1, t2) -> Ast.Minus(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Times (loc,t1, t2) -> Ast.Times(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Div (loc,t1, t2) -> Ast.Div(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | IDiv (loc,t1, t2) -> Ast.IDiv(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Mod (loc,t1, t2) -> Ast.Mod(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | UMinus (loc,t) -> Ast.UMinus(loc, expr_from_temp_expr has_condition t)
-    | ForAll (loc,decls,e) -> Ast.ForAll(loc, decls, expr_from_temp_expr has_condition e)
-    | Exists (loc,decls,e) -> Ast.Exists(loc, decls, expr_from_temp_expr has_condition e)
-    | ArrayUpdate (loc,exp,assign_to,assign_val) -> Ast.ArrayUpdate (loc, expr_from_temp_expr false exp, expr_from_temp_expr false assign_to, expr_from_temp_expr false assign_val)
-    | LT (loc,t1, t2) -> Ast.LT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | LE (loc,t1, t2) -> Ast.LE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | GT (loc,t1, t2) -> Ast.GT(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | GE (loc,t1, t2) -> Ast.GE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | EQ (loc,t1, t2) -> Ast.EQ(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | NE (loc,t1, t2) -> Ast.NE(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | And (loc,t1, t2) -> Ast.And(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Or (loc,t1, t2) -> Ast.Or(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Not (loc,t) -> Ast.Not(loc, expr_from_temp_expr has_condition t)
-    | Length (loc, t) -> Ast.Length(loc, expr_from_temp_expr false t)
-    | Iff (loc,t1, t2) -> Ast.Iff(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | Implies (loc,t1, t2) -> Ast.Implies(loc, expr_from_temp_expr false t1, expr_from_temp_expr has_condition t2)
-    | NewArray(loc,t,e) -> Ast.NewArray(loc, t, expr_from_temp_expr false e)
-    | EmptyExpr -> Ast.EmptyExpr
-
+and expr_from_temp_expr has_condition expr =
+  let location_to_truncate_to = ref None in
+  let rec efte has_condition expr = 
+    match expr with
+      | Assign (loc,l, e) -> Ast.Assign(loc,l,efte has_condition e)
+      | Constant (loc,c) -> Ast.Constant(loc,c)
+      | LValue (loc,l) -> Ast.LValue(loc, l)
+      | TempCall (loc,s, el) -> (
+          match has_condition with
+              true  ->
+                begin
+                  location_to_truncate_to := Some((location_of_temp_expr s).loc_end);
+                  efte false s
+                end
+            | false -> Ast.Call(loc,identifier_of_expression s, expr_list_of_temp_expr_list el)
+        )
+      | TempVarDeclAndAssign(s,e) -> e
+      | Plus (loc,t1, t2) -> Ast.Plus(loc, efte false t1, efte has_condition t2)
+      | Minus (loc,t1, t2) -> Ast.Minus(loc, efte false t1, efte has_condition t2)
+      | Times (loc,t1, t2) -> Ast.Times(loc, efte false t1, efte has_condition t2)
+      | Div (loc,t1, t2) -> Ast.Div(loc, efte false t1, efte has_condition t2)
+      | IDiv (loc,t1, t2) -> Ast.IDiv(loc, efte false t1, efte has_condition t2)
+      | Mod (loc,t1, t2) -> Ast.Mod(loc, efte false t1, efte has_condition t2)
+      | UMinus (loc,t) -> Ast.UMinus(loc, efte has_condition t)
+      | ForAll (loc,decls,e) -> Ast.ForAll(loc, decls, efte has_condition e)
+      | Exists (loc,decls,e) -> Ast.Exists(loc, decls, efte has_condition e)
+      | ArrayUpdate (loc,exp,assign_to,assign_val) -> Ast.ArrayUpdate (loc, efte false exp, efte false assign_to, efte false assign_val)
+      | LT (loc,t1, t2) -> Ast.LT(loc, efte false t1, efte has_condition t2)
+      | LE (loc,t1, t2) -> Ast.LE(loc, efte false t1, efte has_condition t2)
+      | GT (loc,t1, t2) -> Ast.GT(loc, efte false t1, efte has_condition t2)
+      | GE (loc,t1, t2) -> Ast.GE(loc, efte false t1, efte has_condition t2)
+      | EQ (loc,t1, t2) -> Ast.EQ(loc, efte false t1, efte has_condition t2)
+      | NE (loc,t1, t2) -> Ast.NE(loc, efte false t1, efte has_condition t2)
+      | And (loc,t1, t2) -> Ast.And(loc, efte false t1, efte has_condition t2)
+      | Or (loc,t1, t2) -> Ast.Or(loc, efte false t1, efte has_condition t2)
+      | Not (loc,t) -> Ast.Not(loc, efte has_condition t)
+      | Length (loc, t) -> Ast.Length(loc, efte false t)
+      | Iff (loc,t1, t2) -> Ast.Iff(loc, efte false t1, efte has_condition t2)
+      | Implies (loc,t1, t2) -> Ast.Implies(loc, efte false t1, efte has_condition t2)
+      | NewArray(loc,t,e) -> Ast.NewArray(loc, t, efte false e)
+      | EmptyExpr -> Ast.EmptyExpr
+  in
+  let new_expr = efte has_condition expr in
+    match location_to_truncate_to.contents with
+        None -> new_expr
+      | Some(loc) -> truncate_loc_of_expr new_expr loc
+          
 
 %}
 
@@ -191,10 +234,15 @@ and expr_from_temp_expr has_condition = function
 %nonassoc T_Equal T_NotEqual
 %nonassoc T_Less T_Greater T_LessEqual T_GreaterEqual
 %left T_Plus T_Minus
+%left T_Semicolon
 %left T_Star T_Slash T_Div T_Mod
 %right T_Not UnaryMinus
+%left MediumPrecedence
 %left T_LSquareBracket T_Period T_LCurlyBracket
 %left T_LParen
+%left T_Termination
+%left VeryHighPrecedence
+%left VeryVeryHighPrecedence
 
 
 
@@ -239,10 +287,35 @@ Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_sta
 Identifier : T_Identifier { (Ast.create_identifier $1 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)))}
 
 
-FnDecl    : OptionalTermination T_Pre AnnotationExpr T_Post AnnotationExpr Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     { Ast.create_fnDecl $7 $9 $6 $11 (create_precondition (expr_from_temp_expr false $3)) (create_postcondition (expr_from_temp_expr false $5)) $1 (loc 1 11) }
-          | OptionalTermination T_Pre AnnotationExpr T_Post AnnotationExpr T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   { Ast.create_fnDecl $7 $9 (Ast.Void (loc 5 5)) $11 (create_precondition (expr_from_temp_expr false $3)) (create_postcondition (expr_from_temp_expr false $5)) $1 (loc 1 11) }
+FnDecl    : BeforeFunc Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock     {
+              let (pre,post,term) = $1 in
+                Ast.create_fnDecl $3 $5 $2 $7 (create_precondition (expr_from_temp_expr false pre)) (create_postcondition (expr_from_temp_expr false post)) term (loc 2 6)
+          }
+          | BeforeFunc T_Void Identifier T_LParen FormalsOrEmpty T_RParen StmtBlock   {
+              let (pre,post,term) = $1 in
+                Ast.create_fnDecl $3 $5 (Ast.Void(loc 2 2)) $7 (create_precondition (expr_from_temp_expr false pre)) (create_postcondition (expr_from_temp_expr false post)) term (loc 2 6)
+          }
           ;
 
+BeforeFunc : 
+          | Termination AnnotationPre AnnotationPost {$2, $3, Some($1)} 
+          | AnnotationPre AnnotationPost {$1, $2, None} 
+          | AnnotationPre Termination AnnotationPost {$1, $3, Some($2)} 
+          | AnnotationPre AnnotationPost Termination {$1, $2, Some($3)} 
+          | Termination AnnotationPost AnnotationPre {$3, $2, Some($1)} 
+          | AnnotationPost AnnotationPre {$2, $1, None} 
+          | AnnotationPost Termination AnnotationPre {$3, $1, Some($2)} 
+          | AnnotationPost AnnotationPre Termination {$2, $1, Some($3)} 
+ 
+BeforeBranch :
+          | Termination AnnotationWithLabel 
+              {(create_annotation (expr_from_temp_expr true (fst $2)) (snd $2), Some($1), condition_from_temp_expr (fst $2))}
+          | AnnotationWithLabel Termination T_LParen CallInterior T_RParen /*the "call" is an EmptyExpr followed by the actuals, which are actually the components of the for or component of while stmt*/
+              {(create_annotation (expr_from_temp_expr false (fst $1)) (snd $1), Some($2), condition_from_call_interior $4)}
+          | AnnotationWithLabel %prec MediumPrecedence
+              {(create_annotation (expr_from_temp_expr true (fst $1)) (snd $1), None, condition_from_temp_expr (fst $1))}
+
+ 
 Predicate : T_Predicate Identifier T_LParen FormalsOrEmpty T_RParen T_Assign Expr T_Semicolon { {predName=$2;formals_p=$4;expr=(expr_from_temp_expr false $7);location_p=(loc 1 7)} }
           ;
 
@@ -301,30 +374,31 @@ IfStmt       : T_If T_LParen Expr T_RParen Stmt T_Else Stmt %prec T_Else { Ast.I
              | T_If T_LParen Expr T_RParen Stmt %prec T_If { Ast.IfStmt ( (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 5)), expr_from_temp_expr false $3, condense_stmt_list $5, EmptyStmt) }
 ;
 
-WhileStmt  : T_While OptionalTermination AnnotationWithLabel Stmt {
-               let condition = List.nth (snd (condition_from_temp_expr (fst $3))) 0 in
-	       let ann = create_annotation (expr_from_temp_expr true (fst $3)) (snd $3) in
-               Ast.WhileStmt ( loc 1 4, (condition), condense_stmt_list $4, ann, $2)
+
+WhileStmt  : T_While BeforeBranch Stmt {
+               let (annotation,termination,condition) = $2 in
+               let condition = List.nth (snd condition) 0 in
+                 Ast.WhileStmt ( loc 1 3, condition, condense_stmt_list $3, annotation, termination)
 	   }
 
 ;
 
-ForStmt   /* : T_For OptionalTermination T_Assert LocationOpt AnnotationExpr Stmt {*/
-           : T_For OptionalTermination AnnotationWithLabel Stmt {
-               let assign_stmt_and_for_components = condition_from_temp_expr (fst $3) in
-               let for_components = snd assign_stmt_and_for_components in
-	       let ann = create_annotation (expr_from_temp_expr true (fst $3)) (snd $3) in
-               let for_stmt = Ast.ForStmt ( loc 1 4, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $4, ann, $2) in
-               let assign_stmt = fst assign_stmt_and_for_components in
-                 match assign_stmt with
-                     None -> for_stmt
-                   | Some(stmt) -> Ast.StmtBlock(Ast.location_of_stmt for_stmt, [stmt;for_stmt])
+
+
+ForStmt      : T_For BeforeBranch Stmt {
+                 let (annotation,termination,assign_stmt_and_for_components) = $2 in
+                 let for_components = snd assign_stmt_and_for_components in
+                 let for_stmt = Ast.ForStmt ( loc 1 3, (List.nth for_components 0), (List.nth for_components 1), (List.nth for_components 2), condense_stmt_list $3, annotation, termination) in
+                 let assign_stmt = fst assign_stmt_and_for_components in
+                   match assign_stmt with
+                       None -> for_stmt
+                     | Some(stmt) -> Ast.StmtBlock(Ast.location_of_stmt for_stmt, [stmt;for_stmt])
 }
 ;
 
-OptionalTermination : T_Termination T_LParen TerminationArgs T_RParen {Some (Ast.create_ranking_annotation $3 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4))) }
-                    | {None}
-		    ;
+
+Termination : T_Termination T_LParen TerminationArgs T_RParen {Ast.create_ranking_annotation $3 (create_location (Parsing.rhs_start_pos 2) (Parsing.rhs_end_pos 4))}
+
 
 TerminationArgs   : Expr                    { [expr_from_temp_expr false $1] }
                   | TerminationArgs T_Comma Expr    { $1 @ [expr_from_temp_expr false $3] }
@@ -387,9 +461,14 @@ LValue   : Identifier                          { Ast.NormLval ((create_location 
          | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
 ;
 
-Call     : Expr T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
-         | Expr T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
-         | Expr T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
+
+Call     : Expr T_LParen CallInterior T_RParen { TempCall (loc 1 4,$1,$3) }
+;
+
+
+CallInterior  : Actuals                                       { $1 }
+         | OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr { [$1; $3; $5] }
+         | VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr {[(tempVarDeclAndAssign_from_stmt_list $1); $3; $5] }
 ;
 
 ExprList : ExprList T_Comma Expr  { $1 @ [$3] }
@@ -442,11 +521,15 @@ AnnotationLValue   : Identifier                          { Ast.NormLval ((create
          | Annotation T_LSquareBracket Annotation T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
 ;
 
+/*
 AnnotationCall     : Annotation T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
          | Annotation T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
          | Annotation T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
 ;
+*/
 
+AnnotationCall     : Annotation T_LParen CallInterior T_RParen { TempCall (loc 1 4,$1,$3) }
+;
 
 
 AnnotationExpr : Annotation    %prec T_Period                            { $1 }
@@ -461,6 +544,11 @@ AnnotationExpr : Annotation    %prec T_Period                            { $1 }
 
 AnnotationWithLabel : T_Assert Identifier T_Colon AnnotationExpr {($4, Some($2))}
            | T_Assert AnnotationExpr {($2, None)}
+
+
+
+AnnotationPre : T_Pre AnnotationExpr {$2}
+AnnotationPost : T_Post AnnotationExpr {$2}
 
 /*
 LocationOpt : Identifier T_Colon { Some $1 }

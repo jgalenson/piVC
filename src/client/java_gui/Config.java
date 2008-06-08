@@ -105,8 +105,7 @@ public class Config {
 		return map;
 	}
 	
-	public static void initConfig(){
-		
+	public static void initConfig(){		
 		//Step -1: load the ENVIRONMENT file
 		
 		BufferedReader environmentReader = null;

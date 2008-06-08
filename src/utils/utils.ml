@@ -84,3 +84,4 @@ let rational_string_of_float f =
 
 let debug_print_time_diff begin_time end_time message =
   print_endline (message ^ (string_of_float (end_time -. begin_time)))
+

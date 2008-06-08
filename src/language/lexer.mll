@@ -72,6 +72,7 @@ rule lang =  parse
   | digit+ '.' digit+ as num             {updateLocation(lexbuf); T_FloatConstant(float_of_string num)}
   | "/*" ([^'*']*('*'+ [^'/''*'])?)* '*'* "*/" {updateLocation(lexbuf); lang lexbuf (*skip multi-line comments*)}
   | "//"[^'\n']*'\n'			 {updateLocation(lexbuf); lang lexbuf (*skip single-line comments*)}
+  | "//"[^'\n']*eof			 {T_EOF}
   | [' ''\t''\n']   			 {updateLocation(lexbuf); lang lexbuf (*skip whitespace*)}
   | "define"                  		 {updateLocation(lexbuf); T_Define}
   | "declare"				 {updateLocation(lexbuf); T_Declare}

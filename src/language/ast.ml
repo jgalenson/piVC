@@ -222,38 +222,7 @@ type predicate = {
 }
 
 
-let replace_loc_of_expr expr new_loc= 
-  match expr with
-    | Assign (loc,l, e) -> Assign(new_loc,l,e)
-    | Constant (loc,c) -> Constant(new_loc,c)
-    | LValue (loc,l) -> LValue(new_loc,l)
-    | Call (loc,s, el) -> Call(new_loc,s,el)
-    | Plus (loc,t1, t2) -> Plus(new_loc,t1,t2)
-    | Minus (loc,t1, t2) -> Minus(new_loc,t1,t2)
-    | Times (loc,t1, t2) -> Times(new_loc,t1,t2)
-    | Div (loc,t1, t2) -> Div(new_loc,t1,t2)
-    | IDiv (loc,t1, t2) -> IDiv(new_loc,t1,t2)
-    | Mod (loc,t1, t2) -> Mod(new_loc,t1,t2)
-    | UMinus (loc,t) -> UMinus(new_loc,t)
-    | ForAll (loc,decls,e) -> ForAll(new_loc,decls,e)
-    | Exists (loc,decls,e) -> Exists(new_loc,decls,e)
-    | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(new_loc,exp,assign_to, assign_val)
-    | LT (loc,t1, t2) -> LT(new_loc,t1,t2)
-    | LE (loc,t1, t2) -> LE(new_loc,t1,t2)
-    | GT (loc,t1, t2) -> GT(new_loc,t1,t2)
-    | GE (loc,t1, t2) -> GE(new_loc,t1,t2)
-    | EQ (loc,t1, t2) -> EQ(new_loc,t1,t2)
-    | NE (loc,t1, t2) -> NE(new_loc,t1,t2)
-    | And (loc,t1, t2) -> And(new_loc,t1,t2)
-    | Or (loc,t1, t2) -> Or(new_loc,t1,t2)
-    | Not (loc,t) -> Not(new_loc,t)
-    | Length (loc, t) -> Length(new_loc,t)
-    | Iff (loc,t1, t2) -> Iff(new_loc,t1,t2)
-    | Implies (loc,t1, t2) -> Implies(new_loc,t1,t2)
-    | NewArray (loc, t, e) -> NewArray(new_loc,t,e)
-    | EmptyExpr -> assert(false)
-
-
+    
 type decl = 
   | VarDecl of location * varDecl
   | FnDecl of location * fnDecl
@@ -575,3 +544,79 @@ let name_annotation func annotation_id ann_type = match ann_type with
   | Postcondition -> (string_of_identifier func.fnName) ^ ".post" ;;
 
 let create_runtime_assertion a func annotation_id = { ann = a ; ann_type = Runtime; ann_name = Some (name_annotation func annotation_id Runtime) }
+
+
+
+
+
+let replace_loc_of_expr expr new_loc= 
+  match expr with
+    | Assign (loc,l, e) -> Assign(new_loc,l,e)
+    | Constant (loc,c) -> Constant(new_loc,c)
+    | LValue (loc,l) -> LValue(new_loc,l)
+    | Call (loc,s, el) -> Call(new_loc,s,el)
+    | Plus (loc,t1, t2) -> Plus(new_loc,t1,t2)
+    | Minus (loc,t1, t2) -> Minus(new_loc,t1,t2)
+    | Times (loc,t1, t2) -> Times(new_loc,t1,t2)
+    | Div (loc,t1, t2) -> Div(new_loc,t1,t2)
+    | IDiv (loc,t1, t2) -> IDiv(new_loc,t1,t2)
+    | Mod (loc,t1, t2) -> Mod(new_loc,t1,t2)
+    | UMinus (loc,t) -> UMinus(new_loc,t)
+    | ForAll (loc,decls,e) -> ForAll(new_loc,decls,e)
+    | Exists (loc,decls,e) -> Exists(new_loc,decls,e)
+    | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(new_loc,exp,assign_to, assign_val)
+    | LT (loc,t1, t2) -> LT(new_loc,t1,t2)
+    | LE (loc,t1, t2) -> LE(new_loc,t1,t2)
+    | GT (loc,t1, t2) -> GT(new_loc,t1,t2)
+    | GE (loc,t1, t2) -> GE(new_loc,t1,t2)
+    | EQ (loc,t1, t2) -> EQ(new_loc,t1,t2)
+    | NE (loc,t1, t2) -> NE(new_loc,t1,t2)
+    | And (loc,t1, t2) -> And(new_loc,t1,t2)
+    | Or (loc,t1, t2) -> Or(new_loc,t1,t2)  
+    | Not (loc,t) -> Not(new_loc,t)
+    | Length (loc, t) -> Length(new_loc,t)
+    | Iff (loc,t1, t2) -> Iff(new_loc,t1,t2)
+    | Implies (loc,t1, t2) -> Implies(new_loc,t1,t2)
+    | NewArray (loc, t, e) -> NewArray(new_loc,t,e)
+    | EmptyExpr -> assert(false)
+        
+and truncate_loc_of_expr exp truncate_to = 
+  let rec tl exp = 
+    let new_loc = 
+      let old_loc = location_of_expr exp in
+          if old_loc.loc_end.Lexing.pos_cnum > truncate_to.Lexing.pos_cnum then
+            {loc_start = old_loc.loc_start; loc_end = truncate_to}
+          else old_loc
+    in
+      match exp with
+        | Assign (loc,l, e) -> Assign(new_loc,l,tl e)
+        | Constant (loc,c) -> Constant(new_loc,c)
+        | LValue (loc,l) -> LValue(new_loc,l)
+        | Call (loc,s, el) -> Call(new_loc,s, List.map tl el)
+        | Plus (loc,t1, t2) -> Plus(new_loc,tl t1, tl t2)
+        | Minus (loc,t1, t2) -> Minus(new_loc,tl t1, tl t2)
+        | Times (loc,t1, t2) -> Times(new_loc,tl t1,tl t2)
+        | Div (loc,t1, t2) -> Div(new_loc,tl t1,tl t2)
+        | IDiv (loc,t1, t2) -> IDiv(new_loc,tl t1,tl t2)
+        | Mod (loc,t1, t2) -> Mod(new_loc,tl t1,tl t2)
+        | UMinus (loc,t) -> UMinus(new_loc,tl t)
+        | ForAll (loc,decls,e) -> ForAll(new_loc,decls,tl e)
+        | Exists (loc,decls,e) -> Exists(new_loc,decls,tl e)
+        | ArrayUpdate (loc, exp, assign_to, assign_val) -> ArrayUpdate(new_loc,tl exp,tl assign_to, tl assign_val)
+        | LT (loc,t1, t2) -> LT(new_loc,tl t1,tl t2)
+        | LE (loc,t1, t2) -> LE(new_loc,tl t1,tl t2)
+        | GT (loc,t1, t2) -> GT(new_loc,tl t1,tl t2)
+        | GE (loc,t1, t2) -> GE(new_loc,tl t1,tl t2)
+        | EQ (loc,t1, t2) -> EQ(new_loc,tl t1,tl t2)
+        | NE (loc,t1, t2) -> NE(new_loc,tl t1,tl t2)
+        | And (loc,t1, t2) -> And(new_loc,tl t1,tl t2)
+        | Or (loc,t1, t2) -> Or(new_loc,tl t1,tl t2)
+        | Not (loc,t) -> Not(new_loc,tl t)
+        | Length (loc, t) -> Length(new_loc,tl t)
+        | Iff (loc,t1, t2) -> Iff(new_loc,tl t1,tl t2)
+        | Implies (loc,t1, t2) -> Implies(new_loc,tl t1,tl t2)
+        | NewArray (loc, t, e) -> NewArray(new_loc,t,tl e)
+        | EmptyExpr -> EmptyExpr
+  in
+    tl exp
+

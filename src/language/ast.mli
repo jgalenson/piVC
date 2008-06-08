@@ -185,8 +185,6 @@ type program = {
 }
 val create_program : decl list -> location -> program
 
-val replace_loc_of_expr : expr -> location -> expr
-
 val get_root_decl : program -> string -> decl option
 
 (*val identifier_of_lval : lval -> identifier*)
@@ -229,3 +227,10 @@ val string_of_stmt : stmt -> int -> string
 val string_of_decl : decl -> string
 val string_of_program : program -> string
 val string_of_ranking_annotation : rankingAnnotation -> string
+
+(****************
+Utility functions
+*****************)
+
+val replace_loc_of_expr : expr -> location -> expr;;
+val truncate_loc_of_expr : expr -> Lexing.position -> expr;;

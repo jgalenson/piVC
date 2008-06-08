@@ -192,16 +192,16 @@ let generate_paths_for_func func program gen_runtime_asserts =
                 | Some(callee_prob) -> 
                     begin
                       match callee_prob with
-                          VarDecl(loc, vd) -> raise (BadDeclException)
-                        | Predicate(loc, pd) -> raise (BadDeclException)
-                        | ClassDecl(loc, cd) -> raise (BadDeclException)
-                        | FnDecl(loc, callee) -> 
+                          VarDecl(l, vd) -> raise (BadDeclException)
+                        | Predicate(l, pd) -> raise (BadDeclException)
+                        | ClassDecl(l, cd) -> raise (BadDeclException)
+                        | FnDecl(l, callee) -> 
                             begin
                               let el = List.map gnfe el in
                               let ident_name = "_v" ^ string_of_int !temp_var_number in
-                              let ident = create_identifier ident_name (get_dummy_location ()) in
-                              let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
-                              let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+                              let ident = create_identifier ident_name loc in
+                              let decl = create_varDecl callee.returnType ident loc in
+                              let lval_for_new_ident = LValue(loc,NormLval(loc, ident)) in
                                 decl.var_id := Some(ident_name);
                                 ident.decl := Some(decl);
                                 temp_var_number := !temp_var_number + 1;
@@ -228,13 +228,13 @@ let generate_paths_for_func func program gen_runtime_asserts =
             begin
               let array_size = gnfe e in
               let ident_name = "_v" ^ string_of_int !temp_var_number in
-              let ident = create_identifier ident_name (get_dummy_location ()) in
-              let decl = create_varDecl (Ast.Array(t, gdl())) ident (Ast.get_dummy_location ()) in
-              let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+              let ident = create_identifier ident_name loc in
+              let decl = create_varDecl (Ast.Array(t, loc)) ident loc in
+              let lval_for_new_ident = LValue(loc,NormLval(loc, ident)) in
                 decl.var_id := Some(ident_name);
                 ident.decl := Some(decl);
                 temp_var_number := !temp_var_number + 1;
-                new_steps := Assume(EQ(gdl(),Length(gdl(),lval_for_new_ident),array_size))::new_steps.contents;
+                new_steps := Assume(EQ(loc,Length(loc,lval_for_new_ident),array_size))::new_steps.contents;
                 lval_for_new_ident
             end
         | Plus (loc,t1, t2) -> Plus(loc, gnfe t1, gnfe t2)
