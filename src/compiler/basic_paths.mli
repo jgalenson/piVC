@@ -27,3 +27,4 @@ val generate_paths_for_func : fnDecl -> program -> bool -> (basic_path list * ba
 val print_all_basic_paths : basic_path list -> unit ;;
 val is_termination_path : basic_path -> bool ;;
 val name_of_basic_path : basic_path -> string ;;
+val string_of_basic_path : basic_path -> string;;

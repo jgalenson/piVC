@@ -168,113 +168,115 @@ let generate_paths_for_func func program gen_runtime_asserts =
       match l with
         | NormLval(loc2,l) -> NormLval(loc2, l)
         | ArrayLval(loc2,arr,index) ->
+            let index = gnfe index in
+            let arr = gnfe arr in
 	    if (gen_runtime_asserts) then
 	      begin
 		let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
 		let low_node = Ast.GE(Ast.get_dummy_location (), index, constant_node) in
 		let length_node = Ast.Length(Ast.get_dummy_location (), arr) in
 		let up_node = Ast.LT(Ast.get_dummy_location (), index, length_node) in
-		add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.And(loc2, low_node, up_node)) func runtime_assertion_id, "runtime assert")]) true None;
+		add_path (List.append curr_path (!new_steps @ [Annotation(Ast.create_runtime_assertion (Ast.And(loc2, low_node, up_node)) func runtime_assertion_id, "runtime assert")])) true None;
 		incr runtime_assertion_id
 	      end;
-	    ArrayLval(loc2, gnfe arr, gnfe index)
+	    ArrayLval(loc2, arr, index)
     and gnfe expr =
-    match expr with
-      Assign (loc,l, e) -> Assign(loc, gnfl l, gnfe e)
-    | Constant (loc,c) -> expr
-    | LValue (loc,l) -> LValue (loc, gnfl l)
-    | Call (loc,s, el) ->
-        begin
-          match (Ast.get_root_decl program s.name) with 
-              None -> raise (NoDeclException)
-            | Some(callee_prob) -> 
-                begin
-                  match callee_prob with
-                      VarDecl(loc, vd) -> raise (BadDeclException)
-                    | Predicate(loc, pd) -> raise (BadDeclException)
-                    | ClassDecl(loc, cd) -> raise (BadDeclException)
-                    | FnDecl(loc, callee) -> 
-                        begin
-                          let el = List.map gnfe el in
-                          let ident_name = "_v" ^ string_of_int !temp_var_number in
-                          let ident = create_identifier ident_name (get_dummy_location ()) in
-                          let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
-                          let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
-                            decl.var_id := Some(ident_name);
-                            ident.decl := Some(decl);
-                            temp_var_number := !temp_var_number + 1;
-			    let termination_annotation =
-			      let called_decl_opt = Ast_utils.get_called_fndecl func program expr in
-			        if Utils.is_some called_decl_opt then
-			          let called_fndecl = Ast.fnDecl_of_decl (Utils.elem_from_opt called_decl_opt) in
-			          let get_fndecl x = Ast_utils.get_called_fndecl func program x in
-			          let should_add = Ast_utils.calls called_fndecl func get_fndecl in
-			            if should_add then
-			              get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)
+      match expr with
+          Assign (loc,l, e) -> Assign(loc, gnfl l, gnfe e)
+        | Constant (loc,c) -> expr
+        | LValue (loc,l) -> LValue (loc, gnfl l)
+        | Call (loc,s, el) ->
+            begin
+              match (Ast.get_root_decl program s.name) with 
+                  None -> raise (NoDeclException)
+                | Some(callee_prob) -> 
+                    begin
+                      match callee_prob with
+                          VarDecl(loc, vd) -> raise (BadDeclException)
+                        | Predicate(loc, pd) -> raise (BadDeclException)
+                        | ClassDecl(loc, cd) -> raise (BadDeclException)
+                        | FnDecl(loc, callee) -> 
+                            begin
+                              let el = List.map gnfe el in
+                              let ident_name = "_v" ^ string_of_int !temp_var_number in
+                              let ident = create_identifier ident_name (get_dummy_location ()) in
+                              let decl = create_varDecl callee.returnType ident (Ast.get_dummy_location ()) in
+                              let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+                                decl.var_id := Some(ident_name);
+                                ident.decl := Some(decl);
+                                temp_var_number := !temp_var_number + 1;
+			        let termination_annotation =
+			          let called_decl_opt = Ast_utils.get_called_fndecl func program expr in
+			            if Utils.is_some called_decl_opt then
+			              let called_fndecl = Ast.fnDecl_of_decl (Utils.elem_from_opt called_decl_opt) in
+			              let get_fndecl x = Ast_utils.get_called_fndecl func program x in
+			              let should_add = Ast_utils.calls called_fndecl func get_fndecl in
+			                if should_add then
+			                  get_ranking_annotation (gen_func_ranking_annotation_with_args_substitution callee el)
+			                else
+			                  []
 			            else
 			              []
-			        else
-			          []
-			    in
-                              add_path (List.append curr_path ([Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
-                              new_steps := Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident el)::!new_steps;
-                              lval_for_new_ident
-                        end
-                end
-        end
-    | NewArray (loc, t, e) -> 
-        begin
-          let array_size = gnfe e in
-          let ident_name = "_v" ^ string_of_int !temp_var_number in
-          let ident = create_identifier ident_name (get_dummy_location ()) in
-          let decl = create_varDecl (Ast.Array(t, gdl())) ident (Ast.get_dummy_location ()) in
-          let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
-            decl.var_id := Some(ident_name);
-            ident.decl := Some(decl);
-            temp_var_number := !temp_var_number + 1;
-            new_steps := Assume(EQ(gdl(),Length(gdl(),lval_for_new_ident),array_size))::!new_steps;
-            lval_for_new_ident
-        end
-    | Plus (loc,t1, t2) -> Plus(loc, gnfe t1, gnfe t2)
-    | Minus (loc,t1, t2) -> Minus(loc, gnfe t1, gnfe t2)
-    | Times (loc,t1, t2) -> Times(loc, gnfe t1, gnfe t2)
-    | Div (loc,t1, t2) ->
-	if (gen_runtime_asserts) then
-	  begin
-	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
-	    incr runtime_assertion_id
-	  end;
-	Div(loc, gnfe t1, gnfe t2)
-    | IDiv (loc,t1, t2) ->
-	if (gen_runtime_asserts) then
-	  begin
-	    let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
-	    add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
-	    incr runtime_assertion_id
-	  end;
-	IDiv(loc, gnfe t1, gnfe t2)
-    | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
-    | UMinus (loc,t) -> UMinus(loc, gnfe t)
-    | ForAll (loc,decls,e) -> ForAll(loc,decls,gnfe e)
-    | Exists (loc,decls,e) -> Exists(loc,decls,gnfe e)
-    | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc,gnfe expr, gnfe assign_to, gnfe assign_val)
-    | LT (loc,t1, t2) -> LT(loc, gnfe t1, gnfe t2)
-    | LE (loc,t1, t2) -> LE(loc, gnfe t1, gnfe t2)
-    | GT (loc,t1, t2) -> GT(loc, gnfe t1, gnfe t2)
-    | GE (loc,t1, t2) -> GE(loc, gnfe t1, gnfe t2)
-    | EQ (loc,t1, t2) -> EQ(loc, gnfe t1, gnfe t2)
-    | NE (loc,t1, t2) -> NE(loc, gnfe t1, gnfe t2)
-    | And (loc,t1, t2) -> And(loc, gnfe t1, gnfe t2)
-    | Or (loc,t1, t2) -> Or(loc, gnfe t1, gnfe t2)
-    | Not (loc,t) -> Not(loc, gnfe t)
-    | Iff (loc,t1, t2) -> Iff(loc, gnfe t1, gnfe t2)
-    | Implies (loc,t1, t2) -> Implies(loc, gnfe t1, gnfe t2)
-    | Length (loc, t) -> Length(loc, gnfe t)
-    | EmptyExpr -> expr
+			        in
+                                  add_path (List.append curr_path (!new_steps @ [Annotation(Ast.create_annotation_copy (gen_func_precondition_with_args_substitution callee el) callee.preCondition,"call-pre")] @ termination_annotation)) false (Some(CallEnding));
+                                  new_steps := new_steps.contents @ [Assume(gen_func_postcondition_with_rv_substitution callee lval_for_new_ident el)];
+                                  lval_for_new_ident
+                            end
+                    end
+            end
+        | NewArray (loc, t, e) -> 
+            begin
+              let array_size = gnfe e in
+              let ident_name = "_v" ^ string_of_int !temp_var_number in
+              let ident = create_identifier ident_name (get_dummy_location ()) in
+              let decl = create_varDecl (Ast.Array(t, gdl())) ident (Ast.get_dummy_location ()) in
+              let lval_for_new_ident = LValue(loc,NormLval(get_dummy_location (), ident)) in
+                decl.var_id := Some(ident_name);
+                ident.decl := Some(decl);
+                temp_var_number := !temp_var_number + 1;
+                new_steps := Assume(EQ(gdl(),Length(gdl(),lval_for_new_ident),array_size))::new_steps.contents;
+                lval_for_new_ident
+            end
+        | Plus (loc,t1, t2) -> Plus(loc, gnfe t1, gnfe t2)
+        | Minus (loc,t1, t2) -> Minus(loc, gnfe t1, gnfe t2)
+        | Times (loc,t1, t2) -> Times(loc, gnfe t1, gnfe t2)
+        | Div (loc,t1, t2) ->
+	    if (gen_runtime_asserts) then
+	      begin
+	        let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
+	          add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
+	          incr runtime_assertion_id
+	      end;
+	    Div(loc, gnfe t1, gnfe t2)
+        | IDiv (loc,t1, t2) ->
+	    if (gen_runtime_asserts) then
+	      begin
+	        let constant_node = Ast.Constant(Ast.get_dummy_location (), Ast.ConstInt(Ast.get_dummy_location (), 0)) in
+	          add_path (List.append curr_path [Annotation(Ast.create_runtime_assertion (Ast.NE(loc, t2, constant_node)) func runtime_assertion_id, "runtime assert")]) true None;
+	          incr runtime_assertion_id
+	      end;
+	    IDiv(loc, gnfe t1, gnfe t2)
+        | Mod (loc,t1, t2) -> Mod(loc, gnfe t1, gnfe t2)
+        | UMinus (loc,t) -> UMinus(loc, gnfe t)
+        | ForAll (loc,decls,e) -> ForAll(loc,decls,gnfe e)
+        | Exists (loc,decls,e) -> Exists(loc,decls,gnfe e)
+        | ArrayUpdate (loc,expr,assign_to,assign_val) -> ArrayUpdate(loc,gnfe expr, gnfe assign_to, gnfe assign_val)
+        | LT (loc,t1, t2) -> LT(loc, gnfe t1, gnfe t2)
+        | LE (loc,t1, t2) -> LE(loc, gnfe t1, gnfe t2)
+        | GT (loc,t1, t2) -> GT(loc, gnfe t1, gnfe t2)
+        | GE (loc,t1, t2) -> GE(loc, gnfe t1, gnfe t2)
+        | EQ (loc,t1, t2) -> EQ(loc, gnfe t1, gnfe t2)
+        | NE (loc,t1, t2) -> NE(loc, gnfe t1, gnfe t2)
+        | And (loc,t1, t2) -> And(loc, gnfe t1, gnfe t2)
+        | Or (loc,t1, t2) -> Or(loc, gnfe t1, gnfe t2)
+        | Not (loc,t) -> Not(loc, gnfe t)
+        | Iff (loc,t1, t2) -> Iff(loc, gnfe t1, gnfe t2)
+        | Implies (loc,t1, t2) -> Implies(loc, gnfe t1, gnfe t2)
+        | Length (loc, t) -> Length(loc, gnfe t)
+        | EmptyExpr -> expr
     in
     let new_expr = gnfe expr in
-     (new_expr, !new_steps)
+      (new_expr, !new_steps)
 
   in 
   let generate_steps_for_rv_expression expr t curr_path loc = 
