@@ -67,6 +67,9 @@ let new_context () =
       | Not_found ->
 	  Mutex.unlock managers_lock;
 	  raise Not_found
+      | ex ->
+	  Mutex.unlock managers_lock;
+	  raise ex
 
 let get i =
   Mutex.lock managers_lock;

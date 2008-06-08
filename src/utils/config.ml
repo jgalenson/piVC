@@ -85,7 +85,7 @@ let cmd_line_arg_map = ref String_map.empty ;;
 let add_to_map key value () =
   cmd_line_arg_map := String_map.add key value !cmd_line_arg_map ;;
 
-let add_to_map_no_dummy key value =
+let add_to_map_with_value key value =
   cmd_line_arg_map := String_map.add key value !cmd_line_arg_map ;;
 
 (* The command-line arguments we accept for each type of server. *)
@@ -98,7 +98,11 @@ let both_servers_args = [
   "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
-  "--test-email-addr", Arg.String (add_to_map_no_dummy "test_email_addr"), "Send a test email to the address and exit.";
+  "--test-email-addr", Arg.String (add_to_map_with_value "test_email_addr"), "Send a test email to the address and exit.";
+  "--enable-logging", Arg.Unit (add_to_map "logging" "true"), "Enable logging.";
+  "--disable-logging", Arg.Unit (add_to_map "logging" "false"), "Disable logging.";
+  "--info-log-file", Arg.String (add_to_map_with_value "info_log_file"), "Set info log filename.";
+  "--error-log-file", Arg.String (add_to_map_with_value "error_log_file"), "Set error log filename.";
 ] ;;
 
 let main_server_args = [
@@ -108,7 +112,11 @@ let main_server_args = [
   "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
-  "--test-email-addr", Arg.String (add_to_map_no_dummy "test_email_addr"), "Send a test email to the address and exit.";
+  "--test-email-addr", Arg.String (add_to_map_with_value "test_email_addr"), "Send a test email to the address and exit.";
+  "--enable-logging", Arg.Unit (add_to_map "logging" "true"), "Enable logging.";
+  "--disable-logging", Arg.Unit (add_to_map "logging" "false"), "Disable logging.";
+  "--info-log-file", Arg.String (add_to_map_with_value "info_log_file"), "Set info log filename.";
+  "--error-log-file", Arg.String (add_to_map_with_value "error_log_file"), "Set error log filename.";
 ] ;;
 
 let dp_server_args = [
@@ -118,6 +126,10 @@ let dp_server_args = [
   "--no-print-net-msgs", Arg.Unit (add_to_map "print_net_msgs" "false"), "Do not print messages for network events.";
   "--truncate-output", Arg.Unit (add_to_map "truncate_output" "true"), "Truncate debug output.";
   "--no-truncate-output", Arg.Unit (add_to_map "truncate_output" "false"), "Do not truncate debug output.";
+  "--enable-logging", Arg.Unit (add_to_map "logging" "true"), "Enable logging.";
+  "--disable-logging", Arg.Unit (add_to_map "logging" "false"), "Disable logging.";
+  "--info-log-file", Arg.String (add_to_map_with_value "info_log_file"), "Set info log filename.";
+  "--error-log-file", Arg.String (add_to_map_with_value "error_log_file"), "Set error log filename.";
 ] ;;
 
 let parser_args = [ ];;
@@ -131,6 +143,10 @@ let set_server_type s_type = match s_type with
 
 let get_server_type () =
   !server_type ;;
+
+let is_main_server () = match !server_type with
+  | Some (MainServer) -> true
+  | _ -> false ;;
 
 (* Parses the command-line arguments. *)
 let parse_cmd_line s_type =
@@ -152,6 +168,11 @@ let parse_cmd_line s_type =
    passed to the command line. *)
 let load file_path = 
   key_value_map := read_from_file file_path;
+  (* We need to make these absolute here so we can override them with command-line args,
+     which we do not want to make absolute with respect to the binary location. *)
+  key_value_map := String_map.add "info_log_file" (Utils.get_absolute_path (get_value "info_log_file")) !key_value_map;
+  key_value_map := String_map.add "error_log_file" (Utils.get_absolute_path (get_value "error_log_file")) !key_value_map;
+  (* Add command line arguments. *)
   let add_cmd_line_vals key value =
     key_value_map := String_map.add key value !key_value_map
   in

@@ -26,9 +26,7 @@ Joel
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
-	Log server error messages.  Also add command line option to change its directory.
 	Bug: tree selection after compile: selects two different steps with same text (Assert !(y=0), try Ackermann).
-        Can't compile after "yices doesn't exist" error mesasge, even when yices does in fact exist
 
 Unassigned
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?

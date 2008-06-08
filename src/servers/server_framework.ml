@@ -5,6 +5,13 @@ open Semantic_checking
 
 let max_connections = 5000 ;;
 
+let string_of_inet_addr_port addr port =
+  (Unix.string_of_inet_addr addr) ^ ":" ^ (string_of_int port) ;;
+
+let string_of_sockaddr s = match s with
+  | Unix.ADDR_UNIX (s) -> s
+  | Unix.ADDR_INET (addr, port) -> string_of_inet_addr_port addr port ;;
+
 (* Child/worker thread.  Handles one request. *)
 let compile_thread (sock, server_fun) =
   let inchan = Unix.in_channel_of_descr sock
@@ -21,9 +28,12 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   Unix.listen sock max_connections;
   try
     while true do
-      let (s, _) = Unix.accept sock in
+      let (s, cli_addr) = Unix.accept sock in
+      let msg = "Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ "." in
       if Config.get_value_bool "print_net_msgs" then
-	Config.always_print "Accepted network request." ;
+	Config.always_print msg;
+      if Config.is_main_server () then
+	Logger.log_info msg;
       ignore (Thread.create compile_thread (s, server_fun))
     done
   with
@@ -39,7 +49,9 @@ let start_server serv_fun port =
       | Some (Config.DPServer) -> "dp "
       | _ -> ""
   in
-  print_endline ("Starting " ^ type_str ^ "server on " ^ (Unix.string_of_inet_addr my_address) ^ ":" ^ (string_of_int port));
+  let msg = "Starting " ^ type_str ^ "server on " ^ (string_of_inet_addr_port my_address port) ^ "." in
+  print_endline msg;
+  Logger.log_info msg;
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
 
 (* Runs a server using the specified callback function

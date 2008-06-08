@@ -133,7 +133,7 @@ let rec compile vc_cache_and_lock ic oc =
       in
         send_output oc (string_of_xml_node (xml_of_compiler_exception ex));
         Config.print ("Caught compiler exception: " ^ (Exceptions.string_of_exception ex));
-        Logger.log log_message;
+        Logger.log_error log_message;
         Email.send_error_notification log_message
     with
         ex_inner ->
