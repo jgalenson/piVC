@@ -1,10 +1,12 @@
+int e;
+
 @pre  true
-@post ((exists ix. (0 <= ix && ix <= |a| - 1 -> a[ix] = e)
-           || exists ix. (0 <= ix && ix <= |b| - 1 -> b[ix] = e))
-          -> exists ix. (0 <= ix && ix <= |rv| - 1 -> rv[ix] = e))
-      && (exists ix. (0 <= ix && ix <= |rv| - 1 -> rv[ix] = e)
-          -> (exists ix. (0 <= ix && ix <= |a| - 1 -> a[ix] = e)
-              || exists ix. (0 <= ix && ix <= |b| - 1 -> b[ix] = e)))
+@post ((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+           || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e))
+          -> exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e))
+      && (exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e)
+          -> (exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+              || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e)))
 int[] union(int[] a, int[] b) {
 	int[] u := new int[|a| + |b|];
 	int j := 0;

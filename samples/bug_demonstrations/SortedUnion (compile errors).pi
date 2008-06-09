@@ -3,12 +3,12 @@ int e;
 @pre  sorted(a, 0, |a| - 1) 
       && sorted(b, 0, |b| - 1)
 @post sorted(rv, 0, |rv| - 1) 
-      && ((exists ix. (0 <= ix && ix <= |a| - 1 -> a[ix] = e)
-           || exists ix. (0 <= ix && ix <= |b| - 1 -> b[ix] = e))
-          -> exists ix. (0 <= ix && ix <= |rv| - 1 -> rv[ix] = e))
-      && (exists ix. (0 <= ix && ix <= |rv| - 1 -> rv[ix] = e)
-          -> (exists ix. (0 <= ix && ix <= |a| - 1 -> a[ix] = e)
-              || exists ix. (0 <= ix && ix <= |b| - 1 -> b[ix] = e)))
+      && ((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+           || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e))
+          -> exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e))
+      && (exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e)
+          -> (exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+              || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e)))
 int[] union(int[] a, int[] b) {
 	int[] u := new int[|a| + |b|];
 	int i := 0;
