@@ -1,7 +1,7 @@
 open Ast ;;
 
 (* Gets the vcs that ensure that all the ranking annotations are always non-negative. *)
-let get_nonnegativity_vcs program =
+let get_nonnegativity_vcs fn =
   (* First, get all the ranking annotations and their corresponding normal annotations. *)
   let all_ranking_annotations =
     (* We store ras as options, so we need to get them out.
@@ -23,18 +23,9 @@ let get_nonnegativity_vcs program =
     and get_ras_from_stmts stmts =
       List.fold_left get_ras_from_stmt [] stmts
     in
-    (* Get all the ras from a function (ignoring other decls). *)
-    let get_ras_from_decl prev_list cur_decl = match cur_decl with
-      | FnDecl (l, fn) ->
-	  begin
-	    let fnAnnotation = get_ra_from_opt fn.fnRankingAnnotation fn.preCondition in
-	    let fn_ras = fnAnnotation @ (get_ras_from_stmt [] fn.stmtBlock) in
-	    prev_list @ fn_ras
-	  end
-      | _ -> prev_list
-    in
-    (* Get the ras from each function. *)
-    List.fold_left get_ras_from_decl [] program.decls
+    let fnAnnotation = get_ra_from_opt fn.fnRankingAnnotation fn.preCondition in
+    let fn_ras = fnAnnotation @ (get_ras_from_stmt [] fn.stmtBlock) in
+    fn_ras
   in
   (* Then get the list of all the (annotation -> ra is nonnegative) implications. *)
   let nonnegativity_implications = 

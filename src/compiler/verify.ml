@@ -344,11 +344,11 @@ let get_all_info program options =
       List.fold_left map_fn [] program.decls
   in
   (* Gets the VCs for each basic path. *)
-  let get_vcs (fnName, (normal_paths, termination_paths)) =
+  let get_vcs (fndecl, (normal_paths, termination_paths)) =
     let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) normal_paths in
     let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) termination_paths in
-    let nonneg_vcs = List.map fst (Termination.get_nonnegativity_vcs program) in
-    (fnName, norm_vcs, term_vcs, nonneg_vcs)
+    let nonneg_vcs = List.map fst (Termination.get_nonnegativity_vcs fndecl) in
+    (fndecl, norm_vcs, term_vcs, nonneg_vcs)
   in
   let paths = get_basic_paths program in
   List.map get_vcs paths ;;
