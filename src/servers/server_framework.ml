@@ -12,6 +12,13 @@ let string_of_sockaddr s = match s with
   | Unix.ADDR_UNIX (s) -> s
   | Unix.ADDR_INET (addr, port) -> string_of_inet_addr_port addr port ;;
 
+let get_server_type_str () =
+  let server_type = Config.get_server_type () in
+  match server_type with
+    | Some (Config.MainServer) -> "main "
+    | Some (Config.DPServer) -> "dp "
+    | _ -> "" ;;
+
 (* Child/worker thread.  Handles one request. *)
 let compile_thread (sock, server_fun) =
   let inchan = Unix.in_channel_of_descr sock
@@ -38,18 +45,12 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
     done
   with
     Sys.Break -> (* Clean up on exit. *)
+      Logger.log_info ("Closing " ^ get_server_type_str () ^ "server on " ^ (string_of_sockaddr sockaddr) ^ ".");
       Unix.close sock
 
 let start_server serv_fun port =
   let my_address = Unix.inet_addr_any in
-  let type_str =
-    let server_type = Config.get_server_type () in
-    match server_type with
-      | Some (Config.MainServer) -> "main "
-      | Some (Config.DPServer) -> "dp "
-      | _ -> ""
-  in
-  let msg = "Starting " ^ type_str ^ "server on " ^ (string_of_inet_addr_port my_address port) ^ "." in
+  let msg = "Starting " ^ get_server_type_str () ^ "server on " ^ (string_of_inet_addr_port my_address port) ^ "." in
   print_endline msg;
   Logger.log_info msg;
   establish_server serv_fun (Unix.ADDR_INET(my_address, port)) ;;
