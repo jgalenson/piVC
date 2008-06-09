@@ -2,8 +2,8 @@
 @post true
 bool LinearSearch(int[] a, int l, int u, int e) {
 	for
-		# (|a| + l - i)
 		@ 0 <= l && u < |a| && (i <= u + 1 || i <= l)
+		# (|a| + l - i)
 		(int i := l; i <= u; i := i + 1)
 	{
 		if (a[i] = e)

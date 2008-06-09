@@ -1,6 +1,0 @@
-@pre true
-@post true
-void foo() {
-	int x;
-}
-// we seem to get a syntax error if the last line is a C++-style comment

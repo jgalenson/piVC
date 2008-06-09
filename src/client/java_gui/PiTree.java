@@ -18,6 +18,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 
 import data_structures.BasicPath;
 import data_structures.VerificationAtom;
@@ -135,6 +136,7 @@ public class PiTree extends JPanel {
 		});
 		// Draw icons next to things
 		tree.setCellRenderer(new MyTreeCellRenderer());
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setShowsRootHandles(true);
 		tree.setRootVisible(true);
 		tree.setEditable(false);

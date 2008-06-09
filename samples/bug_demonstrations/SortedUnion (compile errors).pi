@@ -1,3 +1,5 @@
+int e;
+
 @pre  sorted(a, 0, |a| - 1) 
       && sorted(b, 0, |b| - 1)
 @post sorted(rv, 0, |rv| - 1) 

@@ -30,7 +30,7 @@ Joel
 
 Unassigned
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?
-	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.
+	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.  Also, the yellow text in the VC pane is almost impossible to read (see UnsortedUnion.pi).
 	Investigate mysterious undo/redo code pane crash of doom.
 	Should we support things like (l <= i <= u) as a convenience?
 	Document the built-in predicates somewhere, probably the README.

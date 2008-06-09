@@ -24,7 +24,7 @@ int[] ms(int[] a_0, int l, int u) {
 @pre  sorted(a_0, l, m) && sorted(a_0, m + 1, u) && l <= m + 1 && m <= u
 @post sorted(rv, l, u) && forall ix. (ix < l || ix > u -> rv[ix] = a_0[ix]) && |rv| = |a_0|
 int[] merge(int[] a_0, int l, int m, int u) {
-	int[] buf := new int[u-l+1];
+	int[] buf := new int[u - l + 1];
 	int[] a := a_0;
 	int i := l;
 	int j := m + 1;
