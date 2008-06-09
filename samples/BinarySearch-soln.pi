@@ -1,0 +1,15 @@
+@pre  0 <= l && u < |a| && sorted(a, 0, |a| - 1)
+@post rv <-> exists ix. (l <= ix && ix <= u && a[ix] = e)
+bool BinarySearch(int[] a, int l, int u, int e) {
+	if (l > u) 
+		return false;
+	else {
+		int m := (l + u) div 2;
+		if (a[m] = e) 
+			return true;
+		else if (a[m] < e) 
+			return BinarySearch(a, m + 1, u, e);
+		else 
+			return BinarySearch(a, l, m - 1, e);
+	}
+}

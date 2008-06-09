@@ -1,0 +1,60 @@
+@pre  true
+@post sorted(rv, 0, |rv| - 1)
+int[] MergeSort(int[] a)
+{
+	return ms(a, 0, |a| - 1);
+}
+
+@pre  true
+@post true
+int[] ms(int[] a_0, int l, int u) {
+	int[] a := a_0;
+	if (l >= u) {
+		return a;
+	}
+	else {
+		int m := (l + u) div 2;
+		a := ms(a, l, m);
+		a := ms(a, m + 1, u);
+		a := merge(a, l, m, u);
+		return a;
+	}
+}
+
+@pre  true
+@post true
+int[] merge(int[] a_0, int l, int m, int u) {
+	int[] buf := new int[u-l+1];
+	int[] a := a_0;
+	int i := l;
+	int j := m + 1;
+	for 
+		@ true
+		(int k := 0; k < u - l + 1; k := k + 1)
+	{
+		if (i > m) {
+			buf[k] := a_0[j];
+			j := j + 1;
+		}
+		else if (j > u) {
+			buf[k] := a_0[i];
+			i := i + 1;
+		}
+		else if (a_0[i] <= a_0[j]) {
+			buf[k] := a_0[i];
+			i := i + 1;
+		}
+		else {
+			buf[k] := a_0[j];
+			j := j + 1;
+		}
+	}
+	for 
+		@ true
+		(int k := 0; k < u - l + 1; k := k + 1)
+	{
+		a[l + k] := buf[k];
+	}
+
+	return a;
+}
