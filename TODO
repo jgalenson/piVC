@@ -22,19 +22,19 @@ Jason
 Joel
 	Static analysis API
 	
-	Samples directory clean-up, generate official samples files that correspond to all of Aaron's previous ones.
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
-	Bug: tree selection after compile: selects two different steps with same text (Assert !(y=0), try Ackermann).
 
 Unassigned
+	Profile our server code, see where it slows down, and fix it.
 	Putting a function call inside a termination annotation (that is in a path) crashes.  Should we just disallow it semantically like we do calls in normal annotations?
 	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.  Also, the yellow text in the VC pane is almost impossible to read (see UnsortedUnion.pi).
 	Investigate mysterious undo/redo code pane crash of doom.
 	Should we support things like (l <= i <= u) as a convenience?
 	Document the built-in predicates somewhere, probably the README.
 	Remove built-in support for the length() function.
+	Add support for int e := ? syntax (see SortedUnion, UnsortedUnion).
 
 --------------------
 Possible later TODOs
