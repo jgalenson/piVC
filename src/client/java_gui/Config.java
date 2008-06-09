@@ -35,11 +35,11 @@ public class Config {
 		}
 	}
 	
-	public static String getEnviornmentValue(String key){
+	public static String getEnvironmentValue(String key){
 		return environment.get(key);
 	}	
 
-	public static boolean enviornmentKeyExists(String key){
+	public static boolean environmentKeyExists(String key){
 		return environment.containsKey(key);
 	}	
 	

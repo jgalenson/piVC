@@ -376,7 +376,7 @@ public class PiGui extends JFrame {
 						public void run() {
 							compileEnded();
 							String message = "You attempted to connect to " + result + ". Ensure that a piVC server is running\nand that the server address in the Settings menu is set to the proper address.";
-							if(Config.enviornmentKeyExists("server_address")){
+							if(Config.environmentKeyExists("server_address")){
 								message = "You attempted to connect to " + result + ". Ensure that a piVC server is running at this address.";
 							}
 							JOptionPane.showMessageDialog(gui, ex.getMessage() + "\n\n" + message, "Connection Error", JOptionPane.ERROR_MESSAGE);
@@ -484,16 +484,15 @@ public class PiGui extends JFrame {
 	 * Swing thread.
 	 */
 	private void handleServerResponse(final String text) {
-		final PiGui gui = this; //this is so we can get the gui in the run() method
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
 				piCompilerOutput.setText(text);
 				String[] messages = serverResponseParser.parse(text, getCurFilename());
 				rightTabbedPane.repaint();
 				compileEnded();
-				if(messages!=null){
-					for(String message:messages){
-						JOptionPane.showMessageDialog(gui,message,"Message",JOptionPane.INFORMATION_MESSAGE);
+				if (messages != null) {
+					for (String message: messages) {
+						JOptionPane.showMessageDialog(PiGui.this, message, "Message", JOptionPane.INFORMATION_MESSAGE);
 					}
 				}
 			}
@@ -513,6 +512,9 @@ public class PiGui extends JFrame {
 		statusProgressBar.setVisible(false);
 	}
 	
+	/**
+	 * Cancels the currently-running compilation.
+	 */
 	public void cancelCompile() {
 		if (curCompilation != null)
 			curCompilation.interrupt();
@@ -541,6 +543,10 @@ public class PiGui extends JFrame {
 		rightTabbedPane.setSelectedIndex(1);
 	}
 	
+	/**
+	 * Handles a response from the server that contains
+	 * an error/exception in our compiler.
+	 */
 	public void handleCompilerError(PiError compilerError) {
 		piTree.clear();
 		vcPane.clear();
@@ -645,6 +651,9 @@ public class PiGui extends JFrame {
 			rightTabbedPane.removeTabAt(2);
 	}
 	
+	/**
+	 * Gets the PiVC icon.
+	 */
 	public static Icon getIcon() {
 		return icon;
 	}

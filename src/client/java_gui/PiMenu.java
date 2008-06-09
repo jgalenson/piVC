@@ -246,7 +246,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		showRawXml.setState(Config.getBooleanValue("show_raw_xml"));
 		settingsMenu.add(showRawXml);	
 		
-		if(!Config.enviornmentKeyExists("server_address")){
+		if(!Config.environmentKeyExists("server_address")){
 			JMenuItem serverAddress = new JMenuItem("Change server address");
 			serverAddress.setMnemonic(KeyEvent.VK_S);
 			serverAddress.addActionListener(new ActionListener() {

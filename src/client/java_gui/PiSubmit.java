@@ -22,7 +22,7 @@ public class PiSubmit extends PiDialog {
 		this.gui = parent;
 		
 		Dimension LABEL_SIZE;
-		if(Config.enviornmentKeyExists("submit_to_email_address")){
+		if(Config.environmentKeyExists("submit_to_email_address")){
 			LABEL_SIZE = LABEL_SIZE_WITHOUT_SUBMIT_TO;	
 		}else{
 			LABEL_SIZE = LABEL_SIZE_WITH_SUBMIT_TO;					
@@ -64,7 +64,7 @@ public class PiSubmit extends PiDialog {
 		userInfo.add(userInfoNote);
         
 		JPanel submissionInfo = null;		
-		if(!Config.enviornmentKeyExists("submit_to_email_address")){
+		if(!Config.environmentKeyExists("submit_to_email_address")){
 			submissionInfo = new JPanel();
 	        submissionInfo.setBorder(BorderFactory.createCompoundBorder(
 	                BorderFactory.createTitledBorder("Submission Information"),
@@ -110,7 +110,7 @@ public class PiSubmit extends PiDialog {
         
 		all.add(userInfo);
 		
-		if(!Config.enviornmentKeyExists("submit_to_email_address")){
+		if(!Config.environmentKeyExists("submit_to_email_address")){
 			all.add(submissionInfo);
 		}
 		all.add(commentsScroll);
