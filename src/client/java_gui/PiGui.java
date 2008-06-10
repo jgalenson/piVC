@@ -406,6 +406,19 @@ public class PiGui extends JFrame {
 	            doc.appendChild(rootNode);
 	            
 	            if(code!=null){
+	            	
+	            	//this code converts \n to \r\n. This is needed to circumvent a bug in xml light, which is used by the piVC server
+	            	int index=0;
+	            	while(true){
+	            		index = code.indexOf('\n', index);
+	            		if(index==-1){
+	            			break;
+	            		}
+	            		if(index==0 || code.charAt(index-1)!='\r'){
+	            			code = code.substring(0,index) + "\r\n" + code.substring(index+1,code.length());
+	            		}
+	            		index+=2;//skip over the \r\n we just added
+	            	}
 	            	Element codeNode = doc.createElement("code");
 	            	codeNode.setTextContent(code);
 	            	rootNode.appendChild(codeNode);

@@ -48,7 +48,7 @@ let create_dir_tree filename =
   let rec create_dir prefix rest =
     begin
       try
-        Unix.umask 0o0;
+        ignore(Unix.umask 0o0);
         Unix.mkdir prefix 0o700
       with _ -> ignore () (* If it already exists, we're fine with that. *)
     end;
@@ -69,7 +69,7 @@ let log msg filename =
   if is_enabled then begin
     Mutex.lock log_lock;
     create_dir_tree filename;
-    Unix.umask 0o0;
+    ignore(Unix.umask 0o0);
     let log_file = Unix.openfile filename [Unix.O_CREAT; Unix.O_WRONLY; Unix.O_APPEND] 0o640 in
     let write_to_log fd str =
       let full_str = get_time_str () ^ " " ^ get_server_type_str () ^ ": " ^ str ^ "\n" in

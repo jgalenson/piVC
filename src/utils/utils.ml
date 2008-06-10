@@ -7,7 +7,7 @@ type options = {
 }
 
 
-(* Converts from Windows to UNIX line endings. *)
+(* Converts from Windows or Mac OS <=9 line endings to UNIX line endings. *)
 let convert_line_endings str =
   let str_temp = Str.global_replace (Str.regexp "\r\n") "\n" str in
     Str.global_replace (Str.regexp "\r") "\n" str_temp

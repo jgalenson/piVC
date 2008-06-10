@@ -23,7 +23,7 @@ let parse lexbuf =
 let parse_strings user_files =
 
   let includes_string = 
-    Unix.umask 0o0;
+    ignore(Unix.umask 0o0);
     let file = Unix.openfile (get_absolute_path (Config.get_value "includes_path")) [Unix.O_RDONLY] 0o640 in
     let file_size = (Unix.fstat file).Unix.st_size in
     let file_text = String.create file_size in
@@ -57,5 +57,6 @@ let parse_strings user_files =
   in
     Lexer.files := list_of_all_names_and_sizes all_files;
     Lexer.actual_cnum := 0;
-    let lexbuf = Lexing.from_string (all_strings_concatenated all_files) in
+    let code = all_strings_concatenated all_files in
+    let lexbuf = Lexing.from_string code in
       parse lexbuf ;;

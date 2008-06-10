@@ -46,8 +46,13 @@ let rec compile vc_cache_and_lock ic oc =
     (* Gets the text from a text node.
        We assume a text node has one child, which is its text. *)
     let get_text_from_text_node node =
-      let text = Xml.pcdata (List.hd (Xml.children node)) in
-      replace_bad_chars text
+      match List.length (Xml.children node) with
+          0 -> "" (*if the file is empty, the text won't register as a child, even though it should*)
+        | _ ->
+            begin
+              let text = Xml.pcdata (List.hd (Xml.children node)) in
+                replace_bad_chars text
+            end
     in
     let xml = Xml.parse_string xml_str in
       check_xml xml;
@@ -154,6 +159,8 @@ let rec compile vc_cache_and_lock ic oc =
           try
             let xml_to_return =
               let (code, options, user_info, submission_info, report_info) = parse_xml xml_str in
+                (*print_endline xml_str;
+                print_endline (elem_from_opt code);*)
                 match report_info with 
                     Some(report_info) -> xml_of_messages_transmission [go_report report_info code user_info options]
                   | None ->
@@ -199,8 +206,7 @@ let rec compile vc_cache_and_lock ic oc =
             in
               send_output oc (string_of_xml_node xml_to_return);
               Config.print "Compilation completed. Response sent back to client.";
-          with 
-              ex ->
+          with ex -> 
                 begin
                   go_exception xml_str ex
                 end

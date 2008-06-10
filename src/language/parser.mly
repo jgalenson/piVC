@@ -1,12 +1,27 @@
 
 %{
-  open Printf
-  open Ast
+open Printf
+open Ast
+open Lexing
 
-
-exception NoCondition
-exception ExprNotIdent
 exception UnexpectedStmt
+
+let r_parens_locs = ref []
+let last_l_paren_of_call_args_loc = ref ({pos_fname="";pos_lnum=0;pos_bol=0;pos_cnum=0;})
+
+let get_last_r_paren_before_call_args () = 
+  if last_l_paren_of_call_args_loc.contents.pos_cnum = 0 then
+    None
+  else
+    begin
+      let loc_is_before_last_call_loc loc = 
+        loc.pos_cnum < last_l_paren_of_call_args_loc.contents.pos_cnum
+      in
+        try
+          Some(List.find loc_is_before_last_call_loc (List.rev r_parens_locs.contents))
+        with ex -> None
+    end
+       
 
 type temp_expr =
   | Assign of Ast.location * Ast.lval * temp_expr
@@ -63,10 +78,10 @@ let tempVarDeclAndAssign_from_stmt_list stmts =
 let identifier_of_expression expr =
   match expr with
     | LValue(loc, l) -> (match l with
-                          Ast.NormLval(loc, identifier) -> identifier
-                        | _ -> raise ExprNotIdent
+                             Ast.NormLval(loc, identifier) -> identifier
+                           | _ -> raise Parsing.Parse_error
                         )
-    | _ -> raise ExprNotIdent (*TODO: you should raise a semantic error (not an exception) if the expr is not a non-array ident*)
+    | _ -> raise Parsing.Parse_error
 
 let assign_expr_of_stmt s = match s with
     Expr(loc, expr) -> expr
@@ -113,10 +128,10 @@ and location_of_temp_expr = function
     | EmptyExpr -> gdl ()
 
 and condition_from_temp_expr = function
-    | Assign (loc,l, e) -> raise NoCondition
-    | Constant (loc,c) -> raise NoCondition
-    | LValue (loc,l) -> raise NoCondition
-    | TempVarDeclAndAssign(l,s) -> raise NoCondition
+    | Assign (loc,l, e) -> raise Parsing.Parse_error
+    | Constant (loc,c) -> raise Parsing.Parse_error
+    | LValue (loc,l) -> raise Parsing.Parse_error
+    | TempVarDeclAndAssign(l,s) -> raise Parsing.Parse_error
     | TempCall (loc,s, el) -> condition_from_call_interior el
     | Plus (loc,t1, t2) -> condition_from_temp_expr t2
     | Minus (loc,t1, t2) -> condition_from_temp_expr t2
@@ -127,7 +142,7 @@ and condition_from_temp_expr = function
     | UMinus (loc,t) -> condition_from_temp_expr t
     | ForAll (loc,decls,e) -> condition_from_temp_expr e
     | Exists (loc,decls,e) -> condition_from_temp_expr e
-    | ArrayUpdate (loc,exp,assign_to,assign_val) -> raise NoCondition
+    | ArrayUpdate (loc,exp,assign_to,assign_val) -> raise Parsing.Parse_error
     | LT (loc,t1, t2) -> condition_from_temp_expr t2
     | LE (loc,t1, t2) -> condition_from_temp_expr t2
     | GT (loc,t1, t2) -> condition_from_temp_expr t2
@@ -137,11 +152,11 @@ and condition_from_temp_expr = function
     | And (loc,t1, t2) -> condition_from_temp_expr t2
     | Or (loc,t1, t2) -> condition_from_temp_expr t2
     | Not (loc,t) -> condition_from_temp_expr t
-    | Length (loc, t) -> raise NoCondition
+    | Length (loc, t) -> raise Parsing.Parse_error
     | Iff (loc,t1, t2) -> condition_from_temp_expr t2
     | Implies (loc,t1, t2) -> condition_from_temp_expr t2
-    | NewArray(loc,t,e) -> raise NoCondition
-    | EmptyExpr -> raise NoCondition
+    | NewArray(loc,t,e) -> raise Parsing.Parse_error
+    | EmptyExpr -> raise Parsing.Parse_error
 
 
 (* "has_condition" reflects whether this expression is followed by a while loop condition.
@@ -158,9 +173,28 @@ and expr_from_temp_expr has_condition expr =
       | LValue (loc,l) -> Ast.LValue(loc, l)
       | TempCall (loc,s, el) -> (
           match has_condition with
-              true  ->
-                begin
-                  location_to_truncate_to := Some((location_of_temp_expr s).loc_end);
+              true ->
+                begin 
+                  location_to_truncate_to :=
+                    (*This is a hack to include closing right parens in the location.
+                      These right parens are not officially part of the expr,
+                      however we still want them to be highlighted. Normally, this
+                      would occur automatically, because the expr in parens would be inside
+                      another larger expr which would have a location that includes the parens.
+                      However, because we are simply using the location of the expr immediately before
+                      the call args, there may be closing right parens between this expr and the call
+                      args.
+                    *)
+                    begin
+                      match get_last_r_paren_before_call_args () with
+                          None -> Some((location_of_temp_expr s).loc_end);
+                        | Some(loc) ->
+                            begin
+                              if (location_of_temp_expr s).loc_end.pos_cnum < loc.pos_cnum then 
+                                Some(loc)
+                              else Some((location_of_temp_expr s).loc_end)
+                            end
+                    end;
                   efte false s
                 end
             | false -> Ast.Call(loc,identifier_of_expression s, expr_list_of_temp_expr_list el)
@@ -490,7 +524,7 @@ Annotation     : AnnotationLValue T_Assign Annotation   { Assign(loc 1 3, $1, $3
          | Constant               { Constant (loc 1 1, $1) }
          | AnnotationLValue  %prec VeryLowPrecedence          { LValue (loc 1 1, $1) }
          | AnnotationCall                   { $1 }
-         | T_LParen Annotation T_RParen { $2 }
+         | T_LParen Annotation T_RParen {r_parens_locs := r_parens_locs.contents @ (*[{pos_fname="";pos_lnum=10;pos_bol=20;pos_cnum=50;}]*)[Parsing.rhs_end_pos 3]; $2 }
          | Annotation T_Plus Annotation       { Plus(loc 1 3, $1, $3) }
          | Annotation T_Minus Annotation      { Minus(loc 1 3, $1, $3) }
          | Annotation T_Star Annotation       { Times(loc 1 3, $1, $3) }
@@ -521,14 +555,7 @@ AnnotationLValue   : Identifier                          { Ast.NormLval ((create
          | Annotation T_LSquareBracket Annotation T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
 ;
 
-/*
-AnnotationCall     : Annotation T_LParen Actuals T_RParen %prec T_LParen                                       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, $3) }
-         | Annotation T_LParen OptionalExpr T_Semicolon Expr T_Semicolon OptionalExpr T_RParen       { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [$3; $5; $7]) }
-         | Annotation T_LParen VarDeclAndAssign T_Semicolon Expr T_Semicolon OptionalExpr T_RParen   { TempCall ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)),$1, [tempVarDeclAndAssign_from_stmt_list $3; $5; $7]) }
-;
-*/
-
-AnnotationCall     : Annotation T_LParen CallInterior T_RParen { TempCall (loc 1 4,$1,$3) }
+AnnotationCall     : Annotation T_LParen CallInterior T_RParen { last_l_paren_of_call_args_loc := Parsing.rhs_end_pos 2; TempCall (loc 1 4,$1,$3) }
 ;
 
 
