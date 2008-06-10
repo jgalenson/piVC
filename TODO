@@ -15,9 +15,6 @@ Jason
 	Bug: Remove stupid a,b counterexample nodes (look for filename field in the location)
         Update README. Especially with information about email functionality.  Also talk about coloring of things in VC pane and the inductive core.
         Figure out why we crash on compiling an empty file.
-        Fix locations of nonnegative atoms (discuss with Joel)
-	Add names for nonnegative nodes.
-
 
 Joel
 	Static analysis API
@@ -25,6 +22,7 @@ Joel
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
+        Bug: doesn't properly create log directory if it doesn't exist. Program then aborts. Does this work for you? It may be a Unix/Windows thing.
 
 Unassigned
 	Profile our server code, see where it slows down, and fix it.
@@ -45,4 +43,3 @@ Better syntax highlighting?
 Add support for warnings (:= vs =, postcondition that uses a parameter and not comparing it to rv (e.g. sorted(a, 0, |a|)))?  Asserts in Pi?
 Running code/debugging.
 Add an analysis that will propgate VCs?  Or maybe make it a heuristic?
-

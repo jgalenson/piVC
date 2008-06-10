@@ -44,16 +44,19 @@ and correctness_result = {
   overall_validity_c : validity;
   vcs : verification_atom list;
 } 
+and atom_info =
+  | BP of Basic_paths.basic_path
+  | RankingFunc of Ast.rankingAnnotation
 and verification_atom = {
   vc : vc_conjunct list list;
-  bp : Basic_paths.basic_path option; (*nonnegative_vcs don't have basic paths*)
+  info : atom_info;  
   valid : validity;
   counter_example : Counterexamples.example list option;
 }
 and verification_atom_temp = {
   func_temp: fnDecl;
   vc_temp : vc_conjunct list list;
-  bp_temp : Basic_paths.basic_path option;
+  info_temp : atom_info;
 }
 and vc_conjunct = {
   exp : expr;
@@ -101,11 +104,15 @@ let overall_validity validities =
     Invalid ;;
 
 let name_of_verification_atom va =
-  if Utils.is_some va.bp then
-    Basic_paths.name_of_basic_path (Utils.elem_from_opt va.bp)
-  else
-    "TODO: Add name" ;;
+  match va.info with
+      BP(bp) -> Basic_paths.name_of_basic_path bp
+    | RankingFunc(rf) -> Ast.string_of_ranking_annotation rf
 
+let location_of_verification_atom va = 
+  match va.info with
+      BP(bp) -> location_of_vc_conjunct_list_list va.vc
+    | RankingFunc(rf) -> rf.location_ra
+        
 let instantiate_predicates expr program = 
   let get_predicate pred_ident = 
     let is_match decl = 
@@ -347,7 +354,7 @@ let get_all_info program options =
   let get_vcs (fndecl, (normal_paths, termination_paths)) =
     let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) normal_paths in
     let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) termination_paths in
-    let nonneg_vcs = List.map fst (Termination.get_nonnegativity_vcs fndecl) in
+    let nonneg_vcs = Termination.get_nonnegativity_vcs fndecl in
     (fndecl, norm_vcs, term_vcs, nonneg_vcs)
   in
   let paths = get_basic_paths program in
@@ -410,7 +417,7 @@ and vc_detailed_of_vc_detailed_temp vc_detailed_temp =
         invalid_elem.counter_example_conjunct
     else
       None
-  in {vc = vc_detailed_temp.vc_temp;valid=valid;counter_example=counter_example; bp = vc_detailed_temp.bp_temp;}
+  in {vc = vc_detailed_temp.vc_temp;valid=valid;counter_example=counter_example; info = vc_detailed_temp.info_temp;}
 
 
 and expr_of_vc_detailed_temp_just_core vc_detailed_temp = 
@@ -448,8 +455,8 @@ and vc_temp_of_expr_with_inductive_core expr func bp map_for_inductive_core =
 and vc_temp_of_expr expr func bp = 
   vc_temp_of_expr_helper expr func bp None
     
-and vc_temp_of_expr_helper expr func bp map_for_inductive_core = 
-  let rec get_implies_list expr = 
+and vc_temp_of_expr_helper expr func info map_for_inductive_core = 
+  let rec get_implies_list expr =
     let rec get_conjunct_list expr = 
       match expr with 
           And(loc,e1,e2) -> get_conjunct_list e1 @ get_conjunct_list e2
@@ -476,14 +483,14 @@ and vc_temp_of_expr_helper expr func bp map_for_inductive_core =
                       end
                   | None -> None
               in              
-                [{exp=expr;valid_conjunct=None;in_inductive_core=in_inductive_core;counter_example_conjunct=None;}]
+                [{exp=expr;valid_conjunct=None;in_inductive_core=in_inductive_core;counter_example_conjunct=None}]
             end
     in
       match expr with
           Implies(loc,lhs,rhs) -> [get_conjunct_list lhs] @ get_implies_list rhs
         | _ -> [get_conjunct_list expr]
   in
-    {vc_temp = get_implies_list expr; func_temp = func; bp_temp = bp}
+    {vc_temp = get_implies_list expr; func_temp = func; info_temp = info}
       
 
 
@@ -557,7 +564,7 @@ let verify_vc (vc,vc_cache_and_lock,program_ast,mode) =
       in
       let new_rhs = List.map new_conjunct_of_thread threads in
       let new_imples_conjs = (List.rev (List.tl (List.rev vc.vc_temp))) (*i.e. everything but the first elem*) @ [new_rhs] in
-        {vc_temp = new_imples_conjs;func_temp = vc.func_temp;bp_temp=vc.bp_temp}          
+        {vc_temp = new_imples_conjs;func_temp = vc.func_temp;info_temp=vc.info_temp}          
     in    
     let threads = threads_of_vc vc in
     let new_vc = make_new_vc_from_threads threads in
@@ -599,9 +606,9 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock alread
       let add_vc_in_bp (bp,expr) = 
         let new_vc = 
           if options.find_inductive_core then
-            vc_temp_of_expr_with_inductive_core expr fn (Some(bp)) already_assigned
+            vc_temp_of_expr_with_inductive_core expr fn (BP(bp)) already_assigned
           else
-            vc_temp_of_expr expr fn (Some(bp))
+            vc_temp_of_expr expr fn (BP(bp))
         in
           vcs := !vcs @ [new_vc]
       in
@@ -696,12 +703,12 @@ let rec verify_program_termination program_info program_ast vc_cache_and_lock al
     let intermediate_fn (fn, norm_bps, term_bps, nvcs) =
       let get_vc_thread vc = Background.create get_vc_with_validity_and_core_set vc (*verify_vc (vc,vc_cache_and_lock,program_ast,Set_validity)*) in
       let intermediate_basic_path (path,vc) =
-        let vc_temp = vc_temp_of_expr_with_inductive_core vc fn (Some(path)) already_assigned in
+        let vc_temp = vc_temp_of_expr_with_inductive_core vc fn (BP(path)) already_assigned in
         let vc_thread = get_vc_thread vc_temp in
           vc_thread
       in
-      let intermediate_nonnegative_vc nvc =
-        let vc_temp = vc_temp_of_expr_with_inductive_core nvc fn None already_assigned in
+      let intermediate_nonnegative_vc (rankingFunc, vc) =
+        let vc_temp = vc_temp_of_expr_with_inductive_core vc fn (RankingFunc(rankingFunc)) already_assigned in
         let vc_thread = get_vc_thread vc_temp in
           vc_thread
       in
@@ -834,21 +841,22 @@ let inductive_core_good_enough function_validity_information_list =
       in
         List.for_all elem_is_in_core rhs
     in
-      if (Utils.is_some vc.bp) then
-	match elem_from_opt vc.bp with
-            Basic_paths.NormalPath(p,e) ->
-              begin
-		match e with
-                    Basic_paths.PostConditionEnding -> rhs_all_in_core vc.vc
-                  | Basic_paths.AssertEnding -> rhs_all_in_core vc.vc
-                  | Basic_paths.AnnotationEnding -> true
-                  | Basic_paths.CallEnding -> true
-              end
-          | Basic_paths.RuntimeAssertPath(p) -> rhs_all_in_core vc.vc
-          | Basic_paths.TerminationPath(p) -> rhs_all_in_core vc.vc
-      else
-	rhs_all_in_core vc.vc
-	
+      match vc.info with
+          BP(bp) ->
+            begin
+              match bp with
+                  Basic_paths.NormalPath(p,e) ->
+                    begin
+                      match e with
+                          Basic_paths.PostConditionEnding -> rhs_all_in_core vc.vc
+                        | Basic_paths.AssertEnding -> rhs_all_in_core vc.vc
+                        | Basic_paths.AnnotationEnding -> true
+                        | Basic_paths.CallEnding -> true
+                    end
+                | Basic_paths.RuntimeAssertPath(p) -> rhs_all_in_core vc.vc
+                | Basic_paths.TerminationPath(p) -> rhs_all_in_core vc.vc
+            end
+        | RankingFunc(r) -> rhs_all_in_core vc.vc
   in
   let inductive_core_good_enough_for_function function_validity_information = 
     List.for_all important_vc_implies_all_rhs_conjuncts_in_inductive_core function_validity_information.correctness_result.vcs &&
@@ -863,3 +871,4 @@ let inductive_core_good_enough function_validity_information_list =
       end
   in
     List.for_all inductive_core_good_enough_for_function function_validity_information_list
+      

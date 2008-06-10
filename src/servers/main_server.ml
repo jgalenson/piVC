@@ -294,38 +294,32 @@ and xml_of_verified_program fns messages =
 	  add_child (xml_of_termination_info (Utils.elem_from_opt fn.termination_result)) function_node;
         function_node
   and xml_of_verification_atom (vc) =
-    let bp = elem_from_opt vc.bp in
-    let nodes = Basic_paths.get_steps_from_path bp in
-    let basic_path_node = Xml_generator.create "verification_atom" in
-      add_attribute ("name", Verify.name_of_verification_atom vc) basic_path_node;
-      add_attribute ("status", Verify.string_of_validity vc.valid) basic_path_node;
-      let path_node = Xml_generator.create "basic_path" in
-        add_child path_node basic_path_node;
-        let vc_node = xml_of_vc vc.vc in
-          add_child vc_node basic_path_node;
-	  if (Utils.is_some vc.counter_example) then
-	    begin
-	      add_child (xml_of_counterexample (Utils.elem_from_opt vc.counter_example)) basic_path_node
-	    end;
-          let process_step step = 
-            add_child (xml_of_step step) path_node in
-            List.iter process_step nodes;
-            basic_path_node
-
-  and xml_of_nonnegative_vc (vc) =
-    let nonnegative_vc_node = Xml_generator.create "verification_atom" in
-      add_attribute ("name", Verify.name_of_verification_atom vc) nonnegative_vc_node;
-      add_attribute ("status", Verify.string_of_validity vc.valid) nonnegative_vc_node;
+    let atom_node = Xml_generator.create "verification_atom" in
+      add_attribute ("name", Verify.name_of_verification_atom vc) atom_node;
+      add_attribute ("status", Verify.string_of_validity vc.valid) atom_node;
       let vc_node = xml_of_vc vc.vc in
-        add_child vc_node nonnegative_vc_node;
-        begin
-	  if (Utils.is_some vc.counter_example) then
-	    add_child (xml_of_counterexample (Utils.elem_from_opt vc.counter_example)) nonnegative_vc_node
-	end;
-        let location_node = xml_of_location (location_of_vc_conjunct_list_list vc.vc) in
-          add_child location_node nonnegative_vc_node;
-          nonnegative_vc_node
-
+        add_child vc_node atom_node;
+        let location_node = xml_of_location (location_of_verification_atom vc) in
+          add_child location_node atom_node;
+          begin
+            if (Utils.is_some vc.counter_example) then
+	      add_child (xml_of_counterexample (Utils.elem_from_opt vc.counter_example)) atom_node
+	  end;
+          begin
+            match vc.info with
+                BP(bp) ->
+                  begin
+                    let nodes = Basic_paths.get_steps_from_path bp in
+                    let path_node = Xml_generator.create "basic_path" in
+                      add_child path_node atom_node;
+                      let process_step step = 
+                        add_child (xml_of_step step) path_node
+                      in
+                        List.iter process_step nodes
+                  end
+              | RankingFunc(r) -> ignore()
+          end;
+          atom_node
   and xml_of_vc vc_conjunct_list_list =
     let vc_node = Xml_generator.create "vc" in      
     let xml_of_conjunct_list conjunct_list = 
@@ -397,7 +391,7 @@ and xml_of_verified_program fns messages =
         let nonnegative_node = Xml_generator.create "nonnegative" in
 	  add_attribute ("status", Verify.string_of_validity (termination_info.nonnegative_vcs_validity)) nonnegative_node;
 	  let process_vc vc =
-            add_child (xml_of_nonnegative_vc vc) nonnegative_node
+            add_child (xml_of_verification_atom vc) nonnegative_node
 	  in
 	    List.iter process_vc (termination_info.nonnegative_vcs); 
 	    add_child nonnegative_node termination_node;

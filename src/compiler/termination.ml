@@ -49,7 +49,7 @@ let get_nonnegativity_vcs fn =
       assert (Utils.is_some cur_ge);
       let cur_implication = Ast.Implies (ra.location_ra, annot.ann, Utils.elem_from_opt cur_ge) in
       let replaced_implication = Verification_conditions.replace_length_with_var cur_implication in
-      prev @ [ (replaced_implication, ra) ]
+      prev @ [ (ra, replaced_implication) ]
     in
     List.fold_left single_implication [] all_ranking_annotations
   in

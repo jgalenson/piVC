@@ -256,6 +256,7 @@ public class ServerResponseParser {
 		BasicPath bp = null;
 		VerificationCondition vc = null;
 		Counterexample counterexample = null;
+		Location location = null;
 		NodeList children = atom.getChildNodes();
 		for (int i = 0; i < children.getLength(); i++) {
 			Node child = children.item(i);
@@ -265,10 +266,13 @@ public class ServerResponseParser {
 				vc = parseVerificationCondition(child, validity);
 			if ("counterexample".equals(child.getNodeName()))
 				counterexample = parseCounterexample(child);
+			if("location".equals(child.getNodeName())){
+				location = parseLocation(child);
+			}
 		}
 		if (vc == null || (vc.getValidity() == VerificationResult.validityT.INVALID && counterexample == null))
 			throw new RuntimeException("Invalid verification_atom tag");
-		return new VerificationAtom(bp, vc, validity, counterexample, name);
+		return new VerificationAtom(bp, vc, validity, counterexample, name, location);
 	}
 
 	/**

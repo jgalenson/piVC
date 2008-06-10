@@ -48,7 +48,9 @@ let create_dir_tree filename =
   let rec create_dir prefix rest =
     begin
       try
-	Unix.mkdir prefix 0o640
+        let umask_backup = Unix.umask 0o0 in
+	  Unix.mkdir prefix 0o755;
+          ignore (Unix.umask umask_backup)
       with _ -> ignore () (* If it already exists, we're fine with that. *)
     end;
     if List.length rest > 0 then

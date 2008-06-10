@@ -16,9 +16,12 @@ and correctness_result = {
   overall_validity_c : validity;
   vcs : verification_atom list;
 } 
+and atom_info =
+  | BP of Basic_paths.basic_path
+  | RankingFunc of Ast.rankingAnnotation
 and verification_atom = {
   vc : vc_conjunct list list;
-  bp : Basic_paths.basic_path option; (*Nonnegative VCs don't have basic paths*)
+  info : atom_info;
   valid : validity;
   counter_example : Counterexamples.example list option;
 }
@@ -37,17 +40,20 @@ and function_validity_information = {
 and verification_atom_temp = {
   func_temp: fnDecl;
   vc_temp : vc_conjunct list list;
-  bp_temp : Basic_paths.basic_path option;
+  info_temp : atom_info;
 }
 
 val name_of_verification_atom : verification_atom -> string ;;
+val location_of_verification_atom : verification_atom -> location ;;
     
-val get_all_info : program -> Utils.options -> (Ast.fnDecl * (Basic_paths.basic_path * expr) list * (Basic_paths.basic_path * expr) list * expr list) list
+val get_all_info : program ->
+  Utils.options ->
+  (Ast.fnDecl * (Basic_paths.basic_path * expr) list * (Basic_paths.basic_path * expr) list * (rankingAnnotation * expr) list) list
 
 val string_of_validity : validity -> string 
 
 
-val verify_program : (Ast.fnDecl * (Basic_paths.basic_path * expr) list  * (Basic_paths.basic_path * expr) list * expr list) list
+val verify_program : (Ast.fnDecl * (Basic_paths.basic_path * expr) list  * (Basic_paths.basic_path * expr) list * (rankingAnnotation * expr) list) list
                       -> Ast.program -> ((string, ((validity * Counterexamples.example list option) * float)) Hashtbl.t * Mutex.t)                      
                       -> Utils.options
                       -> function_validity_information list

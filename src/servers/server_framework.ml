@@ -3,7 +3,7 @@ open Utils
 open Ast
 open Semantic_checking
 
-let max_connections = 5000 ;;
+let max_connections = 10000 ;;
 
 let string_of_inet_addr_port addr port =
   (Unix.string_of_inet_addr addr) ^ ":" ^ (string_of_int port) ;;
@@ -20,14 +20,23 @@ let get_server_type_str () =
     | _ -> "" ;;
 
 (* Child/worker thread.  Handles one request. *)
-let compile_thread (sock, server_fun) =
-  let inchan = Unix.in_channel_of_descr sock
-  and outchan = Unix.out_channel_of_descr sock in
-  server_fun inchan outchan ;
-  (*close_in inchan;
-  close_out outchan;*)
-  Unix.close sock ;;
-    
+let compile_thread (sock, server_fun, cli_addr) =
+
+  let go_message msg = 
+    if Config.get_value_bool "print_net_msgs" then
+      Config.always_print msg;
+    if Config.is_main_server () then
+      Logger.log_info msg;
+  in
+    go_message ("Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ ".");
+    let inchan = Unix.in_channel_of_descr sock
+    and outchan = Unix.out_channel_of_descr sock in
+      server_fun inchan outchan ;
+      (*close_in inchan;
+        close_out outchan;*)
+      Unix.close sock;
+      go_message ("Finished processing network request from " ^ (string_of_sockaddr cli_addr) ^ ".")
+        
 let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
   Unix.setsockopt sock Unix.SO_REUSEADDR true;
@@ -36,12 +45,7 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   try
     while true do
       let (s, cli_addr) = Unix.accept sock in
-      let msg = "Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ "." in
-      if Config.get_value_bool "print_net_msgs" then
-	Config.always_print msg;
-      if Config.is_main_server () then
-	Logger.log_info msg;
-      ignore (Thread.create compile_thread (s, server_fun))
+        ignore (Thread.create compile_thread (s, server_fun, cli_addr));
     done
   with
     Sys.Break -> (* Clean up on exit. *)
