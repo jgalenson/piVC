@@ -1,6 +1,10 @@
 /* PiVC generates the inductive core of your annotations
    and notifies you if simply removing some annotations
-   will prove the program correct. */
+   will prove the program correct. 
+
+   In the following program, the annotation i<=u is unnecessary
+   and incorrect. The inductive core, however, is still valid.
+*/
 
 @pre  0 <= l && u < |a|
 @post rv <-> exists ix. (l <= ix && ix <= u && a[ix] = e)

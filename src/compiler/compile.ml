@@ -23,6 +23,7 @@ let parse lexbuf =
 let parse_strings user_files =
 
   let includes_string = 
+    Unix.umask 0o0;
     let file = Unix.openfile (get_absolute_path (Config.get_value "includes_path")) [Unix.O_RDONLY] 0o640 in
     let file_size = (Unix.fstat file).Unix.st_size in
     let file_text = String.create file_size in

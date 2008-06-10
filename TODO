@@ -22,7 +22,6 @@ Joel
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
 	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
-        Bug: doesn't properly create log directory if it doesn't exist. Program then aborts. Does this work for you? It may be a Unix/Windows thing.
 
 Unassigned
 	Profile our server code, see where it slows down, and fix it.
