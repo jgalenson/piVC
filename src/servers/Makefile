@@ -1,11 +1,12 @@
 PROJ_DIR = .
 
 OCFLAGS = -dtypes -thread -g
+OCOPTFLAGS = $(OCFLAGS) -p
 
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../compiler -I ../utils/xml-light
 
 OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
-OCAMLOPT = ocamlopt $(OCFLAGS) $(INCLUDES)
+OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
 
 include ../Makefile_includes

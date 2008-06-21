@@ -1,11 +1,12 @@
 PROJ_DIR = . 
 
 OCFLAGS = -dtypes -g
+OCOPTFLAGS = $(OCFLAGS) -p
 
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils
 
 OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
-OCAMLOPT = ocamlopt $(OCFLAGS) $(INCLUDES)
+OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
 OCAMLYACC = ocamlyacc
 OCAMLLEX = ocamllex
