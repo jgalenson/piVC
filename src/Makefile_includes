@@ -1,7 +1,17 @@
 UTILS_OBJS = utils.cmo net_utils.cmo constants.cmo scanner.cmo config.cmo background.cmo exceptions.cmo logger.cmo
+UTILS_OBJS_OPT = utils.cmx net_utils.cmx constants.cmx scanner.cmx config.cmx background.cmx exceptions.cmx logger.cmx
+
 LANGUAGE_COMPILE_OBJS = ast.cmo parser.ml lexer.ml scope_stack.cmo parser.cmi parser.cmo lexer.cmi lexer.cmo
+LANGUAGE_COMPILE_OBJS_OPT = ast.cmx parser.ml lexer.ml scope_stack.cmx parser.cmi parser.cmx lexer.cmi lexer.cmx
 LANGUAGE_OBJS = ast.cmo parser.cmo lexer.cmo scope_stack.cmo
-SERVER_OBJS = email.cmo xml_generator.cmo server_framework.cmo ci_yices.cmo main_server.cmo dp_server.cmo
-SERVER_INCLUDES = str.cma unix.cma xml-light.cma threads.cma
+LANGUAGE_OBJS_OPT = ast.cmx parser.cmx lexer.cmx scope_stack.cmx
+
 COMPILER_OBJS = expr_utils.cmo ast_utils.cmo semantic_checking.cmo basic_paths.cmo verification_conditions.cmo compile.cmo transform_yices.cmo counterexamples.cmo termination.cmo verify.cmo
+COMPILER_OBJS_OPT = expr_utils.cmx ast_utils.cmx semantic_checking.cmx basic_paths.cmx verification_conditions.cmx compile.cmx transform_yices.cmx counterexamples.cmx termination.cmx verify.cmx
 COMPILER_INCLUDES = str.cma unix.cma threads.cma
+COMPILER_INCLUDES_OPT = str.cmxa unix.cmxa threads.cmxa
+
+SERVER_OBJS = email.cmo xml_generator.cmo server_framework.cmo ci_yices.cmo main_server.cmo dp_server.cmo
+SERVER_OBJS_OPT = email.cmx xml_generator.cmx server_framework.cmx ci_yices.cmx main_server.cmx dp_server.cmx
+SERVER_INCLUDES = str.cma unix.cma xml-light.cma threads.cma
+SERVER_INCLUDES_OPT = str.cmxa unix.cmxa xml-light.cmxa threads.cmxa

@@ -6,7 +6,8 @@ OCFLAGS =
 INCDIR = -I ../utils
 
 CC = gcc $(CCFLAGS) $(INCDIR)
-OC = ocamlc $(OCFLAGS) $(INCDIR)
+OCAML = ocamlc $(OCFLAGS) $(INCDIR)
+OCAMLOPT = ocamlopt $(OCFLAGS) $(INCDIR)
 JAVAC = javac
 
 include ../Makefile_includes
@@ -16,6 +17,8 @@ default :
 	make frontend; \
 
 all : gui executable
+
+opt : gui executable_opt
 
 #These comments should really be in the block of code below, but comments are printed out during compiliation and pollute the output.
 
@@ -38,11 +41,14 @@ gui :
 	rm -rf temp_files_for_compilation
 
 executable :
-	$(OC) -c pi_gui.ml
-	$(OC) -o ../../bin/pi_gui str.cma utils.cmo pi_gui.cmo
+	$(OCAML) -c pi_gui.ml
+	$(OCAML) -o ../../bin/pi_gui str.cma utils.cmo pi_gui.cmo
+
+executable_opt :
+	$(OCAMLOPT) -c pi_gui.ml
+	$(OCAMLOPT) -o ../../bin/pi_gui str.cmxa utils.cmx pi_gui.cmx
 
 clean :
-	rm pi_gui.cmi
-	rm pi_gui.cmo
-	rm ../../bin/pi_gui
-	rm ../../bin/PiGui.jar
+	rm -f pi_gui.cmi pi_gui.cmo pi_gui.cmx pi_gui.o
+	rm -f ../../bin/pi_gui
+	rm -f ../../bin/PiGui.jar

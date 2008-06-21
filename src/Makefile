@@ -1,17 +1,8 @@
-DIRS	= server client
+default : all
 
-PROJ_DIR = . client server dp_server client/java_gui
+all : backend frontend
 
-CCFLAGS =
-OCFLAGS =
-
-INCDIR = $(PROJ_DIR:%=-I %)
-
-CC = gcc $(CCFLAGS) $(INCDIR)
-OC = ocamlc $(OCFLAGS) $(INCDIR)
-JAVAC = javac
-
-default : backend frontend
+opt : backend_opt frontend_opt
 
 backend :
 	cd utils ;\
@@ -26,11 +17,26 @@ backend :
 	cd servers; \
 	make all; \
 
+backend_opt :
+	cd utils ;\
+	make opt; \
 
-frontend:
+	cd language; \
+	make opt; \
+
+	cd compiler; \
+	make opt; \
+
+	cd servers; \
+	make opt; \
+
+frontend :
 	cd client; \
 	make all; \
 
+frontend_opt :
+	cd client; \
+	make opt; \
 
 clean :
 	cd utils; \

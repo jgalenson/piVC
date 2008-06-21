@@ -4,7 +4,8 @@ OCFLAGS = -dtypes -g
 
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils
 
-OC = ocamlc $(OCFLAGS) $(INCLUDES)
+OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
+OCAMLOPT = ocamlopt $(OCFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
 OCAMLYACC = ocamlyacc
 OCAMLLEX = ocamllex
@@ -17,15 +18,22 @@ default :
 
 all : depend language
 
+opt : depend language_opt
+
 language : $(LANGUAGE_COMPILE_OBJS)
 
-.SUFFIXES: .mli .ml .cmi .cmo .mll .mly 
+language_opt : $(LANGUAGE_COMPILE_OBJS_OPT)
+
+.SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly 
 
 .ml.cmo:
-	$(OC) -c $<
+	$(OCAML) -c $<
+
+.ml.cmx:
+	$(OCAMLOPT) -c $<
 
 .mli.cmi:
-	$(OC) -c $<
+	$(OCAML) -c $<
 
 .mll.ml:
 	$(OCAMLLEX) $<
@@ -37,9 +45,9 @@ language : $(LANGUAGE_COMPILE_OBJS)
 	$(OCAMLYACC) -v $<
 
 clean :
-	rm lexer.ml
-	rm parser.ml
-	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
+	rm -f lexer.ml
+	rm -f parser.ml
+	rm -f $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cmx) $(PROJ_DIR:%=%/*.o) $(PROJ_DIR:%=%/*.annot)
 
 depend:
 	$(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend

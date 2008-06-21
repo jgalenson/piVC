@@ -4,7 +4,8 @@ OCFLAGS = -dtypes -thread -g
 
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../servers
 
-OC = ocamlc $(OCFLAGS) $(INCLUDES)
+OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
+OCAMLOPT = ocamlopt $(OCFLAGS) $(INCLUDES)
 OCAMLDEP = ocamldep
 
 include ../Makefile_includes
@@ -15,18 +16,26 @@ default :
 
 all : depend compiler
 
+opt : depend compiler_opt
+
 compiler : $(COMPILER_OBJS) test_parser.cmo
-	$(OC) -o ../../bin/test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
+	$(OCAML) -o ../../bin/test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
+
+compiler_opt : $(COMPILER_OBJS_OPT) test_parser.cmx
+	$(OCAMLOPT) -o ../../bin/test_parser $(COMPILER_INCLUDES_OPT) $(UTILS_OBJS_OPT) $(LANGUAGE_OBJS_OPT) $(COMPILER_OBJS_OPT) test_parser.cmx
 
 %.cmo : %.ml %.cmi
-	$(OC) -c $<
+	$(OCAML) -c $<
+
+%.cmx : %.ml %.cmi
+	$(OCAMLOPT) -c $<
 
 %.cmi : %.mli
-	$(OC) -c $<
+	$(OCAML) -c $<
 
 clean :
-	rm $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.annot)
-	rm ../../bin/test_parser
+	rm -f $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cmx) $(PROJ_DIR:%=%/*.o) $(PROJ_DIR:%=%/*.annot)
+	rm -f ../../bin/test_parser
 
 depend:
 	$(OCAMLDEP) $(INCLUDES) *.mli *.ml > .depend
