@@ -12,25 +12,6 @@ exception Malformatted_DP_Server_Address;;
 
 type verification_mode = Set_validity | Set_in_core
 
-(*Compares exprs based on their locations. So two exprs with the same locations
-  are deemed the same.*)
-module Expr_map = Map.Make (struct
-                              type t = expr
-                              let compare exp1 exp2 =
-                                let loc1 = (location_of_expr exp1).loc_start in
-                                let loc2 = (location_of_expr exp2).loc_start in
-                                  compare_locs loc1 loc2
-                            end)
-
-(*Compares functions based on their locations. So two functions with the same location
-  are deemed the same.*)
-module Fn_map = Map.Make (struct
-                              type t = fnDecl
-                              let compare fun1 fun2 =
-                                  compare_locs fun1.location_fd.loc_start fun2.location_fd.loc_start
-                            end)
-
-
 type validity = Valid | Invalid | Unknown
         
 and termination_result = {
@@ -471,12 +452,12 @@ and vc_temp_of_expr_helper expr func info map_for_inductive_core =
                           | false -> 
                               begin
                                 try
-                                  Some(Expr_map.find expr m.contents)
+                                  Some(Ast_utils.Expr_map.find expr m.contents)
                                 with
                                     Not_found ->
                                       begin
                                         let new_is_inductive_ref = ref true in
-                                          m := Expr_map.add expr new_is_inductive_ref !m;
+                                          m := Ast_utils.Expr_map.add expr new_is_inductive_ref !m;
                                           Some(new_is_inductive_ref)
                                       end
                               end
@@ -648,21 +629,21 @@ let verify_program_correctness program_info program_ast vc_cache_and_lock alread
       iterate_aarons_algorithm_until_convergence_rounds_2_onwards vcs_with_validity
   in
   let group_vcs_by_function_and_make_non_temp vcs = 
-    let func_map = ref Fn_map.empty in
+    let func_map = ref Ast_utils.Fn_map.empty in
     let grouped_vcs = ref [] in
     let add_vc_to_map vc = 
       begin
-        if not (Fn_map.mem vc.func_temp !func_map) then 
-          func_map := Fn_map.add vc.func_temp [] !func_map
+        if not (Ast_utils.Fn_map.mem vc.func_temp !func_map) then 
+          func_map := Ast_utils.Fn_map.add vc.func_temp [] !func_map
       end;
-      let old_list = Fn_map.find vc.func_temp !func_map in
-        func_map := Fn_map.add vc.func_temp (old_list @ [vc_detailed_of_vc_detailed_temp vc]) !func_map
+      let old_list = Ast_utils.Fn_map.find vc.func_temp !func_map in
+        func_map := Ast_utils.Fn_map.add vc.func_temp (old_list @ [vc_detailed_of_vc_detailed_temp vc]) !func_map
     in
     let deal_with_key_value key value = 
       grouped_vcs := !grouped_vcs @ [(key,value)]
     in
       List.iter add_vc_to_map vcs;
-      Fn_map.iter deal_with_key_value !func_map;
+      Ast_utils.Fn_map.iter deal_with_key_value !func_map;
       !grouped_vcs
   in
   let new_vcs = 
@@ -770,19 +751,19 @@ let rec verify_program_termination program_info program_ast vc_cache_and_lock al
 
 
 and verify_program program_info program_ast vc_cache_and_lock options =
-  let already_assigned = ref Expr_map.empty in
+  let already_assigned = ref Ast_utils.Expr_map.empty in
   let correctness_results = verify_program_correctness program_info program_ast vc_cache_and_lock already_assigned options in
   let termination_results = verify_program_termination program_info program_ast vc_cache_and_lock already_assigned options in
-  let func_map = ref Fn_map.empty in
+  let func_map = ref Ast_utils.Fn_map.empty in
   let add_func_to_map (func,_,_,_) = 
-    func_map := Fn_map.add func (ref None, ref None) !func_map
+    func_map := Ast_utils.Fn_map.add func (ref None, ref None) !func_map
   in
   let put_correctness_result_in_map correctness_result =
-    let (c, t) = Fn_map.find (fst correctness_result) !func_map in
+    let (c, t) = Ast_utils.Fn_map.find (fst correctness_result) !func_map in
       c := Some(snd correctness_result)
   in
   let put_termination_result_in_map termination_result =
-    let (c, t) = Fn_map.find (fst termination_result) !func_map in
+    let (c, t) = Ast_utils.Fn_map.find (fst termination_result) !func_map in
       t := Some(snd termination_result)
   in
   let list_of_map m = 
@@ -805,7 +786,7 @@ and verify_program program_info program_ast vc_cache_and_lock options =
       let list_elem = {fn=fn;correctness_result=correctness_result;termination_result=termination_result;overall_validity=overall_validity;} in
         l := !l @ [list_elem]
     in
-      Fn_map.iter process_key_value m;
+      Ast_utils.Fn_map.iter process_key_value m;
       !l
   in
     (*Step 1: Add all functions to the map without any other information*)

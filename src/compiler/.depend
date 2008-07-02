@@ -53,9 +53,9 @@ verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
     transform_yices.cmi termination.cmi semantic_checking.cmi \
     ../language/parser.cmo ../utils/net_utils.cmi expr_utils.cmi \
     counterexamples.cmi ../utils/config.cmi basic_paths.cmi \
-    ../utils/background.cmi ../language/ast.cmi verify.cmi 
+    ../utils/background.cmi ast_utils.cmi ../language/ast.cmi verify.cmi 
 verify.cmx: verification_conditions.cmx ../utils/utils.cmx \
     transform_yices.cmx termination.cmx semantic_checking.cmx \
     ../language/parser.cmx ../utils/net_utils.cmx expr_utils.cmx \
     counterexamples.cmx ../utils/config.cmx basic_paths.cmx \
-    ../utils/background.cmx ../language/ast.cmx verify.cmi 
+    ../utils/background.cmx ast_utils.cmx ../language/ast.cmx verify.cmi 

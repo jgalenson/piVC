@@ -14,6 +14,9 @@ backend :
 	cd compiler; \
 	make all; \
 
+	cd static_analysis; \
+	make all; \
+
 	cd servers; \
 	make all; \
 
@@ -25,6 +28,9 @@ backend_opt :
 	make opt; \
 
 	cd compiler; \
+	make opt; \
+
+	cd static_analysis; \
 	make opt; \
 
 	cd servers; \
@@ -46,6 +52,9 @@ clean :
 	make clean; \
 
 	cd compiler; \
+	make clean; \
+
+	cd static_analysis; \
 	make clean; \
 
 	cd servers; \

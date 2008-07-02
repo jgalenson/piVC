@@ -1,5 +1,29 @@
 open Ast ;;
 
+(*Compares exprs based on their locations. So two exprs with the same locations
+  are deemed the same.*)
+module Expr_map = Map.Make (struct
+                              type t = expr
+                              let compare exp1 exp2 =
+                                let loc1 = (location_of_expr exp1).loc_start in
+                                let loc2 = (location_of_expr exp2).loc_start in
+                                  Utils.compare_locs loc1 loc2
+                            end)
+
+(*Compares functions based on their locations. So two functions with the same location
+  are deemed the same.*)
+module Fn_map = Map.Make (struct
+                              type t = fnDecl
+                              let compare fun1 fun2 =
+                                  Utils.compare_locs fun1.location_fd.loc_start fun2.location_fd.loc_start
+                            end)
+
+module Fn_set = Set.Make (struct
+			    type t = fnDecl
+			    let compare fun1 fun2 =
+			      Utils.compare_locs fun1.location_fd.loc_start fun2.location_fd.loc_start
+                          end)
+  
 (* Given a Call expr, returns the identifier of the function it calls. *)
 let get_called_function call = match call with
   | Call (_, id, _) -> id
@@ -79,27 +103,20 @@ let rec get_loop_ranking_annotation s = match s with
   | ForStmt (_, _, _, _, _, _, ra) -> ra
   | _ -> assert false (* We should only call this on loops. *) ;;
 
-module Fndecl_set = Set.Make (struct
-				type t = fnDecl
-				let compare a b =
-				  let a_name = Ast.unique_fn_name a in
-				  let b_name = Ast.unique_fn_name b in
-				  String.compare a_name b_name
-                              end)
 (* Checks whether one function calls another. *)
 let calls calling_func callee_func get_fndecl =
-  let visited = ref Fndecl_set.empty in
+  let visited = ref Fn_set.empty in
   (* Checks whether caller calls callee. *)
   let rec does_call caller callee depth =
     let are_same_fn f1 f2 =
-      (Ast.unique_fn_name f1) == (Ast.unique_fn_name f2)
+      Utils.compare_locs f1.location_fd.loc_start f2.location_fd.loc_start == 0
     in
     if (are_same_fn callee caller && depth > 0) then
       true
-    else if (Fndecl_set.mem caller !visited) then
+    else if (Fn_set.mem caller !visited) then
       false
     else begin
-      visited := Fndecl_set.add caller !visited;
+      visited := Fn_set.add caller !visited;
       let all_calls = get_fn_calls caller get_fndecl in
       let all_calls_decls = 
 	let decl_opt_list = List.map (get_fndecl_from_call get_fndecl) all_calls in

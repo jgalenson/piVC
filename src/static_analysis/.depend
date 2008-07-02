@@ -1,0 +1,5 @@
+cfg.cmi: ../language/ast.cmi 
+cfg.cmo: ../utils/utils.cmi ../utils/constants.cmi ../utils/config.cmi \
+    ../compiler/compile.cmi ../language/ast.cmi cfg.cmi 
+cfg.cmx: ../utils/utils.cmx ../utils/constants.cmx ../utils/config.cmx \
+    ../compiler/compile.cmx ../language/ast.cmx cfg.cmi 

@@ -154,8 +154,6 @@ type fnDecl = {
   location_fd : location;
 }
 val create_fnDecl : identifier -> varDecl list -> varType -> stmt -> annotation -> annotation -> rankingAnnotation option -> location -> fnDecl
-(* TODO: Change this when we add classes to use the fn's class if any. *)
-val unique_fn_name : fnDecl -> string ;;
 
 val name_annotation : fnDecl -> int ref -> annotation_type -> string ;;
 val create_runtime_assertion : expr -> fnDecl -> int ref -> annotation ;;
@@ -178,6 +176,8 @@ type decl =
 val name_of_decl : decl -> string
 
 val type_of_decl : decl -> varType
+
+val is_void_type : varType -> bool
 
 type program = {
   decls : decl list;
@@ -227,6 +227,7 @@ val string_of_stmt : stmt -> int -> string
 val string_of_decl : decl -> string
 val string_of_program : program -> string
 val string_of_ranking_annotation : rankingAnnotation -> string
+val string_of_annotation : annotation -> string
 
 (****************
 Utility functions

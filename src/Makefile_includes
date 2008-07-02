@@ -15,3 +15,6 @@ SERVER_OBJS = email.cmo xml_generator.cmo server_framework.cmo ci_yices.cmo main
 SERVER_OBJS_OPT = email.cmx xml_generator.cmx server_framework.cmx ci_yices.cmx main_server.cmx dp_server.cmx
 SERVER_INCLUDES = str.cma unix.cma xml-light.cma threads.cma
 SERVER_INCLUDES_OPT = str.cmxa unix.cmxa xml-light.cmxa threads.cmxa
+
+STATIC_ANALYSIS_OBJS = cfg.cmo
+STATIC_ANALYSIS_OBJS_OPT = cfg.cmx

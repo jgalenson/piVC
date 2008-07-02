@@ -249,6 +249,10 @@ let type_of_decl = function
   | FnDecl (loc, d) -> d.returnType
   | Predicate (loc, p) -> Bool(gdl())
   | ClassDecl (loc, p) -> raise (Error "Class decls don't have types")
+
+let is_void_type vt = match vt with
+  | Void (_) -> true
+  | _ -> false
       
 type program = {
   decls : decl list;
@@ -533,9 +537,6 @@ let rec identifier_of_array_expr exp =
     | ArrayUpdate(loc,expr,assign_to,assign_val) -> identifier_of_array_expr expr
     | _ -> raise (Error ("expr more than just an array ident: " ^ string_of_expr exp))
    
-let unique_fn_name fn =
-  string_of_identifier fn.fnName ;;
-
 (* Generates a name for an annotation based on its type and enclosing function. *)
 let name_annotation func annotation_id ann_type = match ann_type with
   | Normal (_) -> (string_of_identifier func.fnName) ^ "." ^ (string_of_int !annotation_id)
