@@ -13,4 +13,5 @@ val convert_line_endings : string -> string;;
 val compare_locs : Lexing.position -> Lexing.position -> int;;
 val trim : string -> string;;
 val rational_string_of_float : float -> string;;
+val round : float -> int -> float ;;
 val debug_print_time_diff : float -> float -> string -> unit;;

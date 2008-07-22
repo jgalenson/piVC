@@ -31,11 +31,14 @@ let compile_thread (sock, server_fun, cli_addr) =
     go_message ("Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ ".");
     let inchan = Unix.in_channel_of_descr sock
     and outchan = Unix.out_channel_of_descr sock in
+      let start_time = Unix.gettimeofday () in
       server_fun inchan outchan ;
       (*close_in inchan;
         close_out outchan;*)
       Unix.close sock;
-      go_message ("Finished processing network request from " ^ (string_of_sockaddr cli_addr) ^ ".")
+      let end_time = Unix.gettimeofday () in
+      let elapsed_secs = end_time -. start_time in
+      go_message ("Finished processing network request from " ^ (string_of_sockaddr cli_addr) ^ " in " ^ string_of_float (Utils.round elapsed_secs 2) ^ " seconds.")
         
 let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in

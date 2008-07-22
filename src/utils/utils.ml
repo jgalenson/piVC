@@ -81,6 +81,17 @@ let rational_string_of_float f =
   let denominator = "1" ^ (String.make (String.length suffix) '0') in
   numerator ^ "/" ^ denominator ;;
 
+let round num num_places =
+  let num_places_f = float_of_int num_places in
+  let tens = 10.0 ** num_places_f in
+  let larger = num *. tens in
+  let truncated =
+    if larger -. float_of_int (truncate larger) > 0.5 then
+      ceil larger
+    else
+      floor larger
+  in
+  truncated /. tens ;;
 
 let debug_print_time_diff begin_time end_time message =
   print_endline (message ^ (string_of_float (end_time -. begin_time)))
