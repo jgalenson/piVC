@@ -349,19 +349,23 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 		          let error_msg = "'" ^ (string_of_identifier vd.varName) ^ "' is not a " ^ word in
 		            add_error SemanticError error_msg loc errors; ErrorType
 		      | Predicate (l, p) ->
-                          begin
-                            match is_annotation with
-                                true -> check_formals p.formals_p; Bool(gdl())
-		              | false -> let error_msg = "'" ^ (string_of_identifier p.predName) ^ "' is not a function" in
-		                  add_error SemanticError error_msg loc errors; ErrorType
-                          end
-		      | FnDecl (loc, fd) -> 
-                          begin
-                            match is_annotation with
-                                true -> let error_msg = "'" ^ (string_of_identifier fd.fnName) ^ "' is not a predicate" in
-		                  add_error SemanticError error_msg loc errors; ErrorType
-		              | false -> check_formals fd.formals; fd.returnType
-                          end
+			  if is_annotation || is_ranking_fn then begin
+			    check_formals p.formals_p;
+			    Bool(gdl())
+			  end else begin
+			    let error_msg = "'" ^ (string_of_identifier p.predName) ^ "' is not a function" in
+		            add_error SemanticError error_msg loc errors;
+			    ErrorType
+			  end
+		      | FnDecl (loc, fd) ->
+			  if is_annotation || is_ranking_fn then begin
+			    let error_msg = "'" ^ (string_of_identifier fd.fnName) ^ "' is not a predicate" in
+		            add_error SemanticError error_msg loc errors;
+			    ErrorType
+			  end else begin
+			    check_formals fd.formals;
+			    fd.returnType
+			  end
 		      | ClassDecl (loc, cd) -> 
                           begin
                             let what_it_should_be = 
