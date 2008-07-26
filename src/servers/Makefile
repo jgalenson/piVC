@@ -1,14 +1,8 @@
 PROJ_DIR = .
 
-OCFLAGS = -dtypes -thread -g
-OCOPTFLAGS = $(OCFLAGS) -p
-
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils -I ../language -I ../compiler -I ../utils/xml-light
 
-OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
-OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
-OCAMLDEP = ocamldep
-
+include ../Makefile_vars
 include ../Makefile_includes
 
 default :
@@ -20,9 +14,9 @@ all : depend servers
 opt : depend servers_opt
 
 servers : $(SERVER_OBJS) main_server_executable.cmo dp_server_executable.cmo both_servers.cmo
-	$(OCAML) -o ../../bin/main_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) main_server_executable.cmo
-	$(OCAML) -o ../../bin/dp_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) dp_server_executable.cmo
-	$(OCAML) -o ../../bin/both_servers $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) both_servers.cmo
+	$(OCAMLC) -o ../../bin/main_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) main_server_executable.cmo
+	$(OCAMLC) -o ../../bin/dp_server $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) dp_server_executable.cmo
+	$(OCAMLC) -o ../../bin/both_servers $(SERVER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) $(SERVER_OBJS) both_servers.cmo
 
 servers_opt : $(SERVER_OBJS_OPT) main_server_executable.cmx dp_server_executable.cmx both_servers.cmx
 	$(OCAMLOPT) -o ../../bin/main_server $(SERVER_INCLUDES_OPT) $(UTILS_OBJS_OPT) $(LANGUAGE_OBJS_OPT) $(COMPILER_OBJS_OPT) $(SERVER_OBJS_OPT) main_server_executable.cmx
@@ -32,13 +26,13 @@ servers_opt : $(SERVER_OBJS_OPT) main_server_executable.cmx dp_server_executable
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
 %.cmo : %.ml %.cmi
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 %.cmx : %.ml %.cmi
 	$(OCAMLOPT) -c $<
 
 %.cmi : %.mli
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 clean :
 	rm -f $(PROJ_DIR:%=%/*.cmi) $(PROJ_DIR:%=%/*.cmo) $(PROJ_DIR:%=%/*.cmx) $(PROJ_DIR:%=%/*.o) $(PROJ_DIR:%=%/*.annot)

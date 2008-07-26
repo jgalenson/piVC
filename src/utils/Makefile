@@ -1,14 +1,8 @@
 PROJ_DIR = .
 
-OCFLAGS = -dtypes -thread -g
-OCOPTFLAGS = $(OCFLAGS) -p
-
 INCLUDES = $(PROJ_DIR:%=-I %)
 
-OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
-OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
-OCAMLDEP = ocamldep
-
+include ../Makefile_vars
 include ../Makefile_includes
 
 default :
@@ -34,10 +28,10 @@ xmllight_opt:
 .SUFFIXES: .ml .mli .cmo .cmi .cmx
 
 %.cmo : %.ml %.cmi
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 %.cmi : %.mli
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 %.cmx : %.ml %.cmi
 	$(OCAMLOPT) -c $<

@@ -1,16 +1,11 @@
 PROJ_DIR = . 
 
-OCFLAGS = -dtypes -g
-OCOPTFLAGS = $(OCFLAGS) -p
-
 INCLUDES = $(PROJ_DIR:%=-I %) -I ../utils
 
-OCAML = ocamlc $(OCFLAGS) $(INCLUDES)
-OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
-OCAMLDEP = ocamldep
 OCAMLYACC = ocamlyacc
 OCAMLLEX = ocamllex
 
+include ../Makefile_vars
 include ../Makefile_includes
 
 default :
@@ -28,13 +23,13 @@ language_opt : $(LANGUAGE_COMPILE_OBJS_OPT)
 .SUFFIXES: .mli .ml .cmi .cmo .cmx .mll .mly 
 
 .ml.cmo:
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 .ml.cmx:
 	$(OCAMLOPT) -c $<
 
 .mli.cmi:
-	$(OCAML) -c $<
+	$(OCAMLC) -c $<
 
 .mll.ml:
 	$(OCAMLLEX) $<

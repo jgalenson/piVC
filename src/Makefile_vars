@@ -1,0 +1,22 @@
+# Example usage:
+#  Turn of profiling: make PROFILE=""
+#  Turn on optimizations: make opt OPT=true
+
+# compiler flags
+ifdef OPT
+DEBUG =
+PROFILE =
+OPTIMIZE = #-noassert
+else
+DEBUG = -g
+PROFILE = -p
+OPTIMIZE =
+endif
+
+OCFLAGS = -dtypes -thread $(DEBUG) $(OPTIMIZE)
+OCOPTFLAGS = $(OCFLAGS) $(PROFILE)
+
+OCAMLC = ocamlc $(OCFLAGS) $(INCLUDES)
+OCAMLOPT = ocamlopt $(OCOPTFLAGS) $(INCLUDES)
+OCAMLDEP = ocamldep
+JAVAC = javac
