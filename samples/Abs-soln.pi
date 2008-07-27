@@ -4,7 +4,7 @@ int[] abs(int[] a_0) {
 	int[] a := a_0;
 	for
 		@ forall ix. (0 <= ix && ix < i -> a[ix] >= 0)
-		  && i <= |a|
+		  && i <= |a| && i >= 0
 		# (|a| - i)
 		(int i := 0; i < |a|; i := i + 1) 
 	{
