@@ -48,7 +48,17 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   try
     while true do
       let (s, cli_addr) = Unix.accept sock in
-        ignore (Thread.create compile_thread (s, server_fun, cli_addr));
+      if Config.is_dp_server () then
+	match Unix.fork () with
+	  | 0 ->
+	      if Unix.fork () <> 0 then exit 0 ;
+	      compile_thread (s, server_fun, cli_addr);
+	      exit 0
+	  | id ->
+	      Unix.close s;
+	      ignore (Unix.waitpid [] id)
+      else
+        ignore (Thread.create compile_thread (s, server_fun, cli_addr))
     done
   with
     Sys.Break -> (* Clean up on exit. *)

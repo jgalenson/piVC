@@ -56,8 +56,8 @@ let verify ic oc =
 	  end 
   end;
   (*print_endline "dp server end";*)
-  flush oc 
-    
+  flush oc ;;
+
 let start_dp_server () =
   Config.set_server_type Config.DPServer;
   Config.load (Utils.get_absolute_path Constants.dp_server_config_file_path);

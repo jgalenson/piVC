@@ -42,3 +42,4 @@ val always_print : string -> unit ;;
 val get_server_type : unit -> server_type option ;;
 
 val is_main_server : unit -> bool ;;
+val is_dp_server : unit -> bool ;;

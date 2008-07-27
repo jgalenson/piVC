@@ -148,6 +148,10 @@ let is_main_server () = match !server_type with
   | Some (MainServer) -> true
   | _ -> false ;;
 
+let is_dp_server () = match !server_type with
+  | Some (DPServer) -> true
+  | _ -> false ;;
+
 (* Parses the command-line arguments. *)
 let parse_cmd_line s_type =
   let usage_msg = "PiVC server command-line options:" in

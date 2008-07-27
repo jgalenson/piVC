@@ -18,7 +18,6 @@ Joel
 	Static analysis API
 	
 	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
-	Make sure we use multiple cores for yices stuff (test it and change to fork for dp_server if necessary).
 	Timeouts.
 
 Unassigned
