@@ -68,7 +68,8 @@ let log msg filename =
   let is_enabled = Config.get_value_bool "logging" in
   if is_enabled then begin
     Mutex.lock log_lock;
-    create_dir_tree filename;
+    if not (Sys.file_exists filename) then
+      create_dir_tree filename;
     ignore(Unix.umask 0o0);
     let log_file = Unix.openfile filename [Unix.O_CREAT; Unix.O_WRONLY; Unix.O_APPEND] 0o640 in
     let write_to_log fd str =

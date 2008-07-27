@@ -26,6 +26,7 @@ let compare_locs loc1 loc2 =
     else
       cnum_compr
 
+(* Note: Unix.getcwd gets an actual absolute path to the cwd, not a relative path to the binary. *)
 let get_absolute_path path = 
   let first_char = String.get path 0 in
     if first_char = '/' then (*in this case, the path is already absolute*)
