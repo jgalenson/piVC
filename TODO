@@ -25,8 +25,7 @@ Unassigned
 	Investigate mysterious undo/redo code pane crash of doom.
 	Should we support things like (l <= i <= u) as a convenience?
 	Document the built-in predicates somewhere, probably the README.
-	Remove built-in support for the length() function.
-	Add support for int e := ? syntax (see SortedUnion, UnsortedUnion).
+	Add support for int e := ? syntax (see SortedUnion, UnsortedUnion).  Maybe it can mean this var can only be used in assertions?
 
 --------------------
 Possible later TODOs

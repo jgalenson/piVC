@@ -250,7 +250,6 @@ and expr_from_temp_expr has_condition expr =
 %token T_While T_For
 %token T_Else
 %token T_If
-%token T_Length
 %token T_Return T_Break
 %token T_Break T_Return
 %token T_Typedef T_Struct
@@ -487,7 +486,6 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | Expr T_Or Expr         { Or (loc 1 3, $1, $3) }
          | T_Not Expr             { Not (loc 1 2, $2) }
 	 | T_Bar Expr T_Bar       { Length (loc 1 3, $2) }
-	 | T_Length T_LParen Expr T_RParen { Length (loc 1 3,$3) }
 	 | T_New Type T_LSquareBracket Expr T_RSquareBracket { NewArray (loc 1 5,$2, $4) }
 ;
 
@@ -547,7 +545,6 @@ Annotation     : AnnotationLValue T_Assign Annotation   { Assign(loc 1 3, $1, $3
          | Annotation T_Or Annotation         { Or (loc 1 3, $1, $3) }
          | T_Not Annotation             { Not (loc 1 2, $2) }
 	 | T_Bar Annotation T_Bar       { Length (loc 1 3, $2) }
-	 | T_Length T_LParen Annotation T_RParen { Length (loc 1 3,$3) }
 ;
 
 
