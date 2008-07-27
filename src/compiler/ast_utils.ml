@@ -61,7 +61,8 @@ let get_fndecl_from_call get_fndecl c =
       end ;;
 
 (* Gets all the functions func calls.
-   We return one Call expr for each function we call. *)
+   We return one Call expr for each function we call.
+   TODO: This is O(N^2).  Write it with Sets to make it NlogN. *)
 let get_fn_calls func get_fndecl =
   let rec get_calls_from_stmt s = match s with
     | Expr (_, e) -> [Expr_utils.get_calls e]

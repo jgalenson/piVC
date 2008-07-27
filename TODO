@@ -17,8 +17,7 @@ Jason
 Joel
 	Static analysis API
 	
-	Termination: check, perhaps make more efficient (cache is_recursive and get_loops?, make get_fn_calls use Set and not be N^2).
-	Timeouts.
+	Timeouts (Do we really need them?  See http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora168.html if so).
 
 Unassigned
 	Profile our server code, see where it slows down, and fix it.

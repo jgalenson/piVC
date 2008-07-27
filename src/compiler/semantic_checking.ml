@@ -537,7 +537,11 @@ let rec check_stmt scope_stack returnType errors (is_in_loop) annotation_id func
 (* Check termination.
    We ensure that all necessary termination arguments are present
    and that all termination paths begin and end with annotations
-   of the same tuple size. *)
+   of the same tuple size.
+   Note that we could cache some things, like the result of Ast_utils.
+   get_loops, get_fn_calls, and calls, since we likely call them multiple
+   times for a given function.  But that would be a bit ugly, and we
+   don't seem to spend much time in these functions, so we aren't for now. *)
 let check_termination func scope_stack errors =
   let get_fndecl_from_scope_stack c =
     let called_fn = Ast_utils.get_called_function c in
