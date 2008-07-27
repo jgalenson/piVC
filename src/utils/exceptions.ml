@@ -31,4 +31,6 @@ let string_of_exception ex =
 	let line_str = string_of_int line in
 	let col_str = string_of_int col in
         "Error \"" ^ msg ^ "\" in file " ^ file ^ ", line " ^ line_str ^ ", col " ^ col_str ^ "."
+    | Unix.Unix_error (error, s1, s2) ->
+	"Unix error: " ^ Unix.error_message error
     | x -> Printexc.to_string x ;;
