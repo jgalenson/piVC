@@ -161,7 +161,7 @@ public class PiGui extends JFrame {
 	public void doExit() {
 		if (!saveAndConfirmIfDirty())
 			return;
-		System.exit(0);
+		dispose();
 	}
 
 	/**
