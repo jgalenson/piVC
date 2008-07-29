@@ -62,9 +62,18 @@ public class PiGui extends JFrame {
 	private PiVCPane vcPane;
 
 	private static ImageIcon icon = new ImageIcon(Utils.getURL("images/Pi-symbol.png"));
-	
+
 	public PiGui() {
 		super(TITLE);
+		runGui(null);
+	}
+
+	public PiGui(String startingFilename) {
+		super(TITLE);
+		runGui(startingFilename);
+	}
+	
+	private void runGui(String startingFilename) {
 		setLayout(new BorderLayout());
 		useSystemLookAndFeel();
 		setIconImage(icon.getImage());
@@ -76,13 +85,23 @@ public class PiGui extends JFrame {
 		installStatusBar();
 		initDataPost();
 		setupWindow();
+
+		if (startingFilename != null) {
+		   	curFile = new File(startingFilename);
+			loadFile(curFile);
+			filenameChanged();
+		}
 	}
 
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		Config.initConfig();
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
+			    if (args.length == 0)
 				new PiGui();
+			    else
+				for (int i = 0; i < args.length; i++)
+				    new PiGui(args[i]);
 			}
 		});
 	}
