@@ -578,6 +578,7 @@ let get_index_set exp =
       | Plus (loc,t1, t2) -> process_binary_operator t1 t2
       | Minus (loc,t1, t2) -> process_binary_operator t1 t2
       | Times (loc,t1, t2) -> process_binary_operator t1 t2
+      | Div (loc,t1, t2) -> process_binary_operator t1 t2
       | IDiv (loc,t1, t2) -> process_binary_operator t1 t2
       | Mod (loc,t1, t2) -> process_binary_operator t1 t2
       | UMinus (loc,t) -> process_unary_minus t

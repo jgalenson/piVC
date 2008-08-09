@@ -382,7 +382,16 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
     | Minus (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Times (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | Div (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
-    | IDiv (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
+    | IDiv (loc,t1, t2) ->
+	let ltype = cagrt t1 in
+	let rtype = cagrt t2 in
+	begin
+	  match (ltype, rtype) with
+	    | (Int (_), Int (_)) -> Int (loc)
+	    | _ ->
+		add_error SemanticError "Integer division must take integer operands." loc errors;
+		ErrorType
+	end
     | Mod (loc,t1, t2) -> check_and_get_return_type_arithmetic loc t1 t2
     | UMinus (loc,t) ->
 	let rtype = cagrt t in
