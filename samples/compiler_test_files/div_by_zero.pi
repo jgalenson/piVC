@@ -1,0 +1,5 @@
+@pre true
+@post true
+void foo() {
+	@ 1 / 0 = 1;
+}

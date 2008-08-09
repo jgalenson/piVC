@@ -22,6 +22,7 @@ let init () = ()
 
 exception Done
 exception YicesNotFound of string
+exception YicesError
 
 let create () =
   let ip, op = Unix.pipe () in
@@ -100,7 +101,7 @@ let recv i =
       input_line m.ic
   with
     | End_of_file
-    | Sys_blocked_io -> assert(false)
+    | Sys_blocked_io -> raise YicesError
 
 let destroy i m =
   try 

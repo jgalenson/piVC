@@ -1,0 +1,12 @@
+@pre true
+@post true
+void foo() {
+	// Bug: div must take and return ints
+	float f := 1.5 div 3.0;
+
+	// Correct behavior
+	int val := 3 div 2;
+	@ val = 1;
+	float val2 := 3.0 / 2.0;
+	@ val2 = 1.5;
+}
