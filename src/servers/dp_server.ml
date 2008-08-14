@@ -50,7 +50,7 @@ let verify ic oc =
     with
 	ex ->
 	  begin
-	    let error_str = Printexc.to_string ex in
+	    let error_str = Exceptions.string_of_exception ex in
             send_output oc "error";
             send_output oc error_str
 	  end 

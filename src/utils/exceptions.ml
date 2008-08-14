@@ -21,12 +21,12 @@ let our_assert_str asrt msg =
    If it's a PiException, we print out the embedded
    exception as well as its file, line, and col.
    Otherwise, we use Printexc to print it. *)
-let string_of_exception ex =
+let rec string_of_exception ex =
   match ex with
     | PiExceptionEx (ex, file, line, col) ->
 	let line_str = string_of_int line in
 	let col_str = string_of_int col in
-        "Exception " ^ (Printexc.to_string ex) ^ " in file " ^ file ^ ", line " ^ line_str ^ ", col " ^ col_str ^ "."
+        "Exception " ^ (string_of_exception ex) ^ " in file " ^ file ^ ", line " ^ line_str ^ ", col " ^ col_str ^ "."
     | PiExceptionStr (msg, file, line, col) ->
 	let line_str = string_of_int line in
 	let col_str = string_of_int col in
