@@ -28,6 +28,7 @@ let parse_strings user_files =
     let file_size = (Unix.fstat file).Unix.st_size in
     let file_text = String.create file_size in
       ignore (Unix.read file file_text 0 file_size);
+      Unix.close file;
       file_text
   in
   let entries_with_length_ge_0 files = 

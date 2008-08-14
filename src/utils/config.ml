@@ -33,6 +33,7 @@ let read_from_file file_path =
   let file_text =
     let file_text_temp = String.create file_size in
     ignore (Unix.read file file_text_temp 0 file_size);
+    Unix.close file;
     file_text_temp
   in
   let rec load_key_values str = 
