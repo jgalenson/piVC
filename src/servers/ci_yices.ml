@@ -10,23 +10,23 @@ type manager =
       oc : out_channel;
       fd : Unix.file_descr * Unix.file_descr;
       pid : int;
+      error : Unix.file_descr
     }
 
 let max_man = 5000
 let managers = A.make max_man None
 let managers_lock = Mutex.create ()
 
-let log = Unix.openfile ".yices.log" [Unix.O_CREAT; Unix.O_WRONLY] 0o640
-
 let init () = ()
 
 exception Done
 exception YicesNotFound of string
-exception YicesError
+exception YicesError of string
 
 let create () =
   let ip, op = Unix.pipe () in
   let im, om = Unix.pipe () in
+  let error_out, error_in = Unix.pipe () in
     Unix.set_nonblock im;
     let yices_executable =
       let config_value = Config.get_value "yices_path" in
@@ -35,7 +35,7 @@ let create () =
       else
 	config_value
     in
-    let pid = (Unix.create_process yices_executable [|"yices"|] ip om log) in
+    let pid = (Unix.create_process yices_executable [|"yices"|] ip om error_in) in
       (* Ensure yices was successfully started. *)
       let (killed_pid, _) = Unix.waitpid [Unix.WNOHANG; Unix.WUNTRACED] pid in
       if killed_pid != 0 then begin
@@ -43,10 +43,12 @@ let create () =
       end;
       Unix.close ip;
       Unix.close om;
+      Unix.close error_in;
       { ic = Unix.in_channel_of_descr im;
 	oc = Unix.out_channel_of_descr op;
 	fd = (im, op);
 	pid = pid;
+	error = error_out;
       }
 
 let new_context () =
@@ -96,12 +98,14 @@ let wait i =
     ignore (Unix.select [fd] [] [] (-1.))
 
 let recv i =
+  let m = get i in
   try
-    let m = get i in
-      input_line m.ic
+    input_line m.ic
   with
     | End_of_file
-    | Sys_blocked_io -> raise YicesError
+    | Sys_blocked_io ->
+	let str = input_line (Unix.in_channel_of_descr m.error) in
+	raise (YicesError (str))
 
 let destroy i m =
   try 
@@ -109,7 +113,8 @@ let destroy i m =
     ignore (Unix.waitpid [] m.pid);
     let i, o = m.fd in
       Unix.close i;
-      Unix.close o
+      Unix.close o;
+      Unix.close m.error
   with
     | _ -> pr "destroy error"
 
