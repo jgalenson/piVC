@@ -414,7 +414,7 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
     private TabSet getTabSet(){
         int NUM_TABS = 20;
     	TabStop[] tabstops = new TabStop[NUM_TABS];
-        double widthOfChar = getFontMetrics(getFont()).charWidth('a');//because it's a monospaced font, we can pick a character abritrarily
+        double widthOfChar = getFontMetrics(getFont()).charWidth('a');//because it's a monospaced font, we can pick a character arbitrarily
         for(int i=0; i<NUM_TABS; ++i){
         	tabstops[i] = new TabStop((float)(widthOfChar*TAB_SIZE*(i+1)));
         }
@@ -603,13 +603,55 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
 
     /**
      * Just like a DefaultStyledDocument but intercepts inserts and
-     * removes to color them.
+     * removes to color them.  We also do some work when text is
+     * inserted to provide some basic IDE tabbing support.
      */
     public class HighLightedDocument extends DefaultStyledDocument {
         public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-                super.insertString(offs, str, a);
-                color(offs, str.length());
-                documentReader.update(offs, str.length());
+        	/*
+        	 * If the user enters a newline, we want to tab them in relative
+        	 * to the previous line.  If they press enter after typing a '{',
+        	 * we indent them one extra tab.  Otherwise, we indent them to
+        	 * the level of the previous line.  Note that we count spaces
+        	 * as indentation levels as well.
+        	 */
+        	if ("\n".equals(str)) {
+        		String tabs = getLineTabString(offs - 1);
+        		if (offs >= 1 && getText(offs -1, 1).equals("{"))
+        			tabs += "\t";
+                insert(offs, str + tabs, a);
+            /*
+             * If the user enters a '}', we unindent it by one tab.
+             */
+        	} else if ("}".equals(str) && offs >= 1 && getText(offs -1, 1).equals("\t")) {
+        		remove(offs - 1, 1);
+        		insert(offs - 1, str, a);
+        	} else {
+               insert(offs, str, a);
+        	}
+        }
+        
+        /**
+         * Does the actual work of inserting a string into the document.
+         */
+        private void insert(int offs, String str, AttributeSet a) throws BadLocationException {
+            super.insertString(offs, str, a);
+            color(offs, str.length());
+            documentReader.update(offs, str.length());
+        }
+        
+        /**
+         * Returns a string consisting of all the whitespace (tabs or spaces)
+         * at the beginning of the line starting at offs.
+         */
+        private String getLineTabString(int offs) throws BadLocationException {
+    		String text = getText(0, getLength());
+    		int lastNewlinePos = text.lastIndexOf('\n', offs);
+    		String tabs = "";
+    		if (lastNewlinePos != -1)
+    			for (int i = lastNewlinePos + 1; i < text.length() && (text.charAt(i) == '\t' || text.charAt(i) == ' '); i++)
+    				tabs += text.charAt(i);
+    		return tabs;
         }
 
         public void setString(String str, AttributeSet a) throws BadLocationException {
