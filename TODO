@@ -15,8 +15,7 @@ Jason
 	Investigate mysterious undo/redo code pane crash of doom now that we can reproduce it.
 
 Joel
-	Let main server use multiple cores.
-	Timeouts (See http://caml.inria.fr/pub/docs/oreilly-book/html/book-ora168.html).
+	Let main server use multiple cores?
 
 Unassigned
 	i and l are not distinguishable in the VC pane (when bolded and red, I think) and l and 1 are not distinguishable in the code pane.  Also, the yellow text in the VC pane is almost impossible to read (see UnsortedUnion.pi).

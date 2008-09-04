@@ -1,5 +1,7 @@
 open Server_framework ;;
-open Net_utils ;;   
+open Net_utils ;;
+
+exception DP_Server_Timeout ;;
 
 (* Extract if context id is currently sat.  Parse through
  * annoying messages.
@@ -33,12 +35,21 @@ let verify ic oc =
   (*print_endline "dp server begin";*)
   begin
     try
+      ignore (Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise DP_Server_Timeout)));
+      ignore (Unix.alarm (Config.get_value_int "timeout_time"));
       let input = get_input ic in
       Config.print ("dp got input: " ^ input); (* input contains its own endline. *)
       Ci_yices.init ();
       let id = Ci_yices.new_context () in
       Ci_yices.send id input;
-      Ci_yices.wait id;
+      begin
+	try
+	  Ci_yices.wait id
+	with
+	    ex ->
+	      Ci_yices.kill id;
+	      raise ex
+      end;
       let (response, counterexample_opt) = getresponse id in
       Ci_yices.delete_context id;
       assert ((response = "sat") = (Utils.is_some counterexample_opt));
@@ -56,6 +67,7 @@ let verify ic oc =
 	  end 
   end;
   (*print_endline "dp server end";*)
+  Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
   flush oc ;;
 
 let start_dp_server () =

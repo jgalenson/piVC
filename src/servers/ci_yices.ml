@@ -129,3 +129,7 @@ let reset_context i =
   Mutex.lock managers_lock;
   managers.(i) <- Some (create ());
   Mutex.unlock managers_lock
+
+let kill i =
+  let m = get i in
+  Unix.kill m.pid Sys.sigkill

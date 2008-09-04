@@ -59,7 +59,7 @@ let send_error_notification message =
                 let to_addrs = get_list_of_comma_delimited_strings to_addrs_config_str in
                   send_email "piVC" "nobody@nobody.com" to_addrs [] "piVC exception" message
               end
-    end
+    end ;;
       
 let email_heading str = 
   str ^ "\n" ^ (Str.global_replace (Str.regexp ".") "-" str) ^ "\n"

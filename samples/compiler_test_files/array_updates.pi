@@ -2,12 +2,29 @@
  * If you put in a lot more of these lines, we slot down a lot.
  */
 
-@pre true
-@post true
-void foo() {
-	int[] x;
+@pre |arr| > 0
+@post rv[0] = 42
+int[] foo(int[] arr) {
+	int[] x := arr;
 	x[0] := x[0] + 1;
 	x[0] := x[0] + 1;
 	x[0] := x[0] + 1;
 	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	x[0] := x[0] + 1;
+	return x;
 }

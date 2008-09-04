@@ -28,17 +28,15 @@ let compile_thread (sock, server_fun, cli_addr) =
     if Config.is_main_server () then
       Logger.log_info msg;
   in
-    go_message ("Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ ".");
-    let inchan = Unix.in_channel_of_descr sock
-    and outchan = Unix.out_channel_of_descr sock in
-      let start_time = Unix.gettimeofday () in
-      server_fun inchan outchan ;
-      (*close_in inchan;
-        close_out outchan;*)
-      Unix.close sock;
-      let end_time = Unix.gettimeofday () in
-      let elapsed_secs = end_time -. start_time in
-      go_message ("Finished processing network request from " ^ (string_of_sockaddr cli_addr) ^ " in " ^ string_of_float (Utils.round elapsed_secs 2) ^ " seconds.")
+  go_message ("Accepted network request from " ^ (string_of_sockaddr cli_addr) ^ ".");
+  let inchan = Unix.in_channel_of_descr sock in
+  let outchan = Unix.out_channel_of_descr sock in
+  let start_time = Unix.gettimeofday () in
+  server_fun inchan outchan ;
+  Unix.close sock;
+  let end_time = Unix.gettimeofday () in
+  let elapsed_secs = end_time -. start_time in
+  go_message ("Finished processing network request from " ^ (string_of_sockaddr cli_addr) ^ " in " ^ string_of_float (Utils.round elapsed_secs 2) ^ " seconds.") ;;
         
 let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
@@ -47,24 +45,30 @@ let establish_server (server_fun: in_channel -> out_channel -> unit) sockaddr =
   Unix.listen sock max_connections;
   try
     while true do
-      let (s, cli_addr) = Unix.accept sock in
-      if Config.is_dp_server () then
-	match Unix.fork () with
-	  | 0 ->
-	      if Unix.fork () <> 0 then exit 0 ;
-	      compile_thread (s, server_fun, cli_addr);
-	      exit 0
-	  | id ->
-	      Unix.close s;
-	      ignore (Unix.waitpid [] id)
-      else
-        ignore (Thread.create compile_thread (s, server_fun, cli_addr))
+      try
+	let (s, cli_addr) = Unix.accept sock in
+	if Config.is_dp_server () then
+	  match Unix.fork () with
+	    | 0 ->
+		if Unix.fork () <> 0 then exit 0 ;
+		compile_thread (s, server_fun, cli_addr);
+		exit 0
+	    | id ->
+		Unix.close s;
+		ignore (Unix.waitpid [] id)
+	  else
+            ignore (Thread.create compile_thread (s, server_fun, cli_addr))
+      with
+	  Unix.Unix_error(Unix.EINTR, "accept", _) ->
+	    (* If we get a timeout, it throws one of these even if we already handle it.  So we ignore this. *)
+	    ignore ()
     done
   with
-    Sys.Break -> (* Clean up on exit. *)
-      Logger.log_info ("Closing " ^ get_server_type_str () ^ "server on " ^ (string_of_sockaddr sockaddr) ^ ".");
-      Unix.close sock
-
+      Sys.Break -> (* Clean up on exit. *)
+	Logger.log_info ("Closing " ^ get_server_type_str () ^ "server on " ^ (string_of_sockaddr sockaddr) ^ ".");
+	Unix.close sock
+      
+	
 let start_server serv_fun port =
   let my_address = Unix.inet_addr_any in
   let msg = "Starting " ^ get_server_type_str () ^ "server on " ^ (string_of_inet_addr_port my_address port) ^ "." in

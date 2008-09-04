@@ -26,3 +26,4 @@ val send : id -> string -> unit
 val wait : id -> unit
 val recv : id -> string
 
+val kill : id -> unit
