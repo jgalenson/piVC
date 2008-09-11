@@ -607,7 +607,10 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
      * inserted to provide some basic IDE tabbing support.
      */
     public class HighLightedDocument extends DefaultStyledDocument {
+
+    	@Override
         public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+    		System.out.println("insert");
         	/*
         	 * If the user enters a newline, we want to tab them in relative
         	 * to the previous line.  If they press enter after typing a '{',
@@ -659,6 +662,7 @@ public class TextPaneWithSyntaxHighlighting extends JTextPane {
         		insertString(0,str,a);
         }        
         
+    	@Override
         public void remove(int offs, int len) throws BadLocationException {
                 super.remove(offs, len);
                 color(offs, -len);

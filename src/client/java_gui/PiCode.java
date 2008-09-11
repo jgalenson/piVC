@@ -3,9 +3,12 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+
+import javax.swing.JEditorPane;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
@@ -20,6 +23,10 @@ import javax.swing.text.TabSet;
 import javax.swing.text.TabStop;
 import javax.swing.undo.UndoManager;
 
+import org.syntax.jedit.JEditTextArea;
+import org.syntax.jedit.tokenmarker.JavaTokenMarker;
+import org.syntax.jedit.tokenmarker.PiTokenMarker;
+
 import data_structures.Location;
 
 /**
@@ -27,7 +34,9 @@ import data_structures.Location;
  */
 //Note: syntax highlighting has temporarily been disabled. Replace the line with the commented-out line to reenable
 //public class PiCode extends JTextPane implements DocumentListener, DirtyChangedListener {
-public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
+//public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentListener, DirtyChangedListener {
+
+public class PiCode extends JEditTextArea implements DocumentListener, DirtyChangedListener {
 
 	
 	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
@@ -39,18 +48,20 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 	
 	public PiCode(PiGui pGui) {
 		super();
+		setTokenMarker(new PiTokenMarker());
 		this.piGui = pGui;
 		justLoaded = false;
 		undo = new UndoManager();
 		piGui.addDirtyChangedListener(this);
 		initCodePane();
-		setBackground(Color.WHITE);
+		//setBackground(Color.YELLOW);
 		//setTabSize(4);
 	}
 	
 	//Note: this function is only here temporarily, for debugging purposes
 	//It was taken from http://forum.java.sun.com/thread.jspa?forumID=57&threadID=585006
 	//It should be removed before the actual piVC release
+	/*
 	public void setTabSize(int charactersPerTab)
 	{
 		FontMetrics fm = getFontMetrics(getFont());
@@ -70,15 +81,25 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		StyleConstants.setTabSet(attributes, tabSet);
 		int length = getDocument().getLength();
 		getStyledDocument().setParagraphAttributes(0, length, attributes, false);
-	}	
+	}	*/
 	
 	/**
 	 * Overloaded as a hack to avoid the following bug:
 	 * Start program, load file, try to quit.  The dirty bit is true.
 	 */
-	@Override
-	public void read(Reader in, Object desc) throws IOException {
-		super.read(in, desc);
+	//@Override
+	//TODO-J: uncomment?
+	public void read(BufferedReader in, Object desc) throws IOException {
+		//super.read(in, desc);
+		String text="";
+		while(true){
+			String currLine=in.readLine();
+			if(currLine==null){
+				break;
+			}
+			text+=currLine+"\n";
+		}
+		setText(text);
 		justLoaded = true;
 		//setTabSize(4);
 	}
@@ -136,29 +157,32 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 			highlightSingleLocation(location, hlp);
 	}
 	
+
 	/**
 	 * Highlights a single location.
 	 */
 	private void highlightSingleLocation(Location location, DefaultHighlighter.DefaultHighlightPainter hlp) {
 		highlightRange(location.getStartByte(), location.getEndByte(), hlp);
 	}
-
+	
+	//TODO-J: uncomment?
 	/**
 	 * Highlights a single location.
 	 */
 	private void highlightRange(int start, int end, DefaultHighlighter.DefaultHighlightPainter hlp) {
-        try {
-        	getHighlighter().addHighlight(start, end, hlp);
-		} catch (BadLocationException e) {
-			e.printStackTrace();
-		}
+        //try {
+        	//getHighlighter().addHighlight(start, end, hlp);
+		//} catch (BadLocationException e) {
+		//	e.printStackTrace();
+		//}
 	}
 	
+	//TODO-J: uncomment?
 	/**
 	 * Removes all current highlighting.
 	 */
 	public void removeAllHighlights() {
-		getHighlighter().removeAllHighlights();
+		//getHighlighter().removeAllHighlights();
 	}
 	
 	/**
@@ -257,13 +281,14 @@ public class PiCode extends TextPaneWithSyntaxHighlighting implements DocumentLi
 		getDocument().removeDocumentListener(this);
 	}
 	
+	//TODO-J: uncomment?
 	/**
 	 * Disable line wrapping.
 	 */
-	@Override
-	public boolean getScrollableTracksViewportWidth() {
-		return false;
-	}
+	//@Override
+	//public boolean getScrollableTracksViewportWidth() {
+	//	return false;
+	//}
 	
 	/**
 	 * Fixes ugly bug with an empty text pane and no line wrapping.
