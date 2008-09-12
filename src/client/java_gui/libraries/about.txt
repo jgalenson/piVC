@@ -1,0 +1,3 @@
+Library jar files go here. They are automatically un-jared and then re-jared into the jar file along with anything else.
+
+DO NOT DELETE THIS FILE. It acts as a placeholder. The Makefile dies if this directory is empty.

@@ -14,9 +14,11 @@ all : gui executable
 opt : gui executable_opt
 
 #Currently, the script only copies jpgs into the jar, so this needs to be changed if new types of images are added.
+#If you ever want to use external jar libraries, add -classpath java_gui:java_gui/libraries/* to the JAVAC line.
+
 gui :
 	mkdir -p temp_files_for_compilation
-	$(JAVAC) -d temp_files_for_compilation -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java
+	$(JAVAC) -d temp_files_for_compilation -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java java_gui/org/syntax/jedit/*.java java_gui/org/syntax/jedit/tokenmarker/*.java
 	cd temp_files_for_compilation; jar xf ../java_gui/libraries/*
 	mkdir -p temp_files_for_compilation/images
 	cp java_gui/images/*.jpg temp_files_for_compilation/images

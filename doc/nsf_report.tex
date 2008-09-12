@@ -1,0 +1,48 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{verbatim}
+\usepackage{graphicx}
+
+\begin{document}
+
+\author{Summarizes the work done by Jason Auerbach and Joel Galenson}
+\title{piVC Report}
+\date{July 2008}
+\maketitle
+
+\section{About piVC}
+piVC is a \textit{verifying compiler}. It compiles \textit{annotated} (otherwise known as \textit{specified}) programs written a C-like languaged called \textit{pi}. Specified programs contain the standard program text, as well as additional text that is used to specify properties of the program at various points in its execution. \textit{piVC} uses this additional text to attempt to prove that the specified properties hold for all possible inputs to the program. piVC can also be used to prove \textit{total correctness} of a program. Total correctness asserts that, given input constraints specified by the user, the program meets the given specification properties \textit{and} is guaranteed to terminate. 
+
+To specify a pi program, the user must provide annotations reflecting the desired properties at function preconditions, postconditions, and loops. For example, if a user wanted to prove that a function sorts an array, he would likely have an empty precondition, a postcondition that expresses the fact that the array is sorted, and loop conditions that specify the partial degree of sorting that would be present at that point in the program's execution. An example of such a program is included in Figure \ref{example_program}.
+
+piVC accompanies the textbook \textit{The Calculus of Computation}, by Aaron Bradley and Zohar Manna. Using piVC, students can apply the techniques learned in \textit{The Calculous of Computation} to solve real verification problems. piVC is being released under the GNU General Public License.
+
+\section{How piVC Works}
+piVC begins a compilation by breaking up a program into a finite number of \textit{basic paths}. Each basic path begins at either a function precondition or a loop annotation, and ends at a function postcondition, loop annotation, or an assertion. The executation of a program follows a chain of basic paths. Each basic path begins and ends at an annotation, so the verification of the program can be reduced to the verification of each individual basic path. For each path, the compiler seeks to determine whether the annotation at the beginning of the path, combined with the instructions on the path, logically implies the annotation at the end of the path. If this is the case for all basic paths, then the program is deemed \textit{partially correct}. Partial correctness states that if the program terminates, then the specified properties will hold. To prove \textit{total correctness}, the user can provide ranking functions that show that the program is guaranteed to terminate.
+
+\section{Work Done by Jason Auerbach and Joel Galenson}
+We rewrote piVC from the ground-up, giving it a more extensible artictecture, a flexible client/server setup that makes it easier for instructors to deploy piVC to all students in their class in a platform-independent way, and many new features and technologies. The new features include support for proving total correctness (i.e. proving termination), the displaying of counter examples for basic paths that are invalid, and the ability to find an ``inductive core'' (an inductive subset of conjuncts) for invalid annotations. We are currently working on providing an API for static analyses, as well as adding language and verifier support for user-defined classes. Once this has been implemented, users will be able to write and verify pi programs involving more complex data types, such as sets and hashtables.
+
+\begin{figure}
+\begin{verbatim}
+@pre  true
+@post forall ix. (0 <= ix && ix < |rv| -> rv[ix] >= 0)
+int[] abs(int[] a_0){
+  int[] a := a_0;
+  for
+    @ forall ix. (0 <= ix && ix < i -> a[ix] >= 0)
+  (int i := 0; i < |a|; i := i + 1){
+    if (a[i] < 0) {
+      a[i] := -a[i];
+    }
+  }
+  return a;
+}
+\end{verbatim}
+\caption{An example of a verified function written in the \textit{pi} language. This program returns the absolute value of an array (i.e. each element in the returned array is a non-negative version of the corresponding element in the input array). It is specified in a way that allows \textit{piVC} to formally prove its partial correctness.}
+\label{example_program}
+\end{figure}
+
+\end{document}
