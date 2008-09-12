@@ -13,8 +13,8 @@ all : gui executable
 
 opt : gui executable_opt
 
-#Currently, the script only copies jpgs into the jar, so this needs to be changed if new types of images are added.
-#If you ever want to use external jar libraries, add -classpath java_gui:java_gui/libraries/* to the JAVAC line.
+#Currently, the script only copies jpgs and pngs into the jar, so this needs to be changed if new types of images are added.
+
 
 gui :
 	mkdir -p temp_files_for_compilation
