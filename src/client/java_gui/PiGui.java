@@ -18,6 +18,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.undo.UndoManager;
 import javax.xml.parsers.DocumentBuilder;
@@ -162,6 +163,9 @@ public class PiGui extends JFrame {
 		if (!saveAndConfirmIfDirty())
 			return;
 		dispose();
+		//I'm not sure why the following line is necessary, but if it's not included,
+		//the process clings around even after it's been exited
+		System.exit(0);
 	}
 
 	/**
@@ -727,11 +731,16 @@ public class PiGui extends JFrame {
 		JPanel codePanel = new JPanel();
 
 		piCode = new PiCode(this);
-		JScrollPane codeScrollPane = new JScrollPane(piCode);
 
-		codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+		piCode.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+
+		//JScrollPane codeScrollPane = new JScrollPane(piCode);
+
+		//codeScrollPane.setPreferredSize(new Dimension(DEFAULT_WIDTH / 2, DEFAULT_HEIGHT));
+		
 		codePanel.setLayout(new GridLayout(1, 1));
-		codePanel.add(codeScrollPane);
+
+		codePanel.add(piCode);
         codePanel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createTitledBorder("Code"),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)));
@@ -856,6 +865,7 @@ public class PiGui extends JFrame {
 		});
 		pack();
 		setVisible(true);
+		piCode.requestFocus();
 	}
 	
 	/**

@@ -80,7 +80,7 @@ public class SyntaxStyle
 		lastStyledFont = new Font(font.getFamily(),
 			(bold ? Font.BOLD : 0)
 			| (italic ? Font.ITALIC : 0),
-			font.getSize());
+			font.getSize());		
 		return lastStyledFont;
 	}
 

@@ -47,8 +47,8 @@ public class PiTokenMarker extends CTokenMarker
 			piKeywords.add("false",Token.LITERAL2);
 			piKeywords.add("@",Token.LABEL);
 			piKeywords.add("#",Token.LABEL);
-			piKeywords.add("pre",Token.LABEL);
-			piKeywords.add("post",Token.LABEL);
+			piKeywords.add("@pre",Token.LABEL);
+			piKeywords.add("@post",Token.LABEL);
 			piKeywords.add("forall",Token.KEYWORD1);
 			piKeywords.add("exists",Token.KEYWORD1);
 			piKeywords.add("sorted",Token.KEYWORD1);

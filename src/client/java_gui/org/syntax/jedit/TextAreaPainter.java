@@ -11,6 +11,7 @@
 
 package org.syntax.jedit;
 
+import org.syntax.jedit.JEditTextArea.HighlightLocation;
 import org.syntax.jedit.tokenmarker.*;
 import javax.swing.ToolTipManager;
 import javax.swing.text.*;
@@ -499,6 +500,8 @@ public class TextAreaPainter extends JComponent implements TabExpander
 	protected int tabSize;
 	protected FontMetrics fm;
 
+	//Note from Jason Auerbach: this is really the way our custom highlighting should be done. In the future
+	//we might want to use their official system as opposed to our own.
 	protected Highlight highlights;
 
 	protected void paintLine(Graphics gfx, TokenMarker tokenMarker,
@@ -563,7 +566,7 @@ public class TextAreaPainter extends JComponent implements TabExpander
 		y += fm.getHeight();
 		x = SyntaxUtilities.paintSyntaxLine(currentLine,
 			currentLineTokens,styles,this,gfx,x,y);
-
+		
 		if(eolMarkers)
 		{
 			gfx.setColor(eolMarkerColor);
@@ -573,10 +576,20 @@ public class TextAreaPainter extends JComponent implements TabExpander
 
 	protected void paintHighlight(Graphics gfx, int line, int y)
 	{
-		if(line >= textArea.getSelectionStartLine()
-			&& line <= textArea.getSelectionEndLine())
-			paintLineHighlight(gfx,line,y);
+		
+		boolean lineIsActive = line >= textArea.getSelectionStartLine() && line <= textArea.getSelectionEndLine();
+		
+		if(lineIsActive){
+			paintActiveLineHighlight(gfx,line,y);
+		}
+		
+		paintCustomHighlights(gfx,line,y);
 
+		if(lineIsActive){
+			paintSelectedTextHighlight(gfx,line,y);
+		}
+		
+		
 		if(highlights != null)
 			highlights.paintHighlight(gfx,line,y);
 
@@ -587,24 +600,60 @@ public class TextAreaPainter extends JComponent implements TabExpander
 			paintCaret(gfx,line,y);
 	}
 
-	protected void paintLineHighlight(Graphics gfx, int line, int y)
+	
+	protected void paintCustomHighlights(Graphics gfx, int line, int y)
 	{
+		for(HighlightLocation h:textArea.highlights){
+			int startRow = h.l.getStartRow();
+			int endRow = h.l.getEndRow();
+			if(line>=startRow && line<=endRow){
+				int startCol;
+				if(line>startRow){
+					startCol=0;
+				}else{
+					startCol=h.l.getStartCol();
+				}
+				int endCol;
+				if(line<endRow){
+					endCol=textArea.getLineLength(line);
+				}else{
+					endCol=h.l.getEndCol();
+				}
+				//System.out.println(endRow + " " + endCol);
+				int height = fm.getHeight();
+				int yStart = y + fm.getLeading() + fm.getMaxDescent();
+				gfx.setColor(h.c);
+				int xStart = textArea._offsetToX(line,startCol);
+				int xFinish = textArea._offsetToX(line,endCol);
+				gfx.fillRect(xStart,yStart,xFinish-xStart,height);
+			}
+		}
+	}	
+
+	protected void paintActiveLineHighlight(Graphics gfx, int line, int y){
 		int height = fm.getHeight();
 		y += fm.getLeading() + fm.getMaxDescent();
 
-		int selectionStart = textArea.getSelectionStart();
-		int selectionEnd = textArea.getSelectionEnd();
-
-		if(selectionStart == selectionEnd)
-		{
+		if(textArea.getSelectionStartLine() == textArea.getSelectionEndLine()){
 			if(lineHighlight)
 			{
 				gfx.setColor(lineHighlightColor);
 				gfx.fillRect(0,y,getWidth(),height);
 			}
 		}
-		else
-		{
+	}
+
+	
+	protected void paintSelectedTextHighlight(Graphics gfx, int line, int y)
+	{
+		
+		int height = fm.getHeight();
+		y += fm.getLeading() + fm.getMaxDescent();
+
+		int selectionStart = textArea.getSelectionStart();
+		int selectionEnd = textArea.getSelectionEnd();
+
+		if(selectionStart != selectionEnd){
 			gfx.setColor(selectionColor);
 
 			int selectionStartLine = textArea.getSelectionStartLine();

@@ -39,8 +39,8 @@ import data_structures.Location;
 public class PiCode extends JEditTextArea implements DocumentListener, DirtyChangedListener {
 
 	
-	public static DefaultHighlighter.DefaultHighlightPainter yellowHP = new DefaultHighlighter.DefaultHighlightPainter(Color.YELLOW);
-	public static DefaultHighlighter.DefaultHighlightPainter redHP = new DefaultHighlighter.DefaultHighlightPainter(Color.RED);
+	public static Color yellowHP = Color.YELLOW;
+	public static Color redHP = Color.RED;
 	
 	private PiGui piGui;
 	private boolean justLoaded;
@@ -109,6 +109,7 @@ public class PiCode extends JEditTextArea implements DocumentListener, DirtyChan
 	 */
 	private void initCodePane() {
 		// Listen for edits for undo.
+		
 		getDocument().addUndoableEditListener(new UndoableEditListener() {
 		    public void undoableEditHappened(UndoableEditEvent e) {
 		    	//style changes are done automatically by the text pane. it doesn't make sense to undo them
@@ -123,66 +124,56 @@ public class PiCode extends JEditTextArea implements DocumentListener, DirtyChan
 			public void caretUpdate(CaretEvent e) {
 			    int dot = e.getDot();
 			    int mark = e.getMark();
-			    if (dot == mark) // no selection
+			    if (dot == mark){ // no selection
 			    	piGui.codeIsSelected(false);
-			    else // selection
+			    }
+			    else{ // selection
 			    	piGui.codeIsSelected(true);
+			    }
+		    	removeAllHighlights();
 			}
 		});
+		/*
 		// Listen for clicks so we can remove highlighting.
 		addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
+				System.out.println("Here3");
 				if (e.getButton() != MouseEvent.BUTTON1)
 					return;
 				removeAllHighlights();
 			}
-		});
+		});*/
 	}
 	
 	/**
 	 * Clears all current highlights and highlights the given location.
 	 */
-	public void highlight(Location location, DefaultHighlighter.DefaultHighlightPainter hlp) {
-		removeAllHighlights();
-		highlightSingleLocation(location, hlp);
+	public void highlight(Location location, Color c) {
+		highlights.clear();
+		highlights.add(new HighlightLocation(location,c));
+		repaint();
 	}
 	
 	/**
 	 * Clears all current highlights and highlights the given locations.
 	 */
-	public void highlight(ArrayList<Location> locations, DefaultHighlighter.DefaultHighlightPainter hlp) {
-		removeAllHighlights();
-		for (Location location: locations)
-			highlightSingleLocation(location, hlp);
+	public void highlight(ArrayList<Location> locations, Color c) {
+		highlights.clear();
+		for (Location location: locations){
+			highlights.add(new HighlightLocation(location,c));
+		}
+		repaint();
 	}
-	
 
-	/**
-	 * Highlights a single location.
-	 */
-	private void highlightSingleLocation(Location location, DefaultHighlighter.DefaultHighlightPainter hlp) {
-		highlightRange(location.getStartByte(), location.getEndByte(), hlp);
-	}
-	
-	//TODO-J: uncomment?
-	/**
-	 * Highlights a single location.
-	 */
-	private void highlightRange(int start, int end, DefaultHighlighter.DefaultHighlightPainter hlp) {
-        //try {
-        	//getHighlighter().addHighlight(start, end, hlp);
-		//} catch (BadLocationException e) {
-		//	e.printStackTrace();
-		//}
-	}
-	
-	//TODO-J: uncomment?
 	/**
 	 * Removes all current highlighting.
 	 */
 	public void removeAllHighlights() {
-		//getHighlighter().removeAllHighlights();
+		if(highlights.size()>0){
+			highlights.clear();
+			repaint();
+		}
 	}
 	
 	/**
@@ -233,21 +224,21 @@ public class PiCode extends JEditTextArea implements DocumentListener, DirtyChan
 	 * gets called, and we want to ignore that.
 	 */
 	public void changedUpdate(DocumentEvent e) {
+		updateScrollBars();
 		if (justLoaded) {
 			justLoaded = false;
 		} else {
 			piGui.setDirty(true);
-			removeDocumentChangeListener();
 		}
-	}
+	}		
 
 	/**
 	 * When something has changed, set the dirty bit to true
 	 * and remove ourselves as listening for more changes.
 	 */
 	public void insertUpdate(DocumentEvent e) {
+		updateScrollBars();
 		piGui.setDirty(true);
-		removeDocumentChangeListener();
 	}
 
 	/**
@@ -255,8 +246,10 @@ public class PiCode extends JEditTextArea implements DocumentListener, DirtyChan
 	 * and remove ourselves as listening for more changes.
 	 */
 	public void removeUpdate(DocumentEvent e) {
+		updateScrollBars();
+		//TODO: this is a clumsy way to update the scroll bars because it iterates over ever line. if piVC is
+		//ever used with large files, this might pose a problem
 		piGui.setDirty(true);
-		removeDocumentChangeListener();
 	}
 
 	public void dirtyChanged(boolean dirty) {

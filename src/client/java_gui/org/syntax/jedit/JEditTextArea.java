@@ -10,14 +10,20 @@
 package org.syntax.jedit;
 
 import org.syntax.jedit.tokenmarker.*;  
+
+import data_structures.Location;
+
 import javax.swing.event.*;
 import javax.swing.text.*;
 import javax.swing.undo.*;
 import javax.swing.*;
+
 import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.awt.*;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
 
 /**
@@ -50,7 +56,7 @@ import java.util.Vector;
  * @author Slava Pestov
  * @version $Id: JEditTextArea.java,v 1.36 1999/12/13 03:40:30 sp Exp $
  */
-public class JEditTextArea extends JComponent
+public class JEditTextArea extends JComponent implements MouseWheelListener
 {
 	/**
 	 * Adding components with this name to the text area will place
@@ -73,11 +79,13 @@ public class JEditTextArea extends JComponent
 	 */
 	public JEditTextArea(TextAreaDefaults defaults)
 	{
+
 		// Enable the necessary events
 		enableEvents(AWTEvent.KEY_EVENT_MASK);
 
 		// Initialize some misc. stuff
 		painter = new TextAreaPainter(this,defaults);
+
 		documentHandler = new DocumentHandler();
 		listenerList = new EventListenerList();
 		caretEvent = new MutableCaretEvent();
@@ -89,7 +97,10 @@ public class JEditTextArea extends JComponent
 		setLayout(new ScrollLayout());
 		vertical = new JScrollBar(JScrollBar.VERTICAL);
 		horizontal = new JScrollBar(JScrollBar.HORIZONTAL);
-		add(CENTER,painter);
+		Box borderBox = new Box(0);
+		borderBox.add(painter);
+		borderBox.setBorder(BorderFactory.createEtchedBorder());
+		add(CENTER,borderBox);
 		add(RIGHT,vertical);
 		add(BOTTOM,horizontal);
 
@@ -114,6 +125,10 @@ public class JEditTextArea extends JComponent
 
 		popup = defaults.popup;
 
+		highlights = new HashSet<HighlightLocation>();
+		
+		addMouseWheelListener(this);
+		
 		// We don't seem to get the initial focus event?
 		focusedComponent = this;
 	}
@@ -233,6 +248,7 @@ public class JEditTextArea extends JComponent
 	 * if the number of lines in the document changes, or when the
 	 * size of the text are changes.
 	 */
+	
 	public void updateScrollBars()
 	{
 		if(vertical != null && visibleLines != 0)
@@ -242,16 +258,24 @@ public class JEditTextArea extends JComponent
 			vertical.setBlockIncrement(visibleLines);
 		}
 
-		int width = painter.getWidth();
+		int rhsBufferPx=3;
+		int width = painter.getWidth() + rhsBufferPx;
 		if(horizontal != null && width != 0)
 		{
-			horizontal.setValues(-horizontalOffset,width,0,width * 5);
-			horizontal.setUnitIncrement(painter.getFontMetrics()
-				.charWidth('w'));
-			horizontal.setBlockIncrement(width / 2);
+			//note from Jason Auerbach: the last arg used to be width*5. i have no idea why...
+			horizontal.setValues(-horizontalOffset,width,0,getMaxWidth());
+			//System.out.println(-horizontalOffset + " " + width + " " + 0 + " " + getMaxWidth());
+			horizontal.setUnitIncrement(painter.getFontMetrics().charWidth('w'));
 		}
 	}
-
+	public int getMaxWidth(){
+		int maxNumChars=0;
+		for(int i=0; i<getLineCount(); ++i){
+			maxNumChars=Math.max(maxNumChars, getLineLength(i));
+		}
+		return (maxNumChars+1)*painter.getFontMetrics().charWidth('w');
+	}
+	
 	/**
 	 * Returns the line displayed at the text area's origin.
 	 */
@@ -760,7 +784,7 @@ public class JEditTextArea extends JComponent
 		else
 			return lineElement.getEndOffset();
 	}
-
+	
 	/**
 	 * Returns the length of the specified line.
 	 * @param line The line
@@ -1539,6 +1563,8 @@ public class JEditTextArea extends JComponent
 			inputHandler.keyReleased(evt);
 			break;
 		}
+		//note from Jason Auerbach: I added the next line so the keyboard accelerators work
+		super.processKeyEvent(evt);
 	}
 
 	// protected members
@@ -1591,6 +1617,17 @@ public class JEditTextArea extends JComponent
 	protected boolean overwrite;
 	protected boolean rectSelect;
 
+	public class HighlightLocation{
+		Location l;
+		Color c;
+		public HighlightLocation(Location l, Color c){
+			this.l = l;
+			this.c = c;
+		}
+	}
+	
+	protected Set<HighlightLocation> highlights;
+	
 	protected void fireCaretEvent()
 	{
 		Object[] listeners = listenerList.getListenerList();
@@ -2132,5 +2169,9 @@ public class JEditTextArea extends JComponent
 		caretTimer = new Timer(500,new CaretBlinker());
 		caretTimer.setInitialDelay(500);
 		caretTimer.start();
+	}
+
+	public void mouseWheelMoved(MouseWheelEvent arg0) {
+		vertical.setValue(vertical.getValue()+arg0.getUnitsToScroll());
 	}
 }

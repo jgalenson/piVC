@@ -32,7 +32,54 @@ public class SyntaxDocument extends PlainDocument
 	{
 		return tokenMarker;
 	}
+	
+	/*
+	String getNoWordSep(){
+		System.out.println(getProperty("noWordSep"));
+		return "";
+		
+	}*/
+	
+  	@Override
+    public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+    	/*
+    	 * If the user enters a newline, we want to tab them in relative
+    	 * to the previous line.  If they press enter after typing a '{',
+    	 * we indent them one extra tab.  Otherwise, we indent them to
+    	 * the level of the previous line.  Note that we count spaces
+    	 * as indentation levels as well.
+    	 */
+    	if ("\n".equals(str)) {
+    		String tabs = getLineTabString(offs - 1);
+    		if (offs >= 1 && getText(offs -1, 1).equals("{"))
+    			tabs += "\t";
+            super.insertString(offs, str + tabs, a);
+        /*
+         * If the user enters a '}', we unindent it by one tab.
+         */
+    	} else if ("}".equals(str) && offs >= 1 && getText(offs -1, 1).equals("\t")) {
+    		remove(offs - 1, 1);
+    		super.insertString(offs - 1, str, a);
+    	} else {
+    		super.insertString(offs, str, a);
+    	}
+    }
 
+  	
+    /**
+     * Returns a string consisting of all the whitespace (tabs or spaces)
+     * at the beginning of the line starting at offs.
+     */
+    private String getLineTabString(int offs) throws BadLocationException {
+		String text = getText(0, getLength());
+		int lastNewlinePos = text.lastIndexOf('\n', offs);
+		String tabs = "";
+		//if (lastNewlinePos != -1) //Note from Jason: I commented this out so that indenting works correctly on from line 0 to line 1
+			for (int i = lastNewlinePos + 1; i < text.length() && (text.charAt(i) == '\t' || text.charAt(i) == ' '); i++)
+				tabs += text.charAt(i);
+		return tabs;
+    }
+	
 	/**
 	 * Sets the token marker that is to be used to split lines of
 	 * this document up into tokens. May throw an exception if
