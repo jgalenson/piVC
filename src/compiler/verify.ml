@@ -195,105 +195,106 @@ let add_to_cache cache key result =
    or returns whatever exception was thrown. *)
 let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
   (*let begin_time = Unix.time () in*)
-    try
-      let vc = instantiate_predicates vc_with_preds program in      
+  try
+    let vc = instantiate_predicates vc_with_preds program in      
       (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
       Mutex.lock cache_lock;
       if (Hashtbl.mem vc_cache unique_vc_str) then
         begin
-        let (result,_) = Hashtbl.find vc_cache unique_vc_str in
-        Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
-        Mutex.unlock cache_lock;
-        Config.print ("Loaded from cache: " ^ unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
-        Normal (fst result, snd result)
-      end
-    else
-      begin (* Otherwise, get answer from dp server. *)
-      Mutex.unlock cache_lock;
-      (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
-      (*let negated_vc = (Not (get_dummy_location (), vc)) in*)
-      (*let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in*)
-      (*let vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp vc in*)
-      (*let vc_no_quants_array_lengths_geq_0 = (*Verification_conditions.add_array_length_greater_than_0_to_expr*) vc_no_quants in*)
-      (*let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in*)
-
-      (*Utils.debug_print_time_diff begin_time (Unix.time ()) "before vc final: ";*)
-
-      (*let before_vc_time = Unix.time () -. begin_time in*)
-        
-        (*let before_final_vc_time = Unix.time () in*)
-
-        let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
-
-        (*let after_vc_time = Unix.time () -. begin_time in*)
-        (*let vc_time = Unix.time () -. before_final_vc_time in*)
-          
-          (*print_endline ("before vc time: " ^ (string_of_float before_vc_time) ^ "\nafter vc time : " ^ (string_of_float after_vc_time) ^ "\nvc time : " ^ (string_of_float vc_time) ^ "\n\n\n\n");*)
-          
-
-(*  
-  print_endline ("*********************************");
-  print_endline ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf);
-  print_endline ("Index set is as follows:");
-  let print_expr exp = print_endline (Expr_utils.guaranteed_unique_string_of_expr exp) in
-    List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
-  print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quants ^ "\n");
-  (*print_string ("And got a response of: " ^ response ^ "\n");*)
-  print_endline ("*********************************");
-*) 
-
-
-
-      let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
-      let (sock, inchan, outchan) =
-        let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
-        let server_addr_and_port = Config.get_value "dp_server_address" in
-          begin
-            try
-              let index_of_colon = String.index server_addr_and_port ':' in
-              let server_addr = String.sub server_addr_and_port 0 index_of_colon in
-              let server_port = int_of_string (String.sub server_addr_and_port (index_of_colon+1) ((String.length server_addr_and_port)-index_of_colon-1)) in
-                Unix.connect sock (Unix.ADDR_INET(Unix.inet_addr_of_string server_addr, server_port))
-            with
-                Invalid_argument(_) -> raise Malformatted_DP_Server_Address
-              | Not_found -> raise Malformatted_DP_Server_Address
-              | Failure("int_of_string") -> raise Malformatted_DP_Server_Address
-          end
-          ;
-          let inchan = Unix.in_channel_of_descr sock in
-          let outchan = Unix.out_channel_of_descr sock in
-            (sock, inchan, outchan)
-      in
-        Net_utils.send_output outchan vc;
-        flush outchan;
-        let response = Net_utils.get_input inchan in  
-          Unix.close sock;
-          (* A VC is valid iff its negation is unsatisfiable. *)
-          let result =
-            if (response = "unsat") then
-	      (Valid, None)
-            else if (response = "unknown") then
-	      (Unknown, None)
-            else if (response = "sat") then
-	      begin
-	        let counterexample_str = Net_utils.get_input inchan in
-		let counterexample = Counterexamples.parse_counterexample counterexample_str rev_var_names in
-	        (Invalid, Some (counterexample))
-	      end
-	    else if (response = "error") then
-	      begin
-	        let error_msg = Net_utils.get_input inchan in
-	          raise (Dp_server_exception error_msg)
-	      end
-            else
-	      assert false
-          in
-            Mutex.lock cache_lock;
-            add_to_cache vc_cache unique_vc_str result;
+          let (result,_) = Hashtbl.find vc_cache unique_vc_str in
+            Hashtbl.replace vc_cache unique_vc_str (result, Unix.time ()); (* Update timestamp. *)
             Mutex.unlock cache_lock;
+            Config.print ("Loaded from cache: " ^ unique_vc_str ^ " is " ^ (string_of_validity (fst result)));
             Normal (fst result, snd result)
-      end
+        end
+      else
+        begin (* Otherwise, get answer from dp server. *)
+          Mutex.unlock cache_lock;
+  
+      (*Utils.debug_print_time_diff begin_time (Unix.time ()) "before vc final: ";*)
+          
+          (*let before_vc_time = Unix.time () -. begin_time in*)
+          
+          (*let before_final_vc_time = Unix.time () in*)
+          
+          let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
+            
+          (*let after_vc_time = Unix.time () -. begin_time in*)
+          (*let vc_time = Unix.time () -. before_final_vc_time in*)
+            
+          (*print_endline ("before vc time: " ^ (string_of_float before_vc_time) ^ "\nafter vc time : " ^ (string_of_float after_vc_time) ^ "\nvc time : " ^ (string_of_float vc_time) ^ "\n\n\n\n");*)
+            
+
+            
+     (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
+(*          let negated_vc = (Not (get_dummy_location (), vc)) in
+          let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in
+          let vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp vc in
+          let vc_no_quants_array_lengths_geq_0 = (*Verification_conditions.add_array_length_greater_than_0_to_expr*) vc_no_quants in
+          let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in
+            
+            print_endline ("*********************************");
+            print_endline ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf);
+            print_endline ("Index set is as follows:");
+            let print_expr exp = print_endline (Expr_utils.guaranteed_unique_string_of_expr exp) in
+              List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
+              print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quants_array_lengths_geq_0 ^ "\n");
+              (*print_string ("And got a response of: " ^ response ^ "\n");*)
+              print_endline ("*********************************");
+*)
+              
+            
+            
+          let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
+          let (sock, inchan, outchan) =
+            let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
+            let server_addr_and_port = Config.get_value "dp_server_address" in
+              begin
+                try
+                  let index_of_colon = String.index server_addr_and_port ':' in
+                  let server_addr = String.sub server_addr_and_port 0 index_of_colon in
+                  let server_port = int_of_string (String.sub server_addr_and_port (index_of_colon+1) ((String.length server_addr_and_port)-index_of_colon-1)) in
+                    Unix.connect sock (Unix.ADDR_INET(Unix.inet_addr_of_string server_addr, server_port))
+                with
+                    Invalid_argument(_) -> raise Malformatted_DP_Server_Address
+                  | Not_found -> raise Malformatted_DP_Server_Address
+                  | Failure("int_of_string") -> raise Malformatted_DP_Server_Address
+              end
+              ;
+              let inchan = Unix.in_channel_of_descr sock in
+              let outchan = Unix.out_channel_of_descr sock in
+                (sock, inchan, outchan)
+          in
+            Net_utils.send_output outchan vc;
+            flush outchan;
+            let response = Net_utils.get_input inchan in  
+              Unix.close sock;
+              (* A VC is valid iff its negation is unsatisfiable. *)
+              let result =
+                if (response = "unsat") then
+	          (Valid, None)
+                else if (response = "unknown") then
+	          (Unknown, None)
+                else if (response = "sat") then
+	          begin
+	            let counterexample_str = Net_utils.get_input inchan in
+		    let counterexample = Counterexamples.parse_counterexample counterexample_str rev_var_names in
+	              (Invalid, Some (counterexample))
+	          end
+	        else if (response = "error") then
+	          begin
+	            let error_msg = Net_utils.get_input inchan in
+	              raise (Dp_server_exception error_msg)
+	          end
+                else
+	          assert false
+              in
+                Mutex.lock cache_lock;
+                add_to_cache vc_cache unique_vc_str result;
+                Mutex.unlock cache_lock;
+                Normal (fst result, snd result)
+        end
   with
       Expr_utils.OutsideFragment -> Normal(Unknown,None)
     | ex -> Exceptional (ex)
@@ -320,7 +321,7 @@ let get_all_info program options =
           VarDecl (loc, vd) -> None
         | Predicate (loc, p) -> None
 	| FnDecl (loc, fd) -> (Some (fd, Basic_paths.generate_paths_for_func fd program options.generate_runtime_assertions))
-        | ClassDecl (loc, cd) -> assert(false) (*TODO-A: not yet implemented*)
+        | ClassDecl (loc, cd) -> None (*change this if you ever allow classes to have methods*)
     in
     (* Concatenate together functions ignoring vardecls. *)
     let map_fn all cur =
@@ -333,9 +334,9 @@ let get_all_info program options =
   in
   (* Gets the VCs for each basic path. *)
   let get_vcs (fndecl, (normal_paths, termination_paths)) =
-    let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) normal_paths in
-    let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path)) termination_paths in
-    let nonneg_vcs = Termination.get_nonnegativity_vcs fndecl in
+    let norm_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path program)) normal_paths in
+    let term_vcs = List.map (fun path -> (path, Verification_conditions.get_vc path program)) termination_paths in
+    let nonneg_vcs = Termination.get_nonnegativity_vcs fndecl program in
     (fndecl, norm_vcs, term_vcs, nonneg_vcs)
   in
   let paths = get_basic_paths program in

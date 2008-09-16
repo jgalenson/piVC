@@ -59,7 +59,8 @@ let rec parse_expr e var_names rev_var_names =
 (* Transforms an lval by renaming any identifiers in it. *)
 and parse_lval lval var_names rev_var_names = match lval with
   | NormLval (loc, id) -> NormLval (loc, rename_and_replace_id id var_names rev_var_names)
-  | ArrayLval (loc, arr, e) -> ArrayLval (loc, parse_expr arr var_names rev_var_names, parse_expr e var_names rev_var_names) ;;
+  | ArrayLval (loc, arr, e) -> ArrayLval (loc, parse_expr arr var_names rev_var_names, parse_expr e var_names rev_var_names)
+  | _ -> assert(false)
 
 (* Convert our AST to be yices-readable. *)
 let rec yices_string_of_expr e =
@@ -79,6 +80,7 @@ let rec yices_string_of_expr e =
 	  match lval with
 	    | NormLval (loc, ident) -> ident.name
 	    | ArrayLval (loc, arr, e) -> "(" ^ (ysoe arr) ^ " " ^ (ysoe e) ^ ")"
+            | _ -> assert(false)
 	end
     | Plus (loc, t1, t2) -> "(+ " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"
     | Minus (loc, t1, t2) -> "(- " ^ (ysoe t1) ^ " " ^ (ysoe t2) ^ ")"

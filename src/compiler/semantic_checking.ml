@@ -108,14 +108,13 @@ let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval err
   | NormLval(loc, id) ->
       annotate_ident id s;
       let lookupResult = Scope_stack.lookup_decl id.name s in
-      begin
-	match lookupResult with
-          | None ->
-	      let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
-	      add_error SemanticError error_msg  loc errors; ErrorType
-	  | Some(decl) -> type_of_decl decl
-      end;
-
+        begin
+	  match lookupResult with
+            | None ->
+	        let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
+	          add_error SemanticError error_msg  loc errors; ErrorType
+	    | Some(decl) -> type_of_decl decl
+        end
   | ArrayLval(loc, arr, index) ->
       let typeOfIndex = check_and_get_return_type s index errors (is_annotation, is_ranking_fn, false) in
         begin
@@ -126,13 +125,104 @@ let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval err
 		  add_error SemanticError error_msg loc errors
         end;
         let typeOfArray = check_and_get_return_type s arr errors (is_annotation, is_ranking_fn, false) in
-          match typeOfArray with
-              Array(t,loc) -> t
-            | _ ->
-                begin
-                  let error_msg = "'" ^ (string_of_expr arr) ^ "' is of type '" ^ string_of_type typeOfArray ^ "' but should be an array" in
-                    add_error SemanticError error_msg loc errors; ErrorType
-                end
+          begin
+            match typeOfArray with
+                Array(t,loc) -> t
+              | _ ->
+                  begin
+                    let error_msg = "'" ^ (string_of_expr arr) ^ "' is of type '" ^ string_of_type typeOfArray ^ "' but should be an array" in
+                      add_error SemanticError error_msg loc errors; ErrorType
+                  end
+          end
+  | InsideObject(loc,id1,id2) ->
+      let typeOfObject = check_and_get_return_type_lval (is_annotation, is_ranking_fn) s (NormLval(loc,id1)) errors in
+        match typeOfObject with
+            Identifier(id,loc) ->
+              begin
+                let lookupResult = Scope_stack.lookup_decl id.name s in
+                  begin
+	            match lookupResult with
+                        None -> ErrorType (*this indicates an error, but it's reported elsewhere*)
+	              | Some(classDecl) ->
+                          begin
+                            match classDecl with
+                                ClassDecl(loc,cd) ->
+                                  begin
+                                    let memberDecl = decl_from_class cd id2 in
+                                      match memberDecl with
+                                          None ->
+                                            begin
+                                              let error_msg = "The class '" ^ (cd.className.name) ^ "' does not have a member '" ^ id2.name ^ "'" in
+                                                add_error SemanticError error_msg loc errors; ErrorType  
+                                            end
+                                        | Some(memberDecl) -> 
+                                            begin
+                                              match memberDecl with
+                                                  VarDecl(loc,vd) -> vd.varType
+                                                | _ ->
+                                                    begin
+                                                      let error_msg = "The member '" ^ id2.name ^ "' of class '" ^ cd.className.name ^ "' is not a variable" in
+                                                        add_error SemanticError error_msg loc errors; ErrorType  
+                                                    end
+                                            end
+                                  end
+                              | _ -> assert(false)
+                          end
+                  end
+              end
+          | ErrorType -> ErrorType (*handled elsewhere*)
+          | _ ->
+              begin
+                let error_msg = "'" ^ (id1.name) ^ "' is of type '" ^ string_of_type typeOfObject ^ "' but should be an object" in
+                  add_error SemanticError error_msg loc errors; ErrorType                
+              end
+
+                  
+(*            
+  | InsideObject(loc,exp,memberIdent) ->
+      let typeOfPrefix = check_and_get_return_type s exp errors (is_annotation, is_ranking_fn, false) in
+        match typeOfPrefix with
+            Identifier(id,loc) ->
+              begin
+                let lookupResult = Scope_stack.lookup_decl id.name s in
+                  begin
+	            match lookupResult with
+                        None -> ErrorType (*this indicates an error, but it's reporated elsewhere*)
+	              | Some(classDecl) ->
+                          begin
+                            match classDecl with
+                                ClassDecl(loc,cd) ->
+                                  begin
+                                    let memberDecl = decl_from_class cd memberIdent in
+                                      match memberDecl with
+                                          None ->
+                                            begin
+                                              let error_msg = "The class '" ^ (cd.className.name) ^ "' does not have a member '" ^ memberIdent.name ^ "'" in
+                                                add_error SemanticError error_msg loc errors; ErrorType  
+                                            end
+                                        | Some(memberDecl) -> 
+                                            begin
+                                              match memberDecl with
+                                                  VarDecl(loc,vd) -> vd.varType
+                                                | _ ->
+                                                    begin
+                                                      let error_msg = "The member '" ^ memberIdent.name ^ "' of class '" ^ cd.className.name ^ "' is not a variable" in
+                                                        add_error SemanticError error_msg loc errors; ErrorType  
+                                                    end
+                                            end
+                                  end
+                              | _ -> assert(false)
+                          end
+                  end
+              end
+          | _ ->
+              begin
+                let error_msg = "'" ^ (string_of_expr exp) ^ "' is of type '" ^ string_of_type typeOfPrefix ^ "' but should be an object" in
+                  add_error SemanticError error_msg loc errors; ErrorType                
+              end
+*)
+        
+
 	
 and check_for_same_type t1 t2 loc errors = 
   if not (types_equal t1 t2) then
@@ -198,7 +288,14 @@ and check_type t scope_stack errors =
                           end
 	          end
         end
-    | Array (t, loc) -> check_type t scope_stack errors
+    | Array (t, loc) ->
+        begin
+          match t with
+              Identifier (ident, loc2) -> 
+		let error_msg = "You can't have arrays of objects. Sorry." in
+		  add_error SemanticError error_msg loc2 errors
+            | _ -> ignore()
+        end
     | Void(loc) -> ignore ()
     | ErrorType -> ignore () 
 
@@ -227,6 +324,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
               in
                 check_lhs_expr_of_assign arr
             end
+        | InsideObject(loc,obj,member) -> ignore() (*always legal*)
     in cloa lval_orig
   in
   let rec check_and_get_return_type_relational loc t1 t2 =
@@ -719,16 +817,25 @@ let check_predicate pred s errors =
     end;
   Scope_stack.exit_scope s
 
+
 let check_program program errors =
   let s = Scope_stack.create () in
   Scope_stack.enter_scope s;
   insert_decls s errors program.decls;
-  let check_decl decl = 
+
+
+  let rec check_decl decl= 
     match decl with
-	FnDecl(l, d) -> check_function d s errors
+        FnDecl(l, d) -> check_function d s errors
       | Predicate(l,p) -> check_predicate p s errors
       | VarDecl(l,v) -> check_type v.varType s errors
-      | ClassDecl(l,c) -> ignore ()
+      | ClassDecl(l,c) -> List.iter check_class_decl c.members
+          
+  and check_class_decl decl = 
+    match decl with
+      | VarDecl(l,vd) -> check_decl decl
+      | _ -> let error_msg = "Classes can only contain variables. Sorry." in
+          add_error SemanticError error_msg (location_of_decl decl) errors
   in
     List.iter check_decl program.decls;
     Scope_stack.exit_scope s

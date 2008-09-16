@@ -180,6 +180,7 @@ let generate_paths_for_func func program gen_runtime_asserts =
 		incr runtime_assertion_id
 	      end;
 	    ArrayLval(loc2, arr, index)
+        | InsideObject(loc,id1,id2) -> InsideObject(loc,id1,id2)
     and gnfe expr =
       match expr with
           Assign (loc,l, e) -> Assign(loc, gnfl l, gnfe e)

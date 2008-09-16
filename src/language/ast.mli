@@ -47,11 +47,6 @@ val create_universal_varDecl : varType -> identifier -> location -> varDecl
 val create_param_varDecl : varType -> identifier -> location -> varDecl
 
 
-type classDecl = {
-  className : identifier;
-}
-
-
 val is_integral_type : varType -> bool ;;
 
 (*val set_quantification_on_varDecl_List : varDecl list -> quantification -> unit*)
@@ -64,6 +59,7 @@ val create_length_identifier : string -> location -> identifier
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
+  | InsideObject of location * identifier * identifier
 
 and constant =
   | ConstInt of location * int
@@ -172,6 +168,14 @@ type decl =
   | FnDecl of location * fnDecl
   | Predicate of location * predicate
   | ClassDecl of location * classDecl
+and 
+  classDecl = {
+    className : identifier;
+    members : decl list;
+    location_cd : location;
+  }
+
+val decl_from_class : classDecl -> identifier -> decl option
 
 val name_of_decl : decl -> string
 

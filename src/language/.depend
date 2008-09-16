@@ -1,11 +1,10 @@
-lexer.cmi: parser.cmi 
-parser.cmi: ast.cmi 
+lexer.cmi: parser.cmo 
 scope_stack.cmi: ast.cmi 
 ast.cmo: ../utils/utils.cmi ast.cmi 
 ast.cmx: ../utils/utils.cmx ast.cmi 
-lexer.cmo: parser.cmi ../utils/config.cmi lexer.cmi 
+lexer.cmo: parser.cmo ../utils/config.cmi lexer.cmi 
 lexer.cmx: parser.cmx ../utils/config.cmx lexer.cmi 
-parser.cmo: ast.cmi parser.cmi 
-parser.cmx: ast.cmx parser.cmi 
+parser.cmo: ast.cmi 
+parser.cmx: ast.cmx 
 scope_stack.cmo: ast.cmi scope_stack.cmi 
 scope_stack.cmx: ast.cmx scope_stack.cmi 

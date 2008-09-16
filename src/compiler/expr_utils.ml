@@ -19,6 +19,7 @@ let rec array_ident_from_lval lval = match lval with
             | _ -> assert(false)
         in array_name_from_expr arr
       end
+  | InsideObject(l,e,i) -> assert(false)
 
 (* The way the user expresses array-writes is different to how the VC expresses array updates.
    As an example, observe that the following two expressions are equivilent:
@@ -35,6 +36,7 @@ let rec array_write_to_array_update lhs rhs =
             | ArrayLval(loc,arr,index) ->
                 let new_rhs = ArrayUpdate(get_dummy_location (), arr, index, rhs) in
                   array_write_to_array_update arr new_rhs 
+            | InsideObject(_,_,_) -> assert(false)
         end
     | _ -> assert(false) 
 
@@ -172,6 +174,26 @@ let sub_idents expr fn =
 	      | None -> LValue (loc, NormLval (loc, id))
 	end
     | ArrayLval (loc, arr, index) -> LValue (loc, ArrayLval (loc, sub arr, sub index))
+    | InsideObject (loc,id1,id2) ->
+        begin
+          let get_ident_sub ident = 
+            let result = fn ident in
+              match result with
+                  Some(e) ->
+                    begin
+                      match e with
+                          LValue(loc,l) ->
+                            begin
+                              match l with
+                                  NormLval(loc,ident) -> ident
+                                | _ -> assert(false)
+                            end
+                        | _ -> assert(false)
+                    end
+                | None -> ident
+          in
+            LValue(loc,InsideObject(loc,get_ident_sub id1, id2))  
+        end
   in
     sub expr ;;
 
@@ -316,6 +338,7 @@ let guaranteed_unique_string_of_expr e =
   let rec unique_string_of_lval lval = match lval with
     | NormLval (loc, s) -> id_of_identifier s
     | ArrayLval (loc, t1, t2) -> (soe t1) ^ "[" ^ (soe t2) ^ "]"
+    | InsideObject (loc, id1, id2) -> id_of_identifier id1 ^ "." ^ id_of_identifier id2
   and unique_representation_of_decl_names decls = 
     let rec construct_str decls = 
       match decls with
@@ -418,6 +441,7 @@ let get_index_set exp =
                         | Universal -> false
                     end
                 | ArrayLval(_,_,_1) -> false
+                | InsideObject(_,_,_) -> assert(false)
             end
         | Plus (loc,t1, t2) -> is_pexpr t1 && is_pexpr t2
         | Minus (loc,t1, t2) -> is_pexpr t1 && is_pexpr t2
@@ -442,6 +466,7 @@ let get_index_set exp =
                       | Universal -> true
                   end
               | ArrayLval(_,_,_1) -> false
+              | InsideObject(_,_,_) -> assert(false)
           end
       | ForAll (loc,decls,e) -> is_uvar e
       | Exists (loc,decls,e) -> is_uvar e
@@ -574,6 +599,7 @@ let get_index_set exp =
                           end
                       | Uncommitted -> (assert(not (is_uvar index));[index])
                   end
+              | InsideObject(_,_,_) -> assert(false)
           end
       | Plus (loc,t1, t2) -> process_binary_operator t1 t2
       | Minus (loc,t1, t2) -> process_binary_operator t1 t2
@@ -739,6 +765,7 @@ let rec get_calls e =
   let get_calls_lval l = match l with
     | NormLval (_, _) -> []
     | ArrayLval (l, e1, e2) -> get_calls e1 @ get_calls e2
+    | InsideObject (loc,id1,id2) -> []
   in
   match e with
   | Assign (loc,l, e) -> get_calls_lval l @ get_calls e

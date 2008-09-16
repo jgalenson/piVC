@@ -26,7 +26,7 @@ let location_union loc1 loc2 =
   if loc1==gdl() then loc2
   else if loc2==gdl() then loc1
   else
-      {
+    {
       loc_start = 
         if loc1.loc_start.pos_cnum < loc2.loc_start.pos_cnum then
           loc1.loc_start
@@ -39,8 +39,8 @@ let location_union loc1 loc2 =
         else
           loc2.loc_end
       ;
-      }
-
+    }
+      
 type identifier = {
   name: string;
   location_id: location;
@@ -124,6 +124,7 @@ let create_length_identifier name location =
 type lval =
   | NormLval of location * identifier
   | ArrayLval of location * expr * expr
+  | InsideObject of location * identifier * identifier
 
 and constant =
   | ConstInt of location * int
@@ -210,10 +211,6 @@ type fnDecl = {
 }
 let create_fnDecl name formals returnType stmtBlock preCondition postCondition rankingAnnotation location = {fnName=name; returnType = returnType; formals = formals; stmtBlock = stmtBlock; preCondition = preCondition; postCondition = postCondition; fnRankingAnnotation = rankingAnnotation; location_fd = location;}
 
-type classDecl = {
-  className : identifier;
-}
-
 type predicate = {
   predName   : identifier;
   formals_p  : varDecl list;
@@ -229,6 +226,14 @@ type decl =
   | Predicate of location * predicate
   | ClassDecl of location * classDecl
 
+and
+
+classDecl = {
+  className : identifier;
+  members : decl list;
+  location_cd : location;
+}
+
 let varDecl_of_decl decl = match decl with
     VarDecl(loc, vd) -> vd
   | _ -> raise (Error "Not a varDecl")
@@ -243,6 +248,15 @@ let name_of_decl decl =
     | FnDecl(l, d) -> d.fnName.name
     | Predicate(l,d) -> d.predName.name
     | ClassDecl(l,d) -> d.className.name
+
+
+let decl_from_class cd decl_ident = 
+  let is_match decl = (name_of_decl decl)=decl_ident.name in
+    try
+      Some(List.find is_match cd.members)
+    with
+        Not_found -> None
+
 
 let type_of_decl = function
   | VarDecl (loc, d) -> d.varType
@@ -335,6 +349,7 @@ let location_of_expr = function
 let location_of_lval lval = match lval with
   | NormLval(loc,_) -> loc
   | ArrayLval(loc,_,_) -> loc
+  | InsideObject(loc,_,_) -> loc
 
 let location_of_ranking_annotation ra = ra.location_ra ;;      
 
@@ -394,6 +409,7 @@ let get_delimited_list_of_decl_names decls delimiter =
 let rec string_of_lval lval = match lval with
   | NormLval (loc, s) -> string_of_identifier s
   | ArrayLval (loc, t1, t2) -> (string_of_expr t1) ^ "[" ^ (string_of_expr t2) ^ "]"
+  | InsideObject (loc, e, i) -> (string_of_identifier e) ^ "." ^ (string_of_identifier i)
 (* temp *)
 and string_of_constant c = match c with
    | ConstInt (loc,c) -> string_of_int c

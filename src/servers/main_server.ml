@@ -207,17 +207,15 @@ let rec compile vc_cache_and_lock ic oc =
                           end
                   end
           in
-          send_output oc (string_of_xml_node xml_to_return);
-          Config.print "Compilation completed. Response sent back to client.";
-        with ex ->
-          go_exception xml_str ex;
-      with ex ->
-        go_exception "No XML is available. The exception occured before the transmission had been fully recieved." ex
+            send_output oc (string_of_xml_node xml_to_return);
+            Config.print "Compilation completed. Response sent back to client.";
+        with ex -> go_exception xml_str ex;
+      with ex ->  go_exception "No XML is available. The exception occured before the transmission had been fully recieved." ex
   end;
-  Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
-  flush stdout;
-  flush stderr;
-  flush oc;
+    Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
+    flush stdout;
+    flush stderr;
+    flush oc;
   
 and xml_of_messages messages = 
   let messages_node = Xml_generator.create "messages" in

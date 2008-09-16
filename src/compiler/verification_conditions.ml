@@ -19,14 +19,81 @@ let get_new_length_identifier expr =
         end
     | _ -> assert(false) ;;
 
+
+
+let get_corresponding_class_decl var_ident program = 
+  let looking_for =
+    let looking_for_type = (varDecl_of_identifier var_ident).varType in
+      match looking_for_type with
+          Identifier(id,loc) -> id.name
+        | _ -> assert(false)
+  in
+  let got_it what = 
+    match what with
+        ClassDecl (loc, c) -> c.className.name=looking_for
+      | _ -> false
+  in
+    try
+      match List.find got_it program.decls with
+          ClassDecl(loc,c) -> c
+        | _ -> assert(false)
+    with Not_found -> assert(false)
+      
+let get_member_decl object_var program = 
+  match object_var with 
+      InsideObject(loc,id1,id2) ->
+        begin
+          let class_decl = get_corresponding_class_decl id1 program in
+          let got_it what = 
+            match what with
+                VarDecl(loc,v) -> v.varName.name=id2.name
+              | _ -> false
+          in
+            try
+              List.find got_it class_decl.members
+            with Not_found -> assert(false)
+        end
+    | _ -> assert(false)
+            
+
+let get_new_object_var_identifier object_var program = 
+  match object_var with 
+      InsideObject(loc,id1,id2) ->
+        begin
+          let new_ident_name = id1.name ^ "." ^ id2.name in
+          let new_ident_location = location_union id1.location_id id2.location_id in
+          let new_ident_identifier = create_identifier new_ident_name new_ident_location in
+          let new_ident_id = "__" ^ id_of_identifier id1 ^ "_" ^ id2.name in
+            
+          let member_varDecl =
+            let member_decl = get_member_decl object_var program in 
+              match member_decl with
+                  VarDecl(loc, vd) -> vd
+                | _ -> assert(false)
+          in
+            
+          let vd = create_varDecl member_varDecl.varType new_ident_identifier member_varDecl.location_vd
+          in
+            vd.var_id := Some(new_ident_id);
+            let ident = create_identifier new_ident_name new_ident_location in
+              ident.decl := Some(vd);
+              ident
+        end
+    | _ -> assert(false)
+
+
 let get_new_length_expr expr = 
   Ast.LValue(Ast.gdl(),Ast.NormLval(Ast.gdl(),get_new_length_identifier expr)) ;;
 
-let replace_length_with_var expr = 
-  let rec rlwv expr = match expr with
-      Assign(loc,f,t) -> Assign(loc,f,rlwv t)
+let replace_length_and_members_with_var expr program = 
+  let rec rlwv_lval l = match l with
+      NormLval(loc,id) -> l
+    | ArrayLval(loc,exp1,exp2) -> ArrayLval(loc,rlwv exp1, rlwv exp2)
+    | InsideObject(loc,id1,id2) -> NormLval(loc,get_new_object_var_identifier l program)
+  and rlwv expr = match expr with
+      Assign(loc,f,t) -> Assign(loc,rlwv_lval f,rlwv t)
     | Constant (loc,c) -> expr
-    | LValue (loc,l) -> expr
+    | LValue (loc,l) -> LValue(loc, rlwv_lval l)
     | Call (loc,s, el) -> (*calls should have been stripped previously, but there may still be predicates*)
         begin
           let new_args = List.map rlwv el in
@@ -54,7 +121,7 @@ let replace_length_with_var expr =
     | Not (loc,t) -> Not(loc,rlwv t)
     | Iff (loc,t1, t2) -> Iff(loc,rlwv t1, rlwv t2)
     | Implies (loc,t1, t2) -> Implies(loc,rlwv t1, rlwv t2)
-    | Length (loc, t) -> get_new_length_expr expr
+    | Length (loc, t) -> get_new_length_expr (Length(loc, rlwv t))
     | EmptyExpr  -> expr
   in
   rlwv expr ;;
@@ -62,17 +129,18 @@ let replace_length_with_var expr =
 (* Converts all length() nodes to specially named idents.
    Adds a length assignment step to complement each array assignment step.
 *)
-let convert_basic_path_to_acceptable_form path = 
-  let replace_length_with_var_in_step step = 
+let convert_basic_path_to_acceptable_form path program = 
+  let replace_length_and_members_with_vars_in_step step = 
     match step with
-        Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_with_var e)
-      | Assume(e) -> Assume(replace_length_with_var e)
-      | Annotation(e,s) -> Annotation(Ast.create_annotation_copy (replace_length_with_var e.ann) e, s)
-      | RankingAnnotation (ra) -> RankingAnnotation ( Ast.create_ranking_annotation_copy (List.map (function e -> replace_length_with_var e) ra.tuple) ra)
+        Basic_paths.Expr(e) -> Basic_paths.Expr(replace_length_and_members_with_var e program)
+      | Assume(e) -> Assume(replace_length_and_members_with_var e program)
+      | Annotation(e,s) -> Annotation(Ast.create_annotation_copy (replace_length_and_members_with_var e.ann program) e, s)
+      | RankingAnnotation (ra) -> RankingAnnotation ( Ast.create_ranking_annotation_copy (List.map (function e -> replace_length_and_members_with_var e program) ra.tuple) ra)
   in
-  let add_extra_node_for_length_if_necessary node =
-      begin
-        match node with
+  let rec add_extra_node_for_length_if_necessary node =
+    begin
+      let new_node = replace_length_and_members_with_vars_in_step node in
+        match new_node with
             Basic_paths.Expr (e) ->
               begin
                 match e with
@@ -86,15 +154,44 @@ let convert_basic_path_to_acceptable_form path =
                                       begin
                                         let lhs = Ast.NormLval(gdl(), get_new_length_identifier (Length(Ast.gdl(),Ast.LValue(Ast.gdl(),Ast.NormLval(Ast.gdl(),id))))) in
                                         let rhs = get_new_length_expr (Length(Ast.gdl(),Ast.LValue(Ast.gdl(),Ast.NormLval(Ast.gdl(),Ast.identifier_of_array_expr expr)))) in
-                                          [Basic_paths.Expr(Ast.Assign(Ast.gdl(),lhs,rhs));replace_length_with_var_in_step node]
+                                          [Basic_paths.Expr(Ast.Assign(Ast.gdl(),lhs,rhs));new_node]
                                       end
-                                  | _ -> [replace_length_with_var_in_step node]
+                                  | Ast.Identifier(class_id,loc)->
+                                      begin
+                                        let lhs_id = id in
+                                        let rhs_id = match expr with
+                                            Ast.LValue(loc,l) ->
+                                              begin
+                                                match l with
+                                                    Ast.NormLval(loc, id) -> id
+                                                  | _ -> assert(false)
+                                              end
+                                          | _ -> assert(false)
+                                        in
+                                          
+                                        let class_decl = get_corresponding_class_decl lhs_id program in
+                                        let gen_assign_for_member member =
+                                          match member with
+                                              VarDecl(l, vd) ->
+                                                begin
+                                                  let lhs_of_assign = InsideObject(gdl(),lhs_id,vd.varName) in
+                                                  let rhs_of_assign = LValue(gdl(),InsideObject(gdl(),rhs_id,vd.varName)) in
+                                                  let assign = Assign(gdl(), lhs_of_assign, rhs_of_assign) in
+                                                    let new_node = Basic_paths.Expr(replace_length_and_members_with_var assign program) in
+                                                    let new_resulting_nodes = add_extra_node_for_length_if_necessary new_node in
+                                                      [new_node]@new_resulting_nodes
+                                                end
+                                            | _ -> assert(false)
+                                        in
+                                          List.flatten (List.map gen_assign_for_member class_decl.members)
+                                      end
+                                  | _ -> [new_node]
                               end
-                          | _ -> [replace_length_with_var_in_step node]
+                          | _ -> [new_node]
                       end
-                  | _ -> [replace_length_with_var_in_step node]
+                  | _ -> [new_node]
               end
-          | _ -> [replace_length_with_var_in_step node]
+          | _ -> [new_node]
       end
   in
   let rec glo path = 
@@ -114,6 +211,7 @@ let add_array_length_greater_than_0_to_expr expr =
           match l with
               NormLval(loc,ident) -> if ident.is_length then [exp] else []
             | ArrayLval(loc,exp1,exp2) -> []
+            | InsideObject(loc,id1,id2) -> []
         end
     | Call (loc,s, el) -> assert(false)
     | Plus (loc,t1, t2) -> gl t1 @ gl t2
@@ -150,10 +248,11 @@ let add_array_length_greater_than_0_to_expr expr =
 
 (* Gets a VC out of a basic path.
    Returns the VC as an Ast.Expr. *)
-let get_vc bp =
+let get_vc bp program =
+
   let path_with_length_nodes = get_steps_from_path bp in
   let is_termination_path = Basic_paths.is_termination_path bp in
-  let path = convert_basic_path_to_acceptable_form path_with_length_nodes in
+  let path = convert_basic_path_to_acceptable_form path_with_length_nodes program in
   let dummy_loc = Ast.get_dummy_location () in
 
   (* Weakest precondition on a list in reverse order: wp(formula, in; ...; i2; i1) *)
@@ -179,6 +278,7 @@ let get_vc bp =
                                   Ast.Assign(loc,update_from,update_to) -> sub_idents_in_expr_while_preserving_original_location formula [(array_ident,update_to)]
                                 | _ -> assert(false)
                           end
+                      | _ -> assert(false)
                   end
 	      | _ -> formula
 	  end

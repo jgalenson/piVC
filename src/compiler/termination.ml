@@ -1,7 +1,7 @@
 open Ast ;;
 
 (* Gets the vcs that ensure that all the ranking annotations are always non-negative. *)
-let get_nonnegativity_vcs fn =
+let get_nonnegativity_vcs fn program =
   (* First, get all the ranking annotations and their corresponding normal annotations. *)
   let all_ranking_annotations =
     (* We store ras as options, so we need to get them out.
@@ -48,7 +48,7 @@ let get_nonnegativity_vcs fn =
       (* The acual implication: the annotation implies all the >=s. *)
       assert (Utils.is_some cur_ge);
       let cur_implication = Ast.Implies (ra.location_ra, annot.ann, Utils.elem_from_opt cur_ge) in
-      let replaced_implication = Verification_conditions.replace_length_with_var cur_implication in
+      let replaced_implication = Verification_conditions.replace_length_and_members_with_var cur_implication program in
       prev @ [ (ra, replaced_implication) ]
     in
     List.fold_left single_implication [] all_ranking_annotations

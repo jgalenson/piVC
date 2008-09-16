@@ -252,7 +252,7 @@ and expr_from_temp_expr has_condition expr =
 %token T_If
 %token T_Return T_Break
 %token T_Break T_Return
-%token T_Typedef T_Struct
+%token T_Typedef T_Class
 %token T_Assert T_Termination T_Bar T_Div T_Mod T_Plus T_Minus T_Star T_Slash T_Less T_Greater T_Assign T_Not T_Semicolon T_Comma T_Period T_LSquareBracket T_RSquareBracket T_LParen T_RParen T_LCurlyBracket T_RCurlyBracket T_QuestionMark T_LeftArrow T_Colon
 %token T_ForAll T_Exists T_Iff T_Implies T_Pre T_Post
 %token T_Unknown
@@ -301,13 +301,26 @@ main      :    DeclList T_EOF
           ;
 
 DeclList  :    DeclList Decl        { $1 @ [$2] }
-          |    Decl                 { [$1] }
+          |                     { [] }
           ;
 
 Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1) } 
           |    FnDecl               { Ast.FnDecl ($1.location_fd, $1)  }
           |    Predicate            { Ast.Predicate ($1.location_p, $1)}
+          |    ClassDecl            { Ast.ClassDecl ($1.location_cd, $1)}
           ;
+
+
+/*Note: if this works, you should change DeclList to use the same pattern*/
+DeclListInsideClass  :    DeclListInsideClass DeclInsideClass        { $1 @ [$2] }
+                     |                                               { [] }
+                     ;
+
+DeclInsideClass :    VarDecl              { Ast.VarDecl ($1.location_vd, $1) } 
+                |    FnDecl               { Ast.FnDecl ($1.location_fd, $1)  }
+                |    Predicate            { Ast.Predicate ($1.location_p, $1)}
+                ;
+
 
 Type      : T_Int                   { Ast.Int  (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
           | T_Float                 { Ast.Float(create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1) )}
@@ -329,6 +342,10 @@ FnDecl    : BeforeFunc Type Identifier T_LParen FormalsOrEmpty T_RParen StmtBloc
                 Ast.create_fnDecl $3 $5 (Ast.Void(loc 2 2)) $7 (create_precondition (expr_from_temp_expr false pre)) (create_postcondition (expr_from_temp_expr false post)) term (loc 2 6)
           }
           ;
+
+ClassDecl : T_Class Identifier T_LCurlyBracket DeclListInsideClass T_RCurlyBracket{
+  {className=$2;members=$4;location_cd=loc 1 2}
+}
 
 BeforeFunc : 
           | Termination AnnotationPre AnnotationPost {$2, $3, Some($1)} 
@@ -379,6 +396,7 @@ StmtList : StmtList Stmt { $1 @ $2 }
           
 VarDecl   : Var T_Semicolon                 { $1 }
           ;
+
 
 Stmt       : VarDecl { [Ast.VarDeclStmt($1.location_vd, $1)] }
            | VarDeclAndAssign T_Semicolon { $1 }
@@ -458,7 +476,33 @@ CommaSeperatedListOfUniversalVarDecls : Identifier T_Comma CommaSeperatedListOfU
 CommaSeperatedListOfExistentialVarDecls : Identifier T_Comma CommaSeperatedListOfExistentialVarDecls {(create_existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id) :: $3}
                                         | Identifier { [create_existential_varDecl (Int(get_dummy_location ())) $1 $1.location_id] }
 ;
- 
+
+
+LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
+         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
+         | Identifier T_Period Identifier { Ast.InsideObject (loc 1 3, $1, $3) }
+
+;
+/*
+Expr T_Period SuccessiveIdents  {
+             let ident_list = $3 in
+             let rec collapse idents_remaining =
+               match List.rev idents_remaining with
+                   a :: b -> Ast.LValue(gdl(),InsideObject(gdl(),collapse (List.rev b),a))
+                 | [] -> expr_from_temp_expr false $1
+
+             in
+             let last_ident = List.hd (List.rev ident_list) in
+             let non_last_idents = List.rev (List.tl (List.rev ident_list)) in
+               InsideObject(gdl(),collapse non_last_idents,last_ident)
+           }
+*/
+
+/*
+SuccessiveIdents : Identifier %prec VeryLowPrecedence { [$1] }
+         | Identifier T_Period SuccessiveIdents { [$1]@$3 }
+*/ 
+
 Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | Constant               { Constant (loc 1 1, $1) }
          | LValue                 { LValue (loc 1 1, $1) }
@@ -488,11 +532,6 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
 	 | T_Bar Expr T_Bar       { Length (loc 1 3, $2) }
 	 | T_New Type T_LSquareBracket Expr T_RSquareBracket { NewArray (loc 1 5,$2, $4) }
 ;
-
-LValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
-         | Expr T_LSquareBracket Expr T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
-;
-
 
 Call     : Expr T_LParen CallInterior T_RParen { TempCall (loc 1 4,$1,$3) }
 ;
@@ -550,6 +589,7 @@ Annotation     : AnnotationLValue T_Assign Annotation   { Assign(loc 1 3, $1, $3
 
 AnnotationLValue   : Identifier                          { Ast.NormLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 1)), $1) }
          | Annotation T_LSquareBracket Annotation T_RSquareBracket  { Ast.ArrayLval ((create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 4)), expr_from_temp_expr false $1, expr_from_temp_expr false $3) }
+         | Identifier T_Period Identifier { Ast.InsideObject (loc 1 3, $1, $3) }
 ;
 
 AnnotationCall     : Annotation T_LParen CallInterior T_RParen { last_l_paren_of_call_args_loc := Parsing.rhs_end_pos 2; TempCall (loc 1 4,$1,$3) }

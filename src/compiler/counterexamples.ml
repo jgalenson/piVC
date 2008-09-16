@@ -58,7 +58,10 @@ let parse_counterexample str rev_var_names =
 	ignore (Scanner.next_token scan); (* Closing ")" *)
 	Div (num, denom)
       end else
-	Var (first_token, Hashtbl.find rev_var_names orig_first_token)
+        try
+	  Var (first_token, Hashtbl.find rev_var_names orig_first_token)
+        with 
+            Not_found -> assert(false)
     else
       begin
 	let var = parse_counterexample scan in
