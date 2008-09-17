@@ -800,9 +800,11 @@ let check_function func s errors =
   Scope_stack.exit_scope s;
 
   check_stmt s func.returnType errors (false) ann_id func func.stmtBlock;
-  if not (ensure_function_returns func) then
-    let error_msg = "Function " ^ (string_of_identifier func.fnName) ^ " does not return in all control paths." in
-    add_error SemanticError error_msg func.location_fd errors;
+  begin
+    if not (ensure_function_returns func) then
+      let error_msg = "Function " ^ (string_of_identifier func.fnName) ^ " does not return in all control paths." in
+        add_error SemanticError error_msg func.location_fd errors
+  end;
   Scope_stack.exit_scope s
 
 let check_predicate pred s errors =
