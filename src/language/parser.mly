@@ -304,7 +304,7 @@ DeclList  :    DeclList Decl        { $1 @ [$2] }
           |                     { [] }
           ;
 
-Decl      :    VarDecl              { Ast.VarDecl ($1.location_vd, $1) } 
+Decl      :    VarDeclOutsideOfFunc              { Ast.VarDecl ($1.location_vd, $1) } 
           |    FnDecl               { Ast.FnDecl ($1.location_fd, $1)  }
           |    Predicate            { Ast.Predicate ($1.location_p, $1)}
           |    ClassDecl            { Ast.ClassDecl ($1.location_cd, $1)}
@@ -378,6 +378,13 @@ Var       : Type Identifier               { Ast.create_varDecl $1 $2 (create_loc
           ;
 
 
+
+VarOutSideOfFunc       : Type Identifier               { Ast.create_varDecl $1 $2 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
+          | Type Identifier T_Assign T_QuestionMark { Ast.create_annotation_free_varDecl $1 $2 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
+          ;
+
+
+
 ParamVar  : Type Identifier               { Ast.create_param_varDecl $1 $2 (create_location (Parsing.rhs_start_pos 1) (Parsing.rhs_end_pos 2))}
           ;
 
@@ -393,6 +400,9 @@ StmtBlock  : T_LCurlyBracket StmtList T_RCurlyBracket { Ast.StmtBlock((create_lo
 StmtList : StmtList Stmt { $1 @ $2 }
          | { [] }
 ;
+
+VarDeclOutsideOfFunc   : VarOutSideOfFunc T_Semicolon                 { $1 }
+          ;
           
 VarDecl   : Var T_Semicolon                 { $1 }
           ;

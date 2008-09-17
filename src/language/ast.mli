@@ -40,11 +40,13 @@ and varDecl = {
   var_id : (string option) ref;
   quant: quantification;
   is_param : bool;
+  is_annotation_free : bool;
 }
 val create_varDecl : varType -> identifier -> location -> varDecl
 val create_existential_varDecl : varType -> identifier -> location -> varDecl
 val create_universal_varDecl : varType -> identifier -> location -> varDecl
 val create_param_varDecl : varType -> identifier -> location -> varDecl
+val create_annotation_free_varDecl : varType -> identifier -> location -> varDecl
 
 
 val is_integral_type : varType -> bool ;;

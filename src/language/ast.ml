@@ -63,11 +63,13 @@ and varDecl = {
   var_id: (string option) ref;
   quant : quantification;
   is_param : bool;
+  is_annotation_free : bool;
 }
-let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = false;}
-let create_param_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = true;}
-let create_existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential; is_param = false;}
-let create_universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal; is_param = false;}
+let create_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = false; is_annotation_free = false;}
+let create_param_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = true; is_annotation_free = false;}
+let create_existential_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Existential; is_param = false; is_annotation_free=false;}
+let create_universal_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Universal; is_param = false;is_annotation_free=false;}
+let create_annotation_free_varDecl t name location = {varType=t; varName=name; location_vd=location; var_id = ref None; quant = Unquantified; is_param = false; is_annotation_free = true;}
 
 let is_integral_type t = match t with
   | Int (loc) -> true

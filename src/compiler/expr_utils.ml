@@ -224,7 +224,7 @@ let get_idents_of_formals func =
 let change_quantifier old_decls old_expr new_quant =
   (*We also need to change the decls, because the quantification is a property of the decls.*)
   let old_decl_to_new_decl decl = 
-    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; quant = new_quant; is_param = decl.is_param;}
+    {varType=decl.varType; varName=decl.varName; location_vd=decl.location_vd; var_id = decl.var_id; quant = new_quant; is_param = decl.is_param; is_annotation_free = decl.is_annotation_free}
   in
   let new_decls = List.map old_decl_to_new_decl old_decls in
   let get_replacement_pair old_decl new_decl = 

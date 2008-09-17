@@ -78,7 +78,7 @@ let get_statement_list stmts =
     | _ -> [stmts]
 
 let create_rv_decl t ident =
-  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified; is_param = false;}
+  {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified; is_param = false;is_annotation_free = false;}
 
 
 let rec get_replacement_list formals actuals = match formals with

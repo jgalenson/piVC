@@ -98,8 +98,9 @@ let annotate_ident ident s =
         None -> ignore () (*This probably means that the ident wasn't declared, but this will be reported elsewhere.*)
       | Some(decl) ->
           begin
-            let vd = (varDecl_of_decl decl) in
-              ident.decl := Some(vd)
+            match decl with
+                VarDecl(loc,vd) -> ident.decl := Some(vd)
+              | _ -> ignore () (*error, but it's reported elsewhere*)
           end
           
 (* CAGRT *)
@@ -113,7 +114,23 @@ let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval err
             | None ->
 	        let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' not defined" in
 	          add_error SemanticError error_msg  loc errors; ErrorType
-	    | Some(decl) -> type_of_decl decl
+	    | Some(decl) -> 
+                match decl with
+                    ClassDecl(loc_c,c) -> 
+                      begin
+	                let error_msg = "Identifier '" ^ (string_of_identifier id) ^ "' refers to a class, which doesn't make sense in this context." in
+	                  add_error SemanticError error_msg  loc errors; ErrorType
+                      end
+                  | VarDecl(loc_v,v) ->
+                      begin
+                        begin
+                          if (not is_annotation) && v.is_annotation_free then
+                            let error_msg = "These free variables are for use in annotations only." in
+	                      add_error SemanticError error_msg loc errors    
+                        end;
+                        type_of_decl decl
+                      end
+                  | _ -> type_of_decl decl
         end
   | ArrayLval(loc, arr, index) ->
       let typeOfIndex = check_and_get_return_type s index errors (is_annotation, is_ranking_fn, false) in
