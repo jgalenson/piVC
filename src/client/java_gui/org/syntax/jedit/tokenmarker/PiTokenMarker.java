@@ -53,6 +53,7 @@ public class PiTokenMarker extends CTokenMarker
 			piKeywords.add("exists",Token.KEYWORD1);
 			piKeywords.add("sorted",Token.KEYWORD1);
 			piKeywords.add("partitioned",Token.KEYWORD1);
+			piKeywords.add("eq",Token.KEYWORD1);
 			
 		}
 		return piKeywords;

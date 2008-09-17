@@ -588,16 +588,24 @@ let get_index_set exp =
                         Index_guard -> ((*print_endline "7";*)raise OutsideFragment)
                       | Value_constraint ->
                           begin
+                            (*print_endline ("_0_" ^ (string_of_expr exp));*)
                             ignore (get_index_set index Value_constraint_index);
                             (if is_uvar index then [] else [index]) @ (get_index_set arr part)
                           end
                       | Value_constraint_index -> 
                           begin
+                            (*print_endline ("_1_" ^ (string_of_expr exp));*)
                             ignore (get_index_set index Value_constraint_index);
                             ignore (get_index_set arr Value_constraint_index);
                             []
                           end
-                      | Uncommitted -> (assert(not (is_uvar index));[index])
+                      | Uncommitted -> 
+                          begin
+                            (*there was a bug fix here. hopefully it's ok*)
+                            (*print_endline ("_3_" ^ (string_of_expr exp));*)
+                            assert(not (is_uvar index));
+                            [index] @ (get_index_set arr part)
+                          end
                   end
               | InsideObject(_,_,_) -> assert(false)
           end
@@ -610,7 +618,8 @@ let get_index_set exp =
       | UMinus (loc,t) -> process_unary_minus t
       | ForAll (loc,decls,e) -> get_index_set_for_disjuncts e
       | Exists (loc,decls,e) -> get_index_set e part
-      | ArrayUpdate (loc, exp, assign_to, assign_val) ->
+      | ArrayUpdate (loc, exp, assign_to, assign_val) ->             
+          (*print_endline ("_2_" ^ (string_of_expr exp));*)
           begin
             begin
               match is_pexpr assign_to with

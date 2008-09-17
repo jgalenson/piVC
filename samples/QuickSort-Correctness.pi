@@ -1,0 +1,91 @@
+struct qs{
+	int pivot;
+	int[] array;
+}
+
+@pre  true
+@post sorted(rv, 0, |rv| - 1)
+int[] QuickSort(int[] a)
+{
+	return qsort(a, 0, |a| - 1);
+}
+
+@pre  l>=0 && u < |a_0| &&
+			partitioned(a_0, 0, l - 1, l, u) &&
+      partitioned(a_0, l, u, u + 1, |a_0| - 1)
+@post sorted(rv,l,u) &&
+			|rv|=|a_0| &&
+			eq(a_0,rv,0,l-1) && eq(a_0,rv,u+1,|rv|-1) &&
+			partitioned(rv, 0, l - 1, l, u) &&
+      partitioned(rv, l, u, u + 1, |a_0| - 1) 
+int[] qsort(int[] a_0, int l, int u) {
+	if (l >= u) 
+		return a_0;
+	else {
+		qs p := partition(a_0, l, u);
+		int[] a := p.array;
+		a := qsort(a, l, p.pivot - 1);
+		a := qsort(a, p.pivot + 1, u);
+		return a;
+  }
+}
+
+@pre  l<=u && l>=0 && u<|a_0| &&
+			partitioned(a_0, 0, l - 1, l, u) &&
+      partitioned(a_0, l, u, u + 1, |a_0| - 1)
+@post eq(a_0,rv.array,0,l-1) && eq(a_0,rv.array,u+1,|rv.array|-1) &&
+      |a_0|=|rv.array| &&
+      rv.pivot>=l && rv.pivot<=u &&
+			partitioned(rv.array, l, rv.pivot - 1, rv.pivot, rv.pivot) &&
+    	partitioned(rv.array, rv.pivot, rv.pivot, rv.pivot + 1, u) &&
+      partitioned(rv.array, 0, l - 1, l, u) &&
+      partitioned(rv.array, l, u, u + 1, |a_0| - 1)
+qs partition(int[] a_0, int l, int u) {
+	int[] a := a_0;
+	int pi := random(l, u);
+
+	//swap a[u] and a[pi]	
+	int pv := a[pi];
+	a[pi] := a[u];
+	a[u] := pv;
+
+	int i := l - 1;
+	for
+		@
+		forall x. ((x>=l && x<=i) -> a[x]<=pv) &&
+		forall x. ((x>i && x<j) -> a[x]>=pv) &&
+ 		j>i && i>=l-1 && j<=u && a[u]=pv && i>=-1 && l<=u && l>=0 &&
+		eq(a_0,a,0,l-1) && eq(a_0,a,u+1,|a|) && |a_0|=|a| &&
+		partitioned(a, 0, l - 1, l, u) &&
+    partitioned(a, l, u, u + 1, |a| - 1)
+		(int j := l; j < u; j := j + 1)
+	{
+		if (a[j] <= pv) {
+			i := i + 1;
+			
+			//swap a[i] and a[j]
+			int t := a[i];
+			a[i] := a[j];
+			a[j] := t;
+		}
+	}
+
+	//swap a[i+1] and a[u]
+	int t := a[i + 1];
+	a[i + 1] := a[u];
+	a[u] := t;
+
+	qs tmp;
+	tmp.pivot := i + 1;
+	tmp.array := a;
+	
+	return tmp;
+}
+
+@pre  l <= u
+@post l <= rv && rv <= u
+int random(int l, int u)
+{
+	/* a placeholder: only the @post is important */
+	return u;
+}

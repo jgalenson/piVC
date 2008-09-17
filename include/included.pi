@@ -3,3 +3,6 @@ predicate sorted(int[] arr, int low, int high) :=
 
 predicate partitioned(int[] arr, int low1, int high1, int low2, int high2) :=
   (forall a,b. ((low1 <= a && a <= high1 && low2 <= b && b <= high2)-> arr[a]<=arr[b]));
+
+predicate eq(int[] arr1, int[] arr2, int low, int high) := 
+  (forall a. ((low <= a && a <= high) -> arr1[a]=arr2[a]));
