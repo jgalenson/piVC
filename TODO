@@ -12,7 +12,6 @@ Jason
 	Put filename into xml and ocaml data structures.
 	Bug: Remove stupid a,b counterexample nodes (look for filename field in the location)
         Update README. Especially with information about email functionality.  Also talk about coloring of things in VC pane and the inductive core.
-	Bug: server highlighting locations incorrect when && is first token on new line
 
 Joel
 	Let main server use multiple cores?

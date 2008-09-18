@@ -21,9 +21,9 @@ let rec compile vc_cache_and_lock ic oc =
 
   (* Parse the xml we get from the client. *)
   let parse_xml xml_str =
-    (* Replace \rs. *)
     let replace_bad_chars str = 
-      Str.global_replace (Str.regexp "&#13;") "" str
+      (*client puts in spirious \b chars to circumvent bug in xml parser*)
+      Str.global_replace (Str.regexp "&#8;") "" str
     in
     (* Returns whether or not xml has a child tag named tag. *)
     let has_child tag xml =

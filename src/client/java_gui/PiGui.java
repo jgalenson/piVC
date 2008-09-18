@@ -29,6 +29,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -430,7 +431,10 @@ public class PiGui extends JFrame {
 	            
 	            if(code!=null){
 	            	
-	            	//this code converts \n to \r\n. This is needed to circumvent a bug in xml light, which is used by the piVC server
+	            	//This is needed to circumvent a bug in xml light, which is used by the piVC server
+	            	code = code.replaceAll("\n", "\n\b");
+	            	
+	            	/*
 	            	int index=0;
 	            	while(true){
 	            		index = code.indexOf('\n', index);
@@ -442,8 +446,11 @@ public class PiGui extends JFrame {
 	            		}
 	            		index+=2;//skip over the \r\n we just added
 	            	}
+	            	*/
+	            	
 	            	Element codeNode = doc.createElement("code");
 	            	codeNode.setTextContent(code);
+	            	codeNode.setAttribute("xml:space", "preserve");
 	            	rootNode.appendChild(codeNode);
 	            }
 	            if(isReport){
