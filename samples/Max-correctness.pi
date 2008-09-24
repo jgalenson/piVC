@@ -1,0 +1,14 @@
+@pre  |arr| > 0
+@post forall ix. (ix >= 0 && ix < |arr| -> rv >= arr[ix])
+int max(int[] arr) {
+	int max := arr[0];
+	for
+		@ forall j. (j < i && j >= 0 -> max >= arr[j])
+		(int i := 1; i < |arr|; i := i + 1) 
+	{
+		if(arr[i] >= max) {
+			max := arr[i];
+		}
+	}
+	return max;
+}
