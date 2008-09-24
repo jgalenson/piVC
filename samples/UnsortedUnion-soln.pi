@@ -1,0 +1,35 @@
+int e := ?;
+
+@pre  true
+@post ((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+           || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e))
+          <-> exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e))
+int[] union(int[] a, int[] b) {
+	int[] u := new int[|a| + |b|];
+	int j := 0;
+
+	for
+		@ j=i && i<=|a| && |u|=|a|+|b| &&
+			((exists ix. (0 <= ix && ix <= i - 1 && a[ix] = e)
+          <-> exists ix. (0 <= ix && ix <= i - 1 && u[ix] = e))) &&
+      i >= 0
+		# (2, |a| - i)
+		(int i := 0; i < |a|; i := i + 1)
+	{
+		u[j] := a[i];
+		j := j + 1;
+	}
+	for
+		@ j=i+|a| && i <= |b| && |u|=|a|+|b| && i>=0 &&
+			(((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e) ||
+			(exists ix. (0 <= ix && ix <= i - 1 && b[ix] = e)))
+          <-> exists ix. (0 <= ix && ix <= |a| + i - 1 && u[ix] = e)))
+		# (1, |b| - i)
+		(int i := 0; i < |b|; i := i + 1)
+	{
+		u[j] := b[i];
+		j := j + 1;
+	}
+	
+	return u;
+}

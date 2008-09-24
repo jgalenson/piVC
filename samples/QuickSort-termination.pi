@@ -1,0 +1,73 @@
+struct qs{
+	int pivot;
+	int[] array;
+}
+
+@pre  true
+@post sorted(a,0,|a|-1)
+int[] QuickSort(int[] a)
+{
+	return qsort(a, 0, |a| - 1);
+}
+
+@pre  l <= u + 1
+@post true
+# (u - l + 1)
+int[] qsort(int[] a_0, int l, int u) {
+	if (l >= u) 
+		return a_0;
+	else {
+		qs p := partition(a_0, l, u);
+		int[] a := p.array;
+		a := qsort(a, l, p.pivot - 1);
+		a := qsort(a, p.pivot + 1, u);
+		return a;
+  }
+}
+
+@pre  true
+@post rv.pivot >= l && rv.pivot < u
+qs partition(int[] a_0, int l, int u) {
+	int[] a := a_0;
+	int pi := random(l, u);
+
+	//swap a[u] and a[pi]	
+	int pv := a[pi];
+	a[pi] := a[u];
+	a[u] := pv;
+
+	int i := l - 1;
+	for
+		@ j <= u
+		# (u - j)
+		(int j := l; j < u; j := j + 1)
+	{
+		if (a[j] <= pv) {
+			i := i + 1;
+			
+			//swap a[i] and a[j]
+			int t := a[i];
+			a[i] := a[j];
+			a[j] := t;
+		}
+	}
+
+	//swap a[i+1] and a[u]
+	int t := a[i + 1];
+	a[i + 1] := a[u];
+	a[u] := t;
+
+	qs tmp;
+	tmp.pivot := i + 1;
+	tmp.array := a;
+	
+	return tmp;
+}
+
+@pre  l <= u
+@post l <= rv && rv <= u
+int random(int l, int u)
+{
+	/* a placeholder: only the @post is important */
+	return u;
+}

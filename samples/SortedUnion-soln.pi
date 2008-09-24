@@ -1,0 +1,43 @@
+int e := ?;
+
+@pre  sorted(a, 0, |a| - 1) 
+      && sorted(b, 0, |b| - 1)
+@post sorted(rv, 0, |rv| - 1) 
+      && ((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+           || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e))
+          <-> exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e))
+int[] union(int[] a, int[] b) {
+	int[] u := new int[|a| + |b|];
+	int i := 0;
+	int j := 0;
+
+	for
+		@	i+j=k && i>=0 && j>=0 && i<=|a| && j<=|b| && |u|=|a|+|b| && k<=|u| &&
+			sorted(a, 0, |a| - 1) && sorted(b, 0, |b| - 1) && sorted(u,0,k-1) &&
+			(k>0 -> (i<|a|->u[k-1]<=a[i]) && (j<|b|->u[k-1]<=b[j])) &&
+			((exists ix. (0 <= ix && ix < i && a[ix] = e)
+				|| exists ix. (0 <= ix && ix < j && b[ix] = e))
+				<-> exists ix. (0 <= ix && ix < k && u[ix] = e))
+		# (|u| - k)
+		(int k := 0; k < |u|; k := k + 1)
+	{
+		if (i >= |a|) {
+			u[k] := b[j];
+			j := j + 1;
+		}
+		else if (j >= |b|) {
+			u[k] := a[i];
+			i := i + 1;
+		}
+		else if (a[i] <= b[j]) {
+			u[k] := a[i];
+			i := i + 1;
+		}
+		else {
+			u[k] := b[j];
+			j := j + 1;
+		}
+	}
+
+	return u;
+}
