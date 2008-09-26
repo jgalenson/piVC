@@ -84,7 +84,7 @@ let parse_counterexample str rev_var_names =
     let rhs = get_replaced_token scan in
     (lhs, rhs)
   in
-  let data = List.map map_fn parts in
+  let data = List.rev_map map_fn parts in
   let sort_fn (lhs1, _) (lhs2, _) =
     String.compare (variable_to_string lhs1) (variable_to_string lhs2)
   in

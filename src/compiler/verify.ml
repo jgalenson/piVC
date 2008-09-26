@@ -560,7 +560,7 @@ let verify_vcs vcs vc_cache_and_lock program_ast mode =
     let thread_of_vc vc =
       Background.create verify_vc (vc,vc_cache_and_lock,program_ast,mode);
     in
-      List.map thread_of_vc vcs
+      List.rev_map thread_of_vc vcs
   in
   let make_new_vcs_from_threads threads = 
     let make_new_vc_from_thread thread = 
@@ -568,7 +568,7 @@ let verify_vcs vcs vc_cache_and_lock program_ast mode =
 	| Normal (v) -> v
 	| Exceptional (e) -> raise e
     in
-      List.map make_new_vc_from_thread threads
+      List.rev_map make_new_vc_from_thread threads
   in
 (*  let process_one_atom atom =
     let threads = threads_of_vcs [atom] in

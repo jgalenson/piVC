@@ -17,7 +17,7 @@ basic_paths.cmo: ../utils/utils.cmi expr_utils.cmi ../utils/exceptions.cmi \
     ast_utils.cmi ../language/ast.cmi basic_paths.cmi 
 basic_paths.cmx: ../utils/utils.cmx expr_utils.cmx ../utils/exceptions.cmx \
     ast_utils.cmx ../language/ast.cmx basic_paths.cmi 
-compile.cmo: ../utils/utils.cmi semantic_checking.cmi ../language/parser.cmi \
+compile.cmo: ../utils/utils.cmi semantic_checking.cmi ../language/parser.cmo \
     ../language/lexer.cmi ../utils/config.cmi ../language/ast.cmi compile.cmi 
 compile.cmx: ../utils/utils.cmx semantic_checking.cmx ../language/parser.cmx \
     ../language/lexer.cmx ../utils/config.cmx ../language/ast.cmx compile.cmi 
@@ -51,7 +51,7 @@ verification_conditions.cmx: ../utils/utils.cmx expr_utils.cmx \
     basic_paths.cmx ../language/ast.cmx verification_conditions.cmi 
 verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
     transform_yices.cmi termination.cmi semantic_checking.cmi \
-    ../language/parser.cmi ../utils/net_utils.cmi expr_utils.cmi \
+    ../language/parser.cmo ../utils/net_utils.cmi expr_utils.cmi \
     counterexamples.cmi ../utils/config.cmi basic_paths.cmi \
     ../utils/background.cmi ast_utils.cmi ../language/ast.cmi verify.cmi 
 verify.cmx: verification_conditions.cmx ../utils/utils.cmx \

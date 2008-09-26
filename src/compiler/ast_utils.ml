@@ -120,9 +120,9 @@ let calls calling_func callee_func get_fndecl =
       visited := Fn_set.add caller !visited;
       let all_calls = get_fn_calls caller get_fndecl in
       let all_calls_decls = 
-	let decl_opt_list = List.map (get_fndecl_from_call get_fndecl) all_calls in
+	let decl_opt_list = List.rev_map (get_fndecl_from_call get_fndecl) all_calls in
 	let some_decl_list = List.filter Utils.is_some decl_opt_list in
-	List.map Utils.elem_from_opt some_decl_list
+	List.rev_map Utils.elem_from_opt some_decl_list
       in
       let map_fn x = does_call x callee (depth + 1) in
       List.exists map_fn all_calls_decls

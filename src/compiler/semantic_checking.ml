@@ -684,7 +684,7 @@ let check_termination func scope_stack errors =
       true
     else begin
       let loops = Ast_utils.get_loops func in
-      let termination_args = List.map Ast_utils.get_loop_ranking_annotation loops in
+      let termination_args = List.rev_map Ast_utils.get_loop_ranking_annotation loops in
       let is_termination_arg = List.exists Utils.is_some termination_args in
       is_termination_arg
     end
