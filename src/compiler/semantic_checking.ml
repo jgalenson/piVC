@@ -63,7 +63,7 @@ let rec types_equal t1 t2 = match (t1, t2) with
   | (Float(loc1), Float(loc2)) -> true
   | (Array(aType1, loc1), Array(aType2, loc2)) -> (types_equal aType1 aType2)
   | (Void(loc1), Void(loc2)) -> true
-  | (Identifier(t1, loc1), Identifier(t2, loc2)) -> true (* TODO finish off *)
+  | (Identifier(t1, loc1), Identifier(t2, loc2)) -> Ast.string_of_identifier t1 = Ast.string_of_identifier t2
   | (ErrorType, _) -> true
   | (_, ErrorType) -> true
   | (_, _) -> false
@@ -72,7 +72,7 @@ and is_numeric_type t1 = match t1 with
   | Int (loc) -> true
   | Float (loc) -> true
   | ErrorType -> true (* So cascading errors work *)
-  | Identifier (t, loc) -> true (* TODO finish off like above *)
+  | Identifier (t, loc) -> false
   | _ -> false
 
 and is_int_type t1 = match t1 with

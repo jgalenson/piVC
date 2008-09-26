@@ -12,5 +12,7 @@ net_utils.cmo: net_utils.cmi
 net_utils.cmx: net_utils.cmi 
 scanner.cmo: scanner.cmi 
 scanner.cmx: scanner.cmi 
+semaphore.cmo: semaphore.cmi 
+semaphore.cmx: semaphore.cmi 
 utils.cmo: utils.cmi 
 utils.cmx: utils.cmi 

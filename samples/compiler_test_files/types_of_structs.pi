@@ -1,0 +1,15 @@
+struct A {
+	int x;
+}
+
+struct B {
+	float f;
+}
+
+@pre true
+@post true
+void foo() {
+	A a;
+	B b;
+	b := a;
+}
