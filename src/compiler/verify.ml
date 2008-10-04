@@ -287,6 +287,8 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
 	            let error_msg = Net_utils.get_input inchan in
 	              raise (Dp_server_exception error_msg)
 	          end
+		else if response = "non-linear" then
+		  (Unknown, None)
                 else
 	          assert false
               in

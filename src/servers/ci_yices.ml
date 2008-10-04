@@ -22,6 +22,7 @@ let init () = ()
 exception Done
 exception YicesNotFound of string
 exception YicesError of string
+exception NonLinearProblem
 
 let create () =
   let ip, op = Unix.pipe () in
@@ -105,7 +106,10 @@ let recv i =
     | End_of_file
     | Sys_blocked_io ->
 	let str = input_line (Unix.in_channel_of_descr m.error) in
-	raise (YicesError (str))
+	if str = "Error: feature not supported: non linear problem." then
+	  raise NonLinearProblem
+	else
+	  raise (YicesError (str))
 
 let destroy i m =
   try 

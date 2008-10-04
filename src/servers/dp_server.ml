@@ -59,7 +59,9 @@ let verify ic oc =
       if (response = "sat") then
         send_output oc (Utils.elem_from_opt counterexample_opt)
     with
-	ex ->
+      | Ci_yices.NonLinearProblem ->
+	  send_output oc "non-linear"
+      | ex ->
 	  begin
 	    let error_str = Exceptions.string_of_exception ex in
             send_output oc "error";
