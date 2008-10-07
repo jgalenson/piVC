@@ -276,20 +276,15 @@ type program = {
 }
 let create_program decls location = {decls=decls; location = location;}
 
-let get_root_decl program (declName:string) = 
-  let decl_to_return = ref None in
-  let rec find_decl remaining = (
-    match remaining with
-      [] -> ignore ()
-    | e :: l -> ((
-        match (String.compare (name_of_decl e) declName) with
-          0 -> decl_to_return := Some(e)
-        | _ -> ignore ()
-      ); find_decl l)
-  )
-  in
-    find_decl program.decls;
-    !decl_to_return
+let get_root_decl program (declName:string) =
+  try
+    let is_target_decl e =
+      String.compare (name_of_decl e) declName = 0
+    in
+    let target_decl = List.find is_target_decl program.decls in
+    Some (target_decl)
+  with
+    | Not_found -> None
 
 (*
 let identifier_of_lval lval = match lval with
@@ -399,13 +394,13 @@ and string_of_type typ =
   sot typ
    
 let get_delimited_list_of_decl_names decls delimiter = 
-  let rec delimiter_after_all_elems decls = 
-    match decls with
-        decl :: rest -> string_of_identifier decl.varName ^ (*(string_of_quantification (decl.quant)) ^*) delimiter ^ delimiter_after_all_elems rest
-      | [] -> ""
+  let fold_fn prev_str cur_decl =
+    if prev_str = "" then
+      string_of_identifier cur_decl.varName
+    else
+      prev_str ^ delimiter ^ string_of_identifier cur_decl.varName
   in
-  let str_with_delimiter_at_end = delimiter_after_all_elems decls in
-    String.sub str_with_delimiter_at_end 0 ((String.length str_with_delimiter_at_end)-(String.length delimiter))
+  List.fold_left fold_fn "" decls ;;
 
 (* temp *)
 let rec string_of_lval lval = match lval with

@@ -211,14 +211,8 @@ let rec sub_idents_in_expr_while_preserving_original_location expr ident_subs =
   sub_idents expr get_new_ident ;;
 
 (* returns a list of the identifier names of the function's arguments *)
-let get_idents_of_formals func = 
-  let rec build_ident_list remaining = 
-    match remaining with
-        [] -> []
-      | e :: l -> e.varName :: build_ident_list l
-  in 
-    build_ident_list func.formals
-
+let get_idents_of_formals func =
+  List.map (fun e -> e.varName) func.formals
 
 (*Changes the quantification e.g. from a forall to an exists. Useful for getting rid of negations etc.*)
 let change_quantifier old_decls old_expr new_quant =
@@ -320,14 +314,14 @@ and nnf expr =
 
 
 
-let string_of_expr_list exprs delimiter = 
-  let rec delimiter_after_all_elems exprs = 
-    match exprs with
-        expr :: rest -> string_of_expr expr ^ delimiter ^ delimiter_after_all_elems rest
-      | [] -> ""
+let string_of_expr_list exprs delimiter =
+  let fold_fn prev_str cur_expr =
+    if prev_str = "" then
+      string_of_expr cur_expr
+    else
+      prev_str ^ delimiter ^ string_of_expr cur_expr
   in
-  let str_with_delimiter_at_end = delimiter_after_all_elems exprs in
-    String.sub str_with_delimiter_at_end 0 ((String.length str_with_delimiter_at_end)-(String.length delimiter))
+  List.fold_left fold_fn "" exprs ;;
 
 (*The strings (guaranteed_unique_string_of_expr a) and (guaranteed_unique_string_of_expr b) will
   be equal iff exprs a and b are equal.
@@ -340,11 +334,13 @@ let guaranteed_unique_string_of_expr e =
     | ArrayLval (loc, t1, t2) -> (soe t1) ^ "[" ^ (soe t2) ^ "]"
     | InsideObject (loc, id1, id2) -> id_of_identifier id1 ^ "." ^ id_of_identifier id2
   and unique_representation_of_decl_names decls = 
-    let rec construct_str decls = 
-      match decls with
-          decl :: rest -> (id_of_varDecl decl) ^ "," ^ construct_str rest
-        | [] -> ""
-    in construct_str decls
+    let fold_fn prev_str cur_decl =
+      if prev_str = "" then
+	id_of_varDecl cur_decl
+      else
+	prev_str ^ "," ^ id_of_varDecl cur_decl
+    in
+    List.fold_left fold_fn "" decls
   and unique_string_of_type t = 
     match t with
         Identifier(id,loc) -> id_of_identifier id 
@@ -396,14 +392,12 @@ module Expr_set = Set.Make (struct
                               let compare exp1 exp2 = String.compare (guaranteed_unique_string_of_expr exp1) (guaranteed_unique_string_of_expr exp2)
                             end)
 let remove_duplicates_from_list exprs = 
-  let rec build_set so_far remaining_exprs = 
-    match remaining_exprs with 
-        [] -> so_far
-      | exp :: exps -> build_set (Expr_set.add exp so_far) exps
-  in 
-  let s = build_set Expr_set.empty exprs in
+  let fold_fn so_far cur_expr =
+    Expr_set.add cur_expr so_far
+  in
+  let s = List.fold_left fold_fn Expr_set.empty exprs in
   let new_list = Expr_set.elements s in    
-    new_list
+  new_list
 
 
 type part = Index_guard | Value_constraint | Value_constraint_index | Uncommitted
@@ -730,23 +724,22 @@ let remove_quantification_from_vc_with_array_dp exp_orig =
               let sub = [(decl.varName, elem)] in
                 sub_idents_in_expr_while_preserving_original_location exp sub
             in
-            let rec make_conjuncts index_set_terms_remaining expr_so_far = 
-              match index_set_terms_remaining with
-                  elem :: elems ->
-                    let new_term = convert_elem_in_index_set_to_term elem in
-                      begin
-                        match expr_so_far with
-                            EmptyExpr -> make_conjuncts elems new_term
-                          | _ -> make_conjuncts elems (And(gdl(), expr_so_far, new_term))
-                      end
-                | [] -> expr_so_far
+            let make_conjuncts index_set =
+	      let fold_fn expr_so_far cur_elem =
+		let new_term = convert_elem_in_index_set_to_term cur_elem in
+		match expr_so_far with
+		  | EmptyExpr -> new_term
+		  | _ -> (And(gdl(), expr_so_far, new_term))
+	      in
+	      List.fold_left fold_fn EmptyExpr index_set
             in
-              make_conjuncts index_set EmptyExpr
+              make_conjuncts index_set
           in
-          let rec remove_all_decls decls_remaining exp = 
-            match decls_remaining with
-                decl :: decls -> remove_all_decls decls (remove_one_decl decl exp)
-              | [] -> exp
+          let remove_all_decls decls exp =
+	    let fold_fn e cur_decl =
+	      remove_one_decl cur_decl e
+	    in
+	    List.fold_left fold_fn exp decls
           in
             remove_all_decls decls e
         end

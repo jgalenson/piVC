@@ -780,20 +780,10 @@ let ensure_function_returns f =
   let rec check_if_stmt_returns stmt =
     match stmt with
 	ReturnStmt (_, _) -> true
-      | StmtBlock (_, stmts)  -> check_if_stmts_return stmts
-      | IfStmt (_, _, then_block, else_block) ->
-	  begin
-	    match else_block with
-		EmptyStmt -> false
-	      | _ -> (check_if_stmt_returns then_block) && (check_if_stmt_returns else_block)
-	  end
+      | StmtBlock (_, stmts)  -> List.exists check_if_stmt_returns stmts
+      | IfStmt (_, _, then_block, else_block) -> check_if_stmt_returns else_block && check_if_stmt_returns then_block
+	  (* Small optimization: we test the else block first since if it's empty we don't have to test the then block. *)
       | _ -> false
-  (* A list of stmts returns if one of the
-     stmts returns. *)
-  and check_if_stmts_return stmts =
-    match stmts with
-	[] -> false
-      | s :: rest -> (check_if_stmt_returns s) || (check_if_stmts_return rest)
   in
   match f.returnType with
       Void (_) -> true

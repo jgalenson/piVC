@@ -194,12 +194,10 @@ let convert_basic_path_to_acceptable_form path program =
           | _ -> [new_node]
       end
   in
-  let rec glo path = 
-    match path with
-        node :: nodes -> (add_extra_node_for_length_if_necessary node) @ (glo nodes)
-      | [] -> []
+  let fold_fn prev cur_node =
+    prev @ add_extra_node_for_length_if_necessary cur_node
   in
-    glo path
+  List.fold_left fold_fn [] path
         
 let add_array_length_greater_than_0_to_expr expr = 
   let rec gl exp =

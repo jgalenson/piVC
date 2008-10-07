@@ -43,9 +43,11 @@ let replace_bad_chars str =
   let str5 = Str.global_replace (Str.regexp "\"") "&quot;" str4 in
     str5
 
-let rec string_of_attribute_list attribute_list = match attribute_list with
-    [] -> ""
-  | e :: l -> " " ^ replace_bad_chars (fst e) ^ "=\"" ^ replace_bad_chars (snd e) ^ "\"" ^ string_of_attribute_list l
+let rec string_of_attribute_list attribute_list =
+  let fold_fn prev_str cur_attr =
+    prev_str ^ " "  ^ replace_bad_chars (fst cur_attr) ^ "=\"" ^ replace_bad_chars (snd cur_attr) ^ "\""
+  in
+  List.fold_left fold_fn "" attribute_list
 
 and string_of_xml_node node = 
   string_of_xml_node_with_spacing node 0
@@ -60,6 +62,8 @@ and string_of_xml_node_with_spacing node num_spaces =
     end
     ^ "</" ^ node.node_name ^ ">" ^ "\n"
 
-and string_of_xml_nodes_with_spacing nodes num_spaces = match nodes with
-    [] -> ""
-  | e :: l -> (string_of_xml_node_with_spacing e num_spaces) ^ (string_of_xml_nodes_with_spacing l num_spaces)
+and string_of_xml_nodes_with_spacing nodes num_spaces =
+  let fold_fn prev_str cur_node =
+    prev_str ^ string_of_xml_node_with_spacing cur_node num_spaces
+  in
+  List.fold_left fold_fn "" nodes

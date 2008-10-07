@@ -81,10 +81,8 @@ let create_rv_decl t ident =
   {varType = t; varName = ident; location_vd = Ast.get_dummy_location (); var_id = ref (Some("rv")); quant = Unquantified; is_param = false;is_annotation_free = false;}
 
 
-let rec get_replacement_list formals actuals = match formals with
-    [] -> [] 
-  | e :: l -> (List.hd formals, List.hd actuals) :: (get_replacement_list (List.tl formals) (List.tl actuals))
-      
+let get_replacement_list formals actuals = 
+  List.combine formals actuals
       
 let gen_func_precondition_with_args_substitution func args =  
   let ident_subs = get_replacement_list (get_idents_of_formals func) args in
@@ -100,17 +98,12 @@ let gen_func_postcondition_with_rv_substitution func rv_sub args =
 let gen_func_ranking_annotation_with_args_substitution func args =
   if (Utils.is_none func.fnRankingAnnotation) then
     None
-  else begin
-    let rec get_replacement_list remaining_formals remaining_actuals = match remaining_formals with
-	[] -> [] 
-      | e :: l -> (List.hd remaining_formals, List.hd remaining_actuals) :: (get_replacement_list (List.tl remaining_formals) (List.tl remaining_actuals))
-    in
+  else
     let ra = Utils.elem_from_opt func.fnRankingAnnotation in
     let ident_subs = get_replacement_list (get_idents_of_formals func) args in
     let map_fn e =  sub_idents_in_expr_while_preserving_original_location e ident_subs in
     let new_tuple = List.map map_fn ra.tuple in
-    Some (Ast.create_ranking_annotation_copy new_tuple ra)
-  end ;;
+    Some (Ast.create_ranking_annotation_copy new_tuple ra) ;;
 
 (* CODE SECTION: GENERATING PATHS *)
 

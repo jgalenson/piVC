@@ -44,17 +44,17 @@ let parse_strings user_files =
       List.map convert_line_endings_of_elem files
   in
   let all_files = entries_with_length_ge_0 (convert_line_endings (("includes",includes_string) :: user_files)) in
-    
-    
-  let rec all_strings_concatenated elems = 
-    match elems with
-        elem :: elems -> snd elem ^ all_strings_concatenated elems
-      | [] -> ""
+  let all_strings_concatenated elems =
+    let fold_fn prev_str cur_elem =
+      prev_str ^ snd cur_elem
+    in
+    List.fold_left fold_fn "" elems
   in
-  let rec list_of_all_names_and_sizes elems = 
-    match elems with
-        elem :: elems -> [(fst elem,String.length (snd elem))] @ list_of_all_names_and_sizes elems
-      | [] -> []
+  let list_of_all_names_and_sizes elems =
+    let fold_fn prev cur_elem =
+      prev @ [(fst cur_elem, String.length (snd cur_elem))]
+    in
+    List.fold_left fold_fn [] elems
   in
     Lexer.files := list_of_all_names_and_sizes all_files;
     Lexer.actual_cnum := 0;
