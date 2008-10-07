@@ -1,0 +1,7 @@
+@pre true
+@post true
+void foo() {
+	int[] new_array := new int[42];
+	int[] new_array2 := new int[42];
+	@ new_array[0] = new_array2[0];
+}
