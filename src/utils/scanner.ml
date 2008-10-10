@@ -3,7 +3,7 @@ module Scanner =
     type t = { str : string; mutable index : int }
     exception NoMoreTokens
     let spaces = Str.regexp "[ \t]"
-    let punct = Str.regexp "[ ().,;=]"
+    let punct = Str.regexp "[ ().,;=:{}]"
     let create initial_string = { str = initial_string; index = 0 }
     let has_token s = (s.index < (String.length s.str))
     let next_token s =

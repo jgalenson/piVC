@@ -9,6 +9,7 @@ open Lexing
 
 exception Dp_server_exception of string ;;
 exception Malformatted_DP_Server_Address;;
+exception Invalid_DP_Response of string ;;
 
 type verification_mode = Set_validity | Set_in_core
 
@@ -32,7 +33,7 @@ and verification_atom = {
   vc : vc_conjunct list list;
   info : atom_info;  
   valid : validity;
-  counter_example : Counterexamples.example list option;
+  counter_example : Smt_solver.Counterexample.example list option;
 }
 and verification_atom_temp = {
   func_temp: fnDecl;
@@ -42,7 +43,7 @@ and verification_atom_temp = {
 and vc_conjunct = {
   exp : expr;
   valid_conjunct : validity option; (*non-rhs conjuncts don't have a validity*)
-  counter_example_conjunct : Counterexamples.example list option;
+  counter_example_conjunct : Smt_solver.Counterexample.example list option;
   in_inductive_core : (bool ref) option;
 }
 and function_validity_information = {
@@ -218,6 +219,7 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
           
           (*let before_final_vc_time = Unix.time () in*)
           
+	  (* We negate it since F is valid iff not F is unsat. *)
           let final_vc = Expr_utils.remove_quantification_from_vc_with_array_dp (Not (get_dummy_location (), (Verification_conditions.add_array_length_greater_than_0_to_expr vc))) in
             
           (*let after_vc_time = Unix.time () -. begin_time in*)
@@ -239,14 +241,14 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
             print_endline ("Index set is as follows:");
             let print_expr exp = print_endline (Expr_utils.guaranteed_unique_string_of_expr exp) in
               List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
-              print_string ("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quants_array_lengths_geq_0 ^ "\n");
+              print_string ("Gave the following VC to the SMT solver: \n" ^ string_of_expr negated_vc_no_quants_array_lengths_geq_0 ^ "\n");
               (*print_string ("And got a response of: " ^ response ^ "\n");*)
               print_endline ("*********************************");
 *)
               
             
             
-          let (vc, rev_var_names) = Transform_yices.transform_for_yices final_vc in
+          let (vc, rev_var_names) = Smt_solver.transform_input final_vc in
           let (sock, inchan, outchan) =
             let sock = Unix.socket Unix.PF_INET Unix.SOCK_STREAM 0 in
             let server_addr_and_port = Config.get_value "dp_server_address" in
@@ -279,7 +281,7 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
                 else if (response = "sat") then
 	          begin
 	            let counterexample_str = Net_utils.get_input inchan in
-		    let counterexample = Counterexamples.parse_counterexample counterexample_str rev_var_names in
+		    let counterexample = Smt_solver.parse_counterexample counterexample_str rev_var_names in
 	              (Invalid, Some (counterexample))
 	          end
 	        else if (response = "error") then
@@ -290,7 +292,7 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
 		else if response = "non-linear" then
 		  (Unknown, None)
                 else
-	          assert false
+		  raise (Invalid_DP_Response response)
               in
                 Mutex.lock cache_lock;
                 add_to_cache vc_cache unique_vc_str result;

@@ -23,12 +23,12 @@ and verification_atom = {
   vc : vc_conjunct list list;
   info : atom_info;
   valid : validity;
-  counter_example : Counterexamples.example list option;
+  counter_example : Smt_solver.Counterexample.example list option;
 }
 and vc_conjunct = {
   exp : expr;
   valid_conjunct : validity option; (*non-rhs conjuncts don't have a validity*)
-  counter_example_conjunct : Counterexamples.example list option;
+  counter_example_conjunct : Smt_solver.Counterexample.example list option;
   in_inductive_core : (bool ref) option;
 }
 and function_validity_information = {
@@ -54,7 +54,7 @@ val string_of_validity : validity -> string
 
 
 val verify_program : (Ast.fnDecl * (Basic_paths.basic_path * expr) list  * (Basic_paths.basic_path * expr) list * (rankingAnnotation * expr) list) list
-                      -> Ast.program -> ((string, ((validity * Counterexamples.example list option) * float)) Hashtbl.t * Mutex.t)                      
+                      -> Ast.program -> ((string, ((validity * Smt_solver.Counterexample.example list option) * float)) Hashtbl.t * Mutex.t)                      
                       -> Utils.options
                       -> function_validity_information list
 
@@ -70,13 +70,13 @@ type 'a thread_response =
 
 val verify_vc_expr :
   Ast.expr *
-  ((string, (validity * Counterexamples.example list option) * float)
+  ((string, (validity * Smt_solver.Counterexample.example list option) * float)
      Hashtbl.t * Mutex.t) *
-  Ast.program -> (validity * Counterexamples.example list option) thread_response
+  Ast.program -> (validity * Smt_solver.Counterexample.example list option) thread_response
 
 
 val verify_vc : verification_atom_temp *
-  ((string, (validity * Counterexamples.example list option) * float)
+  ((string, (validity * Smt_solver.Counterexample.example list option) * float)
      Hashtbl.t * Mutex.t) *
   Ast.program * verification_mode -> verification_atom_temp thread_response
     
