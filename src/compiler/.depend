@@ -1,13 +1,12 @@
 ast_utils.cmi: ../language/ast.cmi 
 basic_paths.cmi: ../language/ast.cmi 
 compile.cmi: semantic_checking.cmi ../language/ast.cmi 
-counterexamples.cmi: ../language/ast.cmi 
 expr_utils.cmi: ../language/ast.cmi 
 semantic_checking.cmi: ../language/scope_stack.cmi ../language/ast.cmi 
+smt_solver.cmi: ../language/ast.cmi 
 termination.cmi: ../language/ast.cmi 
-transform_yices.cmi: ../language/ast.cmi 
 verification_conditions.cmi: basic_paths.cmi ../language/ast.cmi 
-verify.cmi: ../utils/utils.cmi semantic_checking.cmi counterexamples.cmi \
+verify.cmi: ../utils/utils.cmi smt_solver.cmi semantic_checking.cmi \
     basic_paths.cmi ../language/ast.cmi 
 ast_utils.cmo: ../utils/utils.cmi expr_utils.cmi ../language/ast.cmi \
     ast_utils.cmi 
@@ -21,16 +20,16 @@ compile.cmo: ../utils/utils.cmi semantic_checking.cmi ../language/parser.cmo \
     ../language/lexer.cmi ../utils/config.cmi ../language/ast.cmi compile.cmi 
 compile.cmx: ../utils/utils.cmx semantic_checking.cmx ../language/parser.cmx \
     ../language/lexer.cmx ../utils/config.cmx ../language/ast.cmx compile.cmi 
-counterexamples.cmo: ../utils/utils.cmi ../utils/scanner.cmi \
-    ../language/ast.cmi counterexamples.cmi 
-counterexamples.cmx: ../utils/utils.cmx ../utils/scanner.cmx \
-    ../language/ast.cmx counterexamples.cmi 
 expr_utils.cmo: ../language/ast.cmi expr_utils.cmi 
 expr_utils.cmx: ../language/ast.cmx expr_utils.cmi 
 semantic_checking.cmo: ../utils/utils.cmi ../language/scope_stack.cmi \
     ast_utils.cmi ../language/ast.cmi semantic_checking.cmi 
 semantic_checking.cmx: ../utils/utils.cmx ../language/scope_stack.cmx \
     ast_utils.cmx ../language/ast.cmx semantic_checking.cmi 
+smt_solver.cmo: ../utils/utils.cmi ../utils/scanner.cmi ../utils/config.cmi \
+    ../language/ast.cmi smt_solver.cmi 
+smt_solver.cmx: ../utils/utils.cmx ../utils/scanner.cmx ../utils/config.cmx \
+    ../language/ast.cmx smt_solver.cmi 
 termination.cmo: verification_conditions.cmi ../utils/utils.cmi \
     ../language/ast.cmi termination.cmi 
 termination.cmx: verification_conditions.cmx ../utils/utils.cmx \
@@ -41,21 +40,15 @@ test_parser.cmo: verify.cmi verification_conditions.cmi ../utils/utils.cmi \
 test_parser.cmx: verify.cmx verification_conditions.cmx ../utils/utils.cmx \
     semantic_checking.cmx ../utils/constants.cmx ../utils/config.cmx \
     compile.cmx basic_paths.cmx ../language/ast.cmx test_parser.cmi 
-transform_yices.cmo: ../utils/utils.cmi ../language/ast.cmi \
-    transform_yices.cmi 
-transform_yices.cmx: ../utils/utils.cmx ../language/ast.cmx \
-    transform_yices.cmi 
 verification_conditions.cmo: ../utils/utils.cmi expr_utils.cmi \
     basic_paths.cmi ../language/ast.cmi verification_conditions.cmi 
 verification_conditions.cmx: ../utils/utils.cmx expr_utils.cmx \
     basic_paths.cmx ../language/ast.cmx verification_conditions.cmi 
-verify.cmo: verification_conditions.cmi ../utils/utils.cmi \
-    transform_yices.cmi termination.cmi semantic_checking.cmi \
-    ../language/parser.cmo ../utils/net_utils.cmi expr_utils.cmi \
-    counterexamples.cmi ../utils/config.cmi basic_paths.cmi \
+verify.cmo: verification_conditions.cmi ../utils/utils.cmi termination.cmi \
+    smt_solver.cmi semantic_checking.cmi ../language/parser.cmo \
+    ../utils/net_utils.cmi expr_utils.cmi ../utils/config.cmi basic_paths.cmi \
     ../utils/background.cmi ast_utils.cmi ../language/ast.cmi verify.cmi 
-verify.cmx: verification_conditions.cmx ../utils/utils.cmx \
-    transform_yices.cmx termination.cmx semantic_checking.cmx \
-    ../language/parser.cmx ../utils/net_utils.cmx expr_utils.cmx \
-    counterexamples.cmx ../utils/config.cmx basic_paths.cmx \
+verify.cmx: verification_conditions.cmx ../utils/utils.cmx termination.cmx \
+    smt_solver.cmx semantic_checking.cmx ../language/parser.cmx \
+    ../utils/net_utils.cmx expr_utils.cmx ../utils/config.cmx basic_paths.cmx \
     ../utils/background.cmx ast_utils.cmx ../language/ast.cmx verify.cmi 

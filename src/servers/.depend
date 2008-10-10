@@ -1,18 +1,16 @@
 email.cmi: ../compiler/verify.cmi ../utils/utils.cmi \
     ../compiler/semantic_checking.cmi 
-main_server.cmi: ../compiler/verify.cmi ../compiler/counterexamples.cmi 
+main_server.cmi: ../compiler/verify.cmi ../compiler/smt_solver.cmi 
 both_servers.cmo: server_framework.cmi main_server.cmi email.cmi \
     dp_server.cmi ../utils/config.cmi both_servers.cmi 
 both_servers.cmx: server_framework.cmx main_server.cmx email.cmx \
     dp_server.cmx ../utils/config.cmx both_servers.cmi 
-ci_yices.cmo: ../utils/utils.cmi ../utils/config.cmi ci_yices.cmi 
-ci_yices.cmx: ../utils/utils.cmx ../utils/config.cmx ci_yices.cmi 
-dp_server.cmo: ../utils/utils.cmi server_framework.cmi ../utils/net_utils.cmi \
-    ../utils/exceptions.cmi ../utils/constants.cmi ../utils/config.cmi \
-    ci_yices.cmi dp_server.cmi 
-dp_server.cmx: ../utils/utils.cmx server_framework.cmx ../utils/net_utils.cmx \
-    ../utils/exceptions.cmx ../utils/constants.cmx ../utils/config.cmx \
-    ci_yices.cmx dp_server.cmi 
+dp_server.cmo: ../utils/utils.cmi smt_solver_interface.cmi \
+    server_framework.cmi ../utils/net_utils.cmi ../utils/exceptions.cmi \
+    ../utils/constants.cmi ../utils/config.cmi dp_server.cmi 
+dp_server.cmx: ../utils/utils.cmx smt_solver_interface.cmx \
+    server_framework.cmx ../utils/net_utils.cmx ../utils/exceptions.cmx \
+    ../utils/constants.cmx ../utils/config.cmx dp_server.cmi 
 dp_server_executable.cmo: server_framework.cmi dp_server.cmi \
     ../utils/config.cmi dp_server_executable.cmi 
 dp_server_executable.cmx: server_framework.cmx dp_server.cmx \
@@ -22,19 +20,19 @@ email.cmo: ../compiler/verify.cmi ../utils/utils.cmi ../utils/config.cmi \
 email.cmx: ../compiler/verify.cmx ../utils/utils.cmx ../utils/config.cmx \
     email.cmi 
 main_server.cmo: xml_generator.cmi ../utils/xml-light/xml.cmi \
-    ../compiler/verify.cmi ../utils/utils.cmi server_framework.cmi \
-    ../compiler/semantic_checking.cmi ../utils/net_utils.cmi \
-    ../utils/logger.cmi ../utils/exceptions.cmi email.cmi \
-    ../compiler/counterexamples.cmi ../utils/constants.cmi \
-    ../utils/config.cmi ../compiler/compile.cmi ../compiler/basic_paths.cmi \
-    ../language/ast.cmi main_server.cmi 
+    ../compiler/verify.cmi ../utils/utils.cmi ../compiler/smt_solver.cmi \
+    server_framework.cmi ../compiler/semantic_checking.cmi \
+    ../utils/net_utils.cmi ../utils/logger.cmi ../utils/exceptions.cmi \
+    email.cmi ../utils/constants.cmi ../utils/config.cmi \
+    ../compiler/compile.cmi ../compiler/basic_paths.cmi ../language/ast.cmi \
+    main_server.cmi 
 main_server.cmx: xml_generator.cmx ../utils/xml-light/xml.cmx \
-    ../compiler/verify.cmx ../utils/utils.cmx server_framework.cmx \
-    ../compiler/semantic_checking.cmx ../utils/net_utils.cmx \
-    ../utils/logger.cmx ../utils/exceptions.cmx email.cmx \
-    ../compiler/counterexamples.cmx ../utils/constants.cmx \
-    ../utils/config.cmx ../compiler/compile.cmx ../compiler/basic_paths.cmx \
-    ../language/ast.cmx main_server.cmi 
+    ../compiler/verify.cmx ../utils/utils.cmx ../compiler/smt_solver.cmx \
+    server_framework.cmx ../compiler/semantic_checking.cmx \
+    ../utils/net_utils.cmx ../utils/logger.cmx ../utils/exceptions.cmx \
+    email.cmx ../utils/constants.cmx ../utils/config.cmx \
+    ../compiler/compile.cmx ../compiler/basic_paths.cmx ../language/ast.cmx \
+    main_server.cmi 
 main_server_executable.cmo: server_framework.cmi main_server.cmi email.cmi \
     ../utils/config.cmi main_server_executable.cmi 
 main_server_executable.cmx: server_framework.cmx main_server.cmx email.cmx \
@@ -45,5 +43,9 @@ server_framework.cmo: xml_generator.cmi ../utils/utils.cmi \
 server_framework.cmx: xml_generator.cmx ../utils/utils.cmx \
     ../compiler/semantic_checking.cmx ../utils/logger.cmx ../utils/config.cmx \
     ../language/ast.cmx server_framework.cmi 
+smt_solver_interface.cmo: ../utils/utils.cmi ../compiler/smt_solver.cmi \
+    ../utils/config.cmi smt_solver_interface.cmi 
+smt_solver_interface.cmx: ../utils/utils.cmx ../compiler/smt_solver.cmx \
+    ../utils/config.cmx smt_solver_interface.cmi 
 xml_generator.cmo: xml_generator.cmi 
 xml_generator.cmx: xml_generator.cmi 
