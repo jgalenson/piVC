@@ -1,0 +1,12 @@
+@pre true
+@post true
+void foo(int x) {
+	int ft := forty_two();
+	@ x = ft;
+}
+
+@pre true
+@post rv = 42
+int forty_two() {
+	return 42;
+}
