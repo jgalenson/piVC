@@ -146,7 +146,7 @@ let instantiate_predicates expr program =
       | Iff (loc,t1, t2) -> Iff(loc,ip t1, ip t2)
       | Implies (loc,t1, t2) -> Implies(loc,ip t1, ip t2)
       | Length (loc, t) -> assert(false);
-      | NewArray (loc, t, e) -> assert(false);
+      | NewArray (loc, t, e, n) -> assert(false);
       | EmptyExpr  -> expr        
   in
   let result = ip expr in
@@ -228,25 +228,31 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
           (*print_endline ("before vc time: " ^ (string_of_float before_vc_time) ^ "\nafter vc time : " ^ (string_of_float after_vc_time) ^ "\nvc time : " ^ (string_of_float vc_time) ^ "\n\n\n\n");*)
             
 
-            
+            (*
      (*Note from Jason: do not remove any commented-out code from this file. I might need it for later debugging.*)
-(*          let negated_vc = (Not (get_dummy_location (), vc)) in
+          let negated_vc = (Not (get_dummy_location (), vc)) in
           let negated_vc_nnf = Expr_utils.nnf (Not (get_dummy_location (), vc)) in
-          let vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp vc in
+          let vc_no_quants = Expr_utils.remove_quantification_from_vc_with_array_dp negated_vc_nnf in
           let vc_no_quants_array_lengths_geq_0 = (*Verification_conditions.add_array_length_greater_than_0_to_expr*) vc_no_quants in
           let negated_vc_no_quants_array_lengths_geq_0 = (Not (get_dummy_location (), vc_no_quants_array_lengths_geq_0)) in
-            
-            print_endline ("*********************************");
-            print_endline ("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf);
-            print_endline ("Index set is as follows:");
-            let print_expr exp = print_endline (Expr_utils.guaranteed_unique_string_of_expr exp) in
+           
+
+          let message = ref "" in
+            message:=!message^("*********************************\n");
+            message:=!message^("VC is: \n" ^ string_of_expr vc ^ "\n");
+            message:=!message^("VC in NNF is: \n" ^ string_of_expr negated_vc_nnf ^ "\n");
+            message:=!message^("Index set is as follows:\n");
+            let print_expr exp =
+              message:=!message^(Expr_utils.guaranteed_unique_string_of_expr exp)^"\n" in
               List.iter print_expr (Expr_utils.get_index_set negated_vc_nnf);
-              print_string ("Gave the following VC to the SMT solver: \n" ^ string_of_expr negated_vc_no_quants_array_lengths_geq_0 ^ "\n");
+              message := !message^("Gave the following VC to yices: \n" ^ string_of_expr negated_vc_no_quants_array_lengths_geq_0 ^ "\n");
+
               (*print_string ("And got a response of: " ^ response ^ "\n");*)
-              print_endline ("*********************************");
-*)
+              message:=!message^("*********************************\n");
+              print_endline !message;
+  
               
-            
+            *)
             
           let (vc, rev_var_names) = Smt_solver.transform_input final_vc in
           let (sock, inchan, outchan) =

@@ -95,7 +95,7 @@ and expr =
   | Iff of location * expr * expr
   | Implies of location * expr * expr
   | Length of location * expr
-  | NewArray of location * varType * expr
+  | NewArray of location * varType * expr * identifier option ref
   | EmptyExpr
     
 and stmt =

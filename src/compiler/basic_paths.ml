@@ -176,7 +176,18 @@ let generate_paths_for_func func program gen_runtime_asserts =
         | InsideObject(loc,id1,id2) -> InsideObject(loc,id1,id2)
     and gnfe expr =
       match expr with
-          Assign (loc,l, e) -> Assign(loc, gnfl l, gnfe e)
+          Assign (loc,l, e) ->
+            begin
+              match e with
+                  NewArray(loc,t,e,n) ->
+                    begin
+                      match l with
+                          NormLval(loc,ident) -> (n := Some(ident))
+                        | _ -> ignore ()
+                    end
+                | _ -> ignore ()
+            end;
+            Assign(loc, gnfl l, gnfe e)
         | Constant (loc,c) -> expr
         | LValue (loc,l) -> LValue (loc, gnfl l)
         | Call (loc,s, el) ->
@@ -218,11 +229,14 @@ let generate_paths_for_func func program gen_runtime_asserts =
                             end
                     end
             end
-        | NewArray (loc, t, e) -> 
+        | NewArray (loc, t, e, n) -> 
             begin
               let array_size = gnfe e in
               let ident_name = "_v" ^ string_of_int !temp_var_number in
-              let ident = create_identifier ident_name loc in
+              let ident = match !n with
+                  None -> create_identifier ident_name loc
+                | Some(id) -> id
+              in
               let decl = create_varDecl (Ast.Array(t, loc)) ident loc in
               let lval_for_new_ident = LValue(loc,NormLval(loc, ident)) in
                 decl.var_id := Some(ident_name);

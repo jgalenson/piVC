@@ -51,7 +51,7 @@ type temp_expr =
   | Iff of Ast.location * temp_expr * temp_expr
   | Implies of Ast.location * temp_expr * temp_expr
   | Length of Ast.location * temp_expr
-  | NewArray of Ast.location * varType * temp_expr
+  | NewArray of Ast.location * varType * temp_expr * identifier option ref
   | EmptyExpr
 
 let loc start_token end_token = create_location (Parsing.rhs_start_pos start_token) (Parsing.rhs_end_pos end_token)
@@ -124,7 +124,7 @@ and location_of_temp_expr = function
     | Length (loc, t) -> loc
     | Iff (loc,t1, t2) -> loc
     | Implies (loc,t1, t2) -> loc
-    | NewArray(loc,t,e) -> loc
+    | NewArray(loc,t,e,n) -> loc
     | EmptyExpr -> gdl ()
 
 and condition_from_temp_expr = function
@@ -155,7 +155,7 @@ and condition_from_temp_expr = function
     | Length (loc, t) -> raise Parsing.Parse_error
     | Iff (loc,t1, t2) -> condition_from_temp_expr t2
     | Implies (loc,t1, t2) -> condition_from_temp_expr t2
-    | NewArray(loc,t,e) -> raise Parsing.Parse_error
+    | NewArray(loc,t,e,n) -> raise Parsing.Parse_error
     | EmptyExpr -> raise Parsing.Parse_error
 
 
@@ -222,7 +222,7 @@ and expr_from_temp_expr has_condition expr =
       | Length (loc, t) -> Ast.Length(loc, efte false t)
       | Iff (loc,t1, t2) -> Ast.Iff(loc, efte false t1, efte has_condition t2)
       | Implies (loc,t1, t2) -> Ast.Implies(loc, efte false t1, efte has_condition t2)
-      | NewArray(loc,t,e) -> Ast.NewArray(loc, t, efte false e)
+      | NewArray(loc,t,e,n) -> Ast.NewArray(loc, t, efte false e,n)
       | EmptyExpr -> Ast.EmptyExpr
   in
   let new_expr = efte has_condition expr in
@@ -540,7 +540,7 @@ Expr     : LValue T_Assign Expr   { Assign(loc 1 3, $1, $3)}
          | Expr T_Or Expr         { Or (loc 1 3, $1, $3) }
          | T_Not Expr             { Not (loc 1 2, $2) }
 	 | T_Bar Expr T_Bar       { Length (loc 1 3, $2) }
-	 | T_New Type T_LSquareBracket Expr T_RSquareBracket { NewArray (loc 1 5,$2, $4) }
+	 | T_New Type T_LSquareBracket Expr T_RSquareBracket { NewArray (loc 1 5,$2, $4, ref None) }
 ;
 
 Call     : Expr T_LParen CallInterior T_RParen { TempCall (loc 1 4,$1,$3) }

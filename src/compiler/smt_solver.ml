@@ -77,7 +77,7 @@ let rec parse_expr e var_names rev_var_names =
     | Or (loc, t1, t2) -> Or (loc, pe t1, pe t2)
     | Not (loc, t) -> Not (loc, pe t)
     | Length (loc, t) -> Length (loc, pe t)
-    | NewArray (loc, t, e) -> NewArray (loc, t, pe e)
+    | NewArray (loc, t, e, n) -> NewArray (loc, t, pe e, n)
     | Iff (loc, t1, t2) -> Iff (loc, pe t1, pe t2)
     | Implies (loc, t1, t2) -> Implies (loc, pe t1, pe t2)
     | EmptyExpr -> EmptyExpr

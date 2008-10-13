@@ -20,5 +20,6 @@
 #serve as overrides. If this file is not used, the parameters can be set
 #using the piVC GUI.
 
-#submit_to_email_address = pivc_ta@stanford.edu
+#Seperate multiple email addresses with COMMAs, not semicolons
+submit_to_email_address = jasonaue@cs.stanford.edu,wangboyu@stanford.edu,ggoldgof@stanford.edu
 #server_address = pivc.stanford.edu:4242

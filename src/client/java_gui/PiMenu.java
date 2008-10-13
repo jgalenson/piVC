@@ -295,7 +295,8 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 				String aboutString = 
 					"<html>"
 					+ "PiVC" + "<p />"
-					+ "<a href='http://theory.stanford.edu/~arbrad/pivc/'>http://theory.stanford.edu/~arbrad/pivc/</a>" + "<p /><p />"
+//					+ "<a href='http://theory.stanford.edu/~arbrad/pivc/'>http://theory.stanford.edu/~arbrad/pivc/</a>" + "<p /><p />"
+					+ "Client Version: 1.00<p /><p />"
 					+ "Jason Auerbach, Aaron Bradley," + "<br />"
 					+ "Joel Galenson, Zohar Manna" + "<p /><p />"
 					+ "Licensed under the GPL."

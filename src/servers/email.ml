@@ -40,7 +40,8 @@ let send_email from_name from_addr to_addrs cc_addrs subject content =
         "Subject: " ^ subject ^ "\n" ^
         escaped_content
   in
-    match Sys.command ("echo \""^get_raw_email_text_for_sendmail ()^"\" | " ^ Config.get_value "sendmail_path" ^ " " ^ comma_delimited_list_of_strings (to_addrs@cc_addrs)) with
+  let command =  "echo \""^get_raw_email_text_for_sendmail ()^"\" | " ^ Config.get_value "sendmail_path" ^ " " ^ comma_delimited_list_of_strings (to_addrs@cc_addrs) in
+    match Sys.command command with
         0 -> ignore()
       | _ -> raise Problem_sending_email
           

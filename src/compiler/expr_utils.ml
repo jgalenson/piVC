@@ -163,7 +163,7 @@ let sub_idents expr fn =
     | Iff (loc,t1, t2) -> Iff(loc, sub t1, sub t2)
     | Implies (loc,t1, t2) -> Implies(loc, sub t1, sub t2)
     | Length (loc, t) -> Length(loc, sub t)
-    | NewArray(loc,t,e) -> NewArray(loc,t,sub e)
+    | NewArray(loc,t,e,n) -> NewArray(loc,t,sub e,n)
     | EmptyExpr  -> expr
   and sub_lval lval = match lval with
     | NormLval (loc, id) ->
@@ -308,7 +308,7 @@ and nnf expr =
             And(loc,nnf (Implies(loc,nnf_t1, nnf_t2)),nnf (Implies(loc,nnf_t2, nnf_t1)))
         end
     | Length (loc, t) -> Length(loc, nnf t)
-    | NewArray (loc, t,e) -> assert(false)
+    | NewArray (loc, t,e,n) -> assert(false)
     | EmptyExpr  -> expr
 
 
@@ -372,7 +372,7 @@ let guaranteed_unique_string_of_expr e =
     | Iff (loc,t1, t2) -> "(" ^ (soe t1) ^ ") <-> (" ^ (soe t2) ^ ")"
     | Implies (loc,t1, t2) -> "(" ^ (soe t1) ^ ") -> (" ^ (soe t2) ^ ")"
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"
-    | NewArray(loc,t,e) -> "new " ^ unique_string_of_type t ^ "[" ^ soe e ^ "]"
+    | NewArray(loc,t,e,n) -> "new " ^ unique_string_of_type t ^ "[" ^ soe e ^ "]"
     | EmptyExpr  -> ""
   in
   soe e
@@ -798,7 +798,7 @@ let rec get_calls e =
   | Iff (loc,t1, t2) -> get_calls t1 @ get_calls t2
   | Implies (loc,t1, t2) -> get_calls t1 @ get_calls t2
   | Length (loc, t) -> get_calls t
-  | NewArray (loc, t, e) -> get_calls e
+  | NewArray (loc, t, e, n) -> get_calls e
   | EmptyExpr  -> [] ;;
 
 

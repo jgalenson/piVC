@@ -26,6 +26,7 @@ Unassigned
 --------------------
 Possible later TODOs
 --------------------
+Provide better naming for _v nodes in counter-example.
 Static analysis API
 Better syntax highlighting?
 Add support for warnings (:= vs =, postcondition that uses a parameter and not comparing it to rv (e.g. sorted(a, 0, |a|)))?  Asserts in Pi?

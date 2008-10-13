@@ -160,7 +160,7 @@ and expr =
   | Iff of location * expr * expr
   | Implies of location * expr * expr
   | Length of location * expr
-  | NewArray of location * varType * expr
+  | NewArray of location * varType * expr * identifier option ref
   | EmptyExpr
 
     
@@ -339,7 +339,7 @@ let location_of_expr = function
     | Length (loc, t) -> loc
     | Iff (loc,t1, t2) -> loc
     | Implies (loc,t1, t2) -> loc
-    | NewArray (loc, t, e) -> loc
+    | NewArray (loc, t, e, n) -> loc
     | EmptyExpr -> get_dummy_location ()
 
 
@@ -441,7 +441,7 @@ and string_of_expr e =
     | Iff (loc,t1, t2) -> "(" ^ (soe t1) ^ ") <-> (" ^ (soe t2) ^ ")"
     | Implies (loc,t1, t2) -> "(" ^ (soe t1) ^ ") -> (" ^ (soe t2) ^ ")"
     | Length (loc, t) -> "|" ^ (soe t) ^ "|"
-    | NewArray (loc, t, e) -> "new " ^ string_of_type t ^ "[" ^ soe e ^ "]"
+    | NewArray (loc, t, e, n) -> "new " ^ string_of_type t ^ "[" ^ soe e ^ "]"
     | EmptyExpr  -> ""
   in
   soe e
@@ -591,7 +591,7 @@ let replace_loc_of_expr expr new_loc=
     | Length (loc, t) -> Length(new_loc,t)
     | Iff (loc,t1, t2) -> Iff(new_loc,t1,t2)
     | Implies (loc,t1, t2) -> Implies(new_loc,t1,t2)
-    | NewArray (loc, t, e) -> NewArray(new_loc,t,e)
+    | NewArray (loc, t, e, n) -> NewArray(new_loc,t,e,n)
     | EmptyExpr -> assert(false)
         
 and truncate_loc_of_expr exp truncate_to = 
@@ -629,7 +629,7 @@ and truncate_loc_of_expr exp truncate_to =
         | Length (loc, t) -> Length(new_loc,tl t)
         | Iff (loc,t1, t2) -> Iff(new_loc,tl t1,tl t2)
         | Implies (loc,t1, t2) -> Implies(new_loc,tl t1,tl t2)
-        | NewArray (loc, t, e) -> NewArray(new_loc,t,tl e)
+        | NewArray (loc, t, e, n) -> NewArray(new_loc,t,tl e, n)
         | EmptyExpr -> EmptyExpr
   in
     tl exp

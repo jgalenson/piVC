@@ -566,7 +566,7 @@ and check_and_get_return_type scope_stack e errors (is_annotation, is_ranking_fn
 	    add_error SemanticError error_msg loc errors;
 	  end;
 	Int(loc)
-    | NewArray(loc,t,e) -> 
+    | NewArray(loc,t,e,n) -> 
         check_type t scope_stack errors;
 	let size_type = cagrt e in
           begin

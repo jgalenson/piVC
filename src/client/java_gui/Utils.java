@@ -20,7 +20,7 @@ public class Utils {
 	}
 
 	public static boolean nameFieldIsWellFormatted(String name){
-		return name.matches("\\S+");
+		return true;
 	}	
 	
 	
