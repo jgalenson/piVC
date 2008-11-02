@@ -3,13 +3,13 @@
 int[] InsertionSort(int[] a_0) {
 	int[] a := a_0;
 	for
-		@ true
+		@L1: true
 		(int i := 1; i < |a|; i := i + 1)
 	{
 		int t := a[i];
 		int j;
 		for
-			@ true
+			@L2: true
 			(j := i - 1; j >= 0; j := j - 1)
 		{
 			if (a[j] <= t) break;

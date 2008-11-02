@@ -1,8 +1,8 @@
 @pre  0 <= l && u < |a|
-@post rv <-> exists ix. (l <= ix && ix <= u && a[ix] = e)
+@post rv <-> exists j. (l <= j && j <= u && a[j] = e)
 bool LinearSearch(int[] a, int l, int u, int e) {
 	for
-		@ l <= i && forall ix. (l <= ix && ix < i -> a[ix] != e)
+		@ L: l <= i && forall j. (l <= j && j < i -> a[j] != e)
 		(int i := l; i <= u; i := i + 1)
 	{
 		if (a[i] = e)

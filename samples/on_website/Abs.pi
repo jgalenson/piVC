@@ -3,7 +3,7 @@
 int[] abs(int[] a_0) {
 	int[] a := a_0;
 	for
-		@ true
+		@L: true
 		(int i := 0; i < |a|; i := i + 1) 
 	{
 		if (a[i] < 0) {
