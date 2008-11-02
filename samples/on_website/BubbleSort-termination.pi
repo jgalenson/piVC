@@ -8,7 +8,6 @@ int[] BubbleSort(int[] a_0) {
 		(int i := |a| - 1; i > 0; i := i - 1)
 	{
 		for
-			// Note: I had to change this from (i+1>=0) to (i+1>=1) to get it to verify.  It was that way in the book p.145.
 			@ i + 1 >= 1 && i - j >= 0
 			# (i + 1, i - j)
 			(int j := 0; j < i; j := j + 1)
