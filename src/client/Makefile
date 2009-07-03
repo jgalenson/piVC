@@ -18,7 +18,7 @@ opt : gui executable_opt
 
 gui :
 	mkdir -p temp_files_for_compilation
-	$(JAVAC) -d temp_files_for_compilation -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java java_gui/org/syntax/jedit/*.java java_gui/org/syntax/jedit/tokenmarker/*.java
+	$(JAVAC) -d temp_files_for_compilation -target 1.5 -classpath java_gui:java_gui/libraries/* java_gui/data_structures/*.java java_gui/*.java java_gui/org/syntax/jedit/*.java java_gui/org/syntax/jedit/tokenmarker/*.java
 	cd temp_files_for_compilation; jar xf ../java_gui/libraries/*
 	mkdir -p temp_files_for_compilation/images
 	cp java_gui/images/*.jpg temp_files_for_compilation/images
