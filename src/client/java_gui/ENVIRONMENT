@@ -21,5 +21,5 @@
 #using the piVC GUI.
 
 #Seperate multiple email addresses with COMMAs, not semicolons
-submit_to_email_address = jasonaue@cs.stanford.edu,wangboyu@stanford.edu,ggoldgof@stanford.edu
-#server_address = pivc.stanford.edu:4242
+#submit_to_email_address = jasonaue@cs.stanford.edu,wangboyu@stanford.edu,ggoldgof@stanford.edu
+#server_address = pivc.jasonland.com:4242
