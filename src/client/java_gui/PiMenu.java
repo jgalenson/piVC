@@ -294,11 +294,11 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 			public void actionPerformed(ActionEvent e) {
 				String aboutString = 
 					"<html>"
-					+ "PiVC" + "<p />"
+					+ "PiVC Client<br>"
 //					+ "<a href='http://theory.stanford.edu/~arbrad/pivc/'>http://theory.stanford.edu/~arbrad/pivc/</a>" + "<p /><p />"
-					+ "Client Version: 1.00<p /><p />"
-					+ "Jason Auerbach, Aaron Bradley," + "<br />"
-					+ "Joel Galenson, Zohar Manna" + "<p /><p />"
+					+ "Version 1.01<br><br>"
+					+ "Jason Auerbach, Aaron Bradley,<br>"
+					+ "Joel Galenson, Zohar Manna<br><br>"
 					+ "Licensed under the GPL."
 					+ "</html>";
 				JOptionPane.showMessageDialog(piGui, aboutString, "About PiVC", JOptionPane.INFORMATION_MESSAGE, PiGui.getIcon());
