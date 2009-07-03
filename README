@@ -9,13 +9,13 @@ This distribution provides everything needed to use piVC. There are 3 components
 
 Note that for most users, the distinction between the main server and DP server is not relevant. There is a binary "both_servers" that runs both.
 
-Intended Use of This Distribution
----------------------------------
-The vast majority of piVC users should only need to download the client JAR file. The first time that a user compiles a program, he/she will be prompted to enter in a server address.
+Typical Use-Case of This Distribution
+-------------------------------------
+Instructor: Run the piVC server on a powerful computer by executing bin/both_servers (or perhaps use the server that we provide - see the note at the end of this section). Change the submit_to_email_address and server_address variables in the file src/client/java_gui/ENVIRONMENT. Run make from src/client. Distribute bin/PiGui.jar to the class.
 
-A class instructor should setup a piVC server. He should give this server address and port to his/her students.
+Student: Download and run PiGui.jar.
 
-Depending on demand and logistics, there may be free piVC servers available for public use. Check out the piVC website for more information on this.
+Note: The instructor might not need to run their own server. We host a piVC server at pivc.stanford.edu:4242. However, we cannot guarantee availability of this server. If you want to use it for a class, you should contact us first (jasonaue@cs.stanford.edu and galenson@cs.stanford.edu).
 
 Requirements
 ------------
@@ -32,11 +32,11 @@ or
 
 Configuration Instructions
 --------------------------
-In general, the only configuration that is required is to set the clients to use the correct server address and port. This section provides more detailed configuration information.
+Client: Instructors will probably want to edit the server_address and submit_to_email_address variables in src/client/java_gui/ENVIRONMENT before distributing PiGui to their students. If these variables are not set, PiGui uses a server address of pivc.jasonland.com:4242 by default (but allows users to change it using the GUI) and prompts the user for an instrutor's email address upon submission.
 
-There are two configuration files in the conf directory. pivc-server.conf contains configuration settings for the main server, and pivc-dp-server.conf contains configuration settings for the DP server.
+Server: No configuration should be required. That being said, there is a conf directory with all relevent configuration files.
 
-The default ports are 4242 for the main server and 4243 for the DP server. If you want to change these defaults, edit the files conf/pivc-server.conf and conf/pivc-dp-server.conf. If you change the DP server's port, be sure to update both the "dp_server_address" variable in conf/pivc-server.conf AND the "port" variable in conf/pivc-dp-server.conf.
+The main use of these configuration files is probably to change the ports. The default ports are 4242 for the main server and 4243 for the DP server. If you want to change these defaults, edit the files conf/pivc-server.conf and conf/pivc-dp-server.conf. If you change the DP server's port, be sure to update both the "dp_server_address" variable in conf/pivc-server.conf AND the "port" variable in conf/pivc-dp-server.conf.
 
 If you want to run the DP server on a separate machine to the main server, then change the "dp_server_address" variable in conf/pivc-server.conf.
 
