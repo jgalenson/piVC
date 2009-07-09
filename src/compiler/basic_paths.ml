@@ -233,10 +233,19 @@ let generate_paths_for_func func program gen_runtime_asserts =
             begin
               let array_size = gnfe e in
               let ident_name = "_v" ^ string_of_int !temp_var_number in
-              let ident = match !n with
+	      (*
+		The following code caused a bug (MergeSort-soln failed with
+		runtime checks), so it is commented out.  It was meant to help
+		give better naming for arrays created with the new array[size]
+		syntax (so they'd use the variable name rather than the _v0
+		type names in the counterexample).  With this, we are still
+		populating the preferred name field, but not using it at all.
+	      *)
+              (*let ident = match !n with
                   None -> create_identifier ident_name loc
                 | Some(id) -> id
-              in
+              in*)
+	      let ident = create_identifier ident_name loc in
               let decl = create_varDecl (Ast.Array(t, loc)) ident loc in
               let lval_for_new_ident = LValue(loc,NormLval(loc, ident)) in
                 decl.var_id := Some(ident_name);
