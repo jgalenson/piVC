@@ -4,6 +4,7 @@ open Scanner ;;
 exception InvalidVC of string ;;
 exception InvalidSMTSolver of string ;;
 exception InvalidSolverResponse of string;;
+exception InvalidSolverCounterexample of string * string ;;
 
 (* Counterexample stuff *)
 
@@ -14,7 +15,8 @@ module Counterexample =
     type variable =
       | Var of string * identifier
       | ArrayVar of variable * string
-      | Div of string * string ;;
+      | Div of string * string
+      | Mod of string * string ;;
 
     (* A single part of the counterexample of the form variable=string. *)
     type example = variable * string ;;
@@ -23,7 +25,8 @@ module Counterexample =
       match v with
 	| Var (s,_) -> s
 	| ArrayVar (v, s) -> (variable_to_string v) ^ "[" ^ s  ^ "]"
-	| Div (num, denom) -> num ^ " div " ^ denom ;;
+	| Div (num, denom) -> num ^ " div " ^ denom
+	| Mod (x, y) -> x ^ " mod " ^ y ;;
     
     let example_to_string (lhs, rhs) =
       (variable_to_string lhs) ^ " = " ^ rhs ;;
@@ -321,22 +324,28 @@ module Yices =
       let rec parse_counterexample scan =
 	let orig_first_token = Scanner.next_token scan in
 	let first_token = replace_name orig_first_token in
-	if (first_token <> "(") then
+	if (first_token <> "(") then begin
 	  if first_token = "div" then begin (* yices puts in some stupid (div 1 2) nodes when you do integer division. *)
 	    let num = Scanner.next_token scan in
 	    let denom = Scanner.next_token scan in
 	    ignore (Scanner.next_token scan); (* Closing ")" *)
 	    Counterexample.Div (num, denom)
+	  end else if first_token = "mod" then begin (* yices puts in some stupid (mod 0 2) nodes when you do modulus. *)
+	    let x = Scanner.next_token scan in
+	    let y = Scanner.next_token scan in
+	    ignore (Scanner.next_token scan); (* Closing ")" *)
+	    Counterexample.Mod (x, y)
 	  end else
             try
 	      Counterexample.Var (first_token, Hashtbl.find rev_var_names orig_first_token)
             with 
-		Not_found -> print_endline orig_first_token; assert(false)
-	else
+		Not_found -> raise (InvalidSolverCounterexample (str, orig_first_token))
+	end else
 	  begin
 	    let var = parse_counterexample scan in
 	    match var with
 	      | Counterexample.Div (_, _) -> var
+	      | Counterexample.Mod (_, _) -> var
 	      | _ -> (* An array *)
 		  let rhs = get_replaced_token scan in
 		  let array_var = Counterexample.ArrayVar (var, rhs) in

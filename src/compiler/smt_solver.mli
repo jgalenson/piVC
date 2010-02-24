@@ -6,6 +6,7 @@ module Counterexample :
       | Var of string * Ast.identifier
       | ArrayVar of variable * string
       | Div of string * string
+      | Mod of string * string
 
     type example = variable * string
     
