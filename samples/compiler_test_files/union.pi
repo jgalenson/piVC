@@ -1,0 +1,36 @@
+int e := ?;
+
+predicate inRange( int target, int[]arr, int low, int high ) :=
+    ((low <= high && 0 <= low && high <= |arr| - 1) ->
+    (exists ix. (low <= ix && ix <= high && arr[ix] = target)));
+
+predicate in( int target, int[]arr ) :=
+    inRange( target, arr, 0, |arr| - 1 );
+
+@pre  true
+@post ((exists ix. (0 <= ix && ix <= |a| - 1 && a[ix] = e)
+        || exists ix. (0 <= ix && ix <= |b| - 1 && b[ix] = e))
+          <-> exists ix. (0 <= ix && ix <= |rv| - 1 && rv[ix] = e))
+int[] union(int[] a, int[] b) {
+    int[] u := new int[|a| + |b|];
+    int j := 0;
+
+    for
+            @ i > 0 && a[i-1] = u[j-1]
+                -> (exists ix. (0 <= ix && ix <= i - 1 && a[ix] = e)
+                  <-> exists ix. (0 <= ix && ix <= j - 1 && u[ix] = e))
+            (int i := 0; i < |a|; i := i + 1)
+    {
+            u[j] := a[i];
+            j := j + 1;
+    }
+    for
+            @ in(e,a) || in(e,b) <-> in(e,u)
+            (int i := 0; i < |b|; i := i + 1)
+    {
+            u[j] := b[i];
+            j := j + 1;
+    }
+
+    return u;
+}

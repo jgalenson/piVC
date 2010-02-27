@@ -1,0 +1,7 @@
+predicate a() := true;
+
+predicate b() := a();
+
+@pre true
+@post b()
+void main() {}

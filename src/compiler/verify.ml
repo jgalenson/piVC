@@ -122,7 +122,8 @@ let instantiate_predicates expr program =
             let get_replacement_pair decl arg = 
               (decl.varName,arg) in
             let replacement_pairs = List.map2 get_replacement_pair pred_decl.formals_p new_el in
-              Expr_utils.sub_idents_in_expr_while_preserving_original_location pred_decl.expr replacement_pairs
+            let subbed_expr = Expr_utils.sub_idents_in_expr_while_preserving_original_location pred_decl.expr replacement_pairs in
+	    ip subbed_expr
           end
       | Plus (loc,t1, t2) -> Plus(loc,ip t1, ip t2)
       | Minus (loc,t1, t2) -> Minus(loc,ip t1, ip t2)
@@ -145,7 +146,7 @@ let instantiate_predicates expr program =
       | Not (loc,t) -> Not(loc,ip t)
       | Iff (loc,t1, t2) -> Iff(loc,ip t1, ip t2)
       | Implies (loc,t1, t2) -> Implies(loc,ip t1, ip t2)
-      | Length (loc, t) -> assert(false);
+      | Length (loc, t) -> Length(loc, ip t)
       | NewArray (loc, t, e, n) -> assert(false);
       | EmptyExpr  -> expr        
   in
@@ -197,7 +198,9 @@ let add_to_cache cache key result =
 let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
   (*let begin_time = Unix.time () in*)
   try
-    let vc = instantiate_predicates vc_with_preds program in      
+    let vc_with_length = instantiate_predicates vc_with_preds program in
+    (* TODO: This is a workaround: instantiating predicates could expose length vars, so we remove them.  We've already called this function, however, and we shouldn't call it twice.  We should probably instantiate predicates before replacing length vars. *)
+    let vc = Verification_conditions.replace_length_and_members_with_var vc_with_length program in
       (* Use cached version if we can. *)
     let unique_vc_str = Expr_utils.guaranteed_unique_string_of_expr vc in
       Mutex.lock cache_lock;
