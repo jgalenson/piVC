@@ -209,7 +209,16 @@ let rec compile vc_cache_and_lock ic oc =
           in
             send_output oc (string_of_xml_node xml_to_return);
             Config.print "Compilation completed. Response sent back to client.";
-        with ex -> go_exception xml_str ex;
+        with ex ->
+	  let prettify str =
+	    let replace_pairs = [ ("&#8;", ""); ("&gt;", ">"); ("&lt;", "<"); ("&apos;", "'"); ("&quot;", "\""); ("&amp;", "&") ] in
+	    let replacer str (from_str, to_str) =
+	      Str.global_replace (Str.regexp from_str) to_str str
+	    in
+	    List.fold_left replacer str replace_pairs
+	  in
+	  let pretty_xml_str = prettify xml_str in
+	  go_exception pretty_xml_str ex;
       with ex ->  go_exception "No XML is available. The exception occured before the transmission had been fully recieved." ex
   end;
     Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
