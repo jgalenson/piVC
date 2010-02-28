@@ -826,8 +826,108 @@ let check_predicate pred s errors =
     end;
   Scope_stack.exit_scope s
 
+(* Check for cycles in predicates.  These are not allowed, as we
+   eagerly expand predicates, so we throw an error if we find them. *)
+    
+module Id_set = Set.Make (struct
+			    type t = identifier
+			    let compare p1 p2 = String.compare (string_of_identifier p1) (string_of_identifier p2)
+                          end) ;;
+    
+module Id_map = Map.Make (struct
+			    type t = identifier
+			    let compare p1 p2 = String.compare (string_of_identifier p1) (string_of_identifier p2)
+                          end) ;;
+
+exception PredicateCycle of string * location ;;
+
+let check_for_circular_predicates program errors =
+  let predicates =
+    let get_predicate x = match x with
+      | Predicate (_, predicate) -> [ predicate ]
+      | _ -> []
+    in
+    List.flatten (List.rev_map get_predicate program.decls)
+  in
+  let edge_map = ref Id_map.empty in (* Map of predicate -> List of predicates it directly calls. *)
+  (* Find edges *)
+  begin
+    let find_edges predicate =
+      let call_exprs = Expr_utils.get_calls predicate.expr in
+      let get_id_of_call x = match x with
+	| Call(_, id, _) -> id
+	| _ -> assert false
+      in
+      let call_ids = List.rev_map get_id_of_call call_exprs in
+      edge_map := Id_map.add predicate.predName call_ids !edge_map
+    in
+    List.iter find_edges predicates
+  end;
+  (* Debug: Print edges *)
+  (*let print_edge pred pred_list =
+    let string_of_pred_list acc cur =
+      let cur_str = string_of_identifier cur in
+      if acc = "" then cur_str else acc ^ ", " ^ cur_str
+    in
+    let pred_string = List.fold_left string_of_pred_list "" pred_list in
+    let str = (string_of_identifier pred) ^ " -> " ^ pred_string in
+    print_endline str
+  in
+  Id_map.iter print_edge !edge_map;*)
+  (* Main algorithm: search for cycles.
+     The algorithm works by iteratively running DFSes.
+     Each individual DFS behaves as expected: it raises an error if it finds
+     a cycle and otherwise builds a set of all the nodes it visited.
+     The outer loop keeps a global set of all the visited nodes.  It runs the
+     DFS described above on each unvisited node and then adds the set of nodes
+     visited in that DFS to the global set.  This should ensure that every node
+     is visited exactly once, which ensures that we find all cycles but maintain
+     linear performance. *)
+  try
+    (* Single DFS *)
+    let visited_global = ref Id_set.empty in
+    let dfs cur =
+      if not (Id_set.mem cur !visited_global) then begin
+	let visited_local = ref Id_set.empty in
+	let path = Stack.create () in
+	let rec dfs cur =
+	  if Id_set.mem cur !visited_local then begin (* Cycle found *)
+	    (* Build a string showing the cycle from the path. *)
+	    let cycle_string =
+	      let rec make_cycle_string cur_str =
+		let cur_elem = Stack.pop path in
+		let next_str = cur_str ^ " -> " ^ string_of_identifier cur_elem in
+		let id_eq x y = String.compare (string_of_identifier x) (string_of_identifier y) = 0 in
+		if id_eq cur_elem cur then
+		  next_str
+		else
+		  make_cycle_string next_str
+	      in
+	      make_cycle_string (string_of_identifier cur)
+	    in
+	    (* Raise an exception to short-circuit the rest of the search. *)
+	    raise (PredicateCycle (cycle_string, cur.location_id))
+	  end else if not (Id_set.mem cur !visited_global) then begin (* Only search nodes we've never seen before, since if we've visited this node before in a previous iteration, we know it will lead to a dead end so we don't need to search it. *)
+	    visited_local := Id_set.add cur !visited_local;
+	    Stack.push cur path;
+	    let children = Id_map.find cur !edge_map in
+	    List.iter dfs children;
+	    ignore (Stack.pop path)
+	  end
+	in
+	dfs cur;
+	visited_global := Id_set.union !visited_global !visited_local
+      end
+    in
+    let predicate_ids = List.map (fun p -> p.predName) predicates in
+    List.iter dfs predicate_ids
+  with
+    | PredicateCycle (path, loc) ->
+	let error_msg = "Cycle found in predicates: " ^ path in
+	add_error SemanticError error_msg loc errors ;;
 
 let check_program program errors =
+  check_for_circular_predicates program errors;
   let s = Scope_stack.create () in
   Scope_stack.enter_scope s;
   insert_decls s errors program.decls;
