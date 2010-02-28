@@ -21,7 +21,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
 	private JCheckBoxMenuItem runtimeAssertions;
 	private JCheckBoxMenuItem findInductiveCore;
-	private JCheckBoxMenuItem showRawXml;
+        //private JCheckBoxMenuItem showRawXml;
 	
 	public PiMenu(PiGui piGui) {
 		super();
@@ -236,15 +236,16 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		settingsMenu.add(findInductiveCore);	
 		
 		settingsMenu.addSeparator();
-		
-		showRawXml = new JCheckBoxMenuItem("Show raw XML");
-		showRawXml.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				piGui.showHideRawXml(showRawXml.getState());
-			}
-		});
-		showRawXml.setState(Config.getBooleanValue("show_raw_xml"));
-		settingsMenu.add(showRawXml);	
+
+		// TODO: Turn this into a command-line option.
+		// showRawXml = new JCheckBoxMenuItem("Show raw XML");
+		// showRawXml.addActionListener(new ActionListener() {
+		// 	public void actionPerformed(ActionEvent e) {
+		// 		piGui.showHideRawXml(showRawXml.getState());
+		// 	}
+		// });
+		// showRawXml.setState(Config.getBooleanValue("show_raw_xml"));
+		// settingsMenu.add(showRawXml);
 		
 		if(!Config.environmentKeyExists("server_address")){
 			JMenuItem serverAddress = new JMenuItem("Change server address");
