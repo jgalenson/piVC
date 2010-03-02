@@ -859,7 +859,13 @@ let check_for_circular_predicates program errors =
 	| _ -> assert false
       in
       let call_ids = List.rev_map get_id_of_call call_exprs in
-      edge_map := Id_map.add predicate.predName call_ids !edge_map
+      let unique_call_ids =
+	let s = Id_set.empty in
+	let fold_fn s cur = Id_set.add cur s in
+	let id_set = List.fold_left fold_fn s call_ids in
+	Id_set.elements id_set
+      in
+      edge_map := Id_map.add predicate.predName unique_call_ids !edge_map
     in
     List.iter find_edges predicates
   end;

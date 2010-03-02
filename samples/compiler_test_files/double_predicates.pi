@@ -1,0 +1,9 @@
+/* This is Joel testing his fix */
+
+predicate a() := true;
+
+predicate b() := a() <-> a();
+
+@pre true
+@post a()
+void main() {}
