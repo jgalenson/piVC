@@ -130,7 +130,18 @@ let rec check_and_get_return_type_lval (is_annotation, is_ranking_fn) s lval err
                         end;
                         type_of_decl decl
                       end
-                  | _ -> type_of_decl decl
+                  | FnDecl (_, _) ->
+		      begin
+			let error_msg = "Using a function as an lval." in
+			add_error SemanticError error_msg loc errors;
+			type_of_decl decl
+		      end
+                  | Predicate (_, _) ->
+		      begin
+			let error_msg = "Using a predicate as an lval." in
+			add_error SemanticError error_msg loc errors;
+			type_of_decl decl
+		      end
         end
   | ArrayLval(loc, arr, index) ->
       let typeOfIndex = check_and_get_return_type s index errors (is_annotation, is_ranking_fn, false) in

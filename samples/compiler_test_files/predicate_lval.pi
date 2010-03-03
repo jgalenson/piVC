@@ -1,0 +1,5 @@
+predicate a() := true;
+
+@pre true
+@post a
+void main() {}

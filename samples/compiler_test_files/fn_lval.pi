@@ -1,0 +1,7 @@
+@pre true
+@post true
+bool a() { return true; }
+
+@pre true
+@post a
+void main() {}
