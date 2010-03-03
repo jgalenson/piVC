@@ -406,6 +406,15 @@ public class PiGui extends JFrame {
 							JOptionPane.showMessageDialog(gui, ex.getMessage() + "\n\n" + message, "Connection Error", JOptionPane.ERROR_MESSAGE);
 						}
 					});
+				} catch (final java.io.IOException ex){
+					SwingUtilities.invokeLater(new Runnable() {
+						public void run() {
+							compileEnded();
+							String message = "There has been an error in the connection with the server.";
+							JOptionPane.showMessageDialog(gui, message + "\n\n" + ex.toString(), "Connection Error", JOptionPane.ERROR_MESSAGE);
+						}
+					});
+					ex.printStackTrace();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
