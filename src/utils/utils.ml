@@ -31,10 +31,15 @@ let get_absolute_path path =
   let first_char = String.get path 0 in
     if first_char = '/' then (*in this case, the path is already absolute*)
         path
-    else (*otherwise we need to turn it into an absolute path*)
+    else begin (*otherwise we need to turn it into an absolute path*)
       (* We could use Sys.argv.(0) here. *)
       let path_of_executable = Sys.executable_name in
-        (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1)) ^ path 
+      try
+        (String.sub path_of_executable 0 ((String.rindex path_of_executable '/')+1)) ^ path
+      with
+	| Not_found ->
+	    "./" ^ path
+    end
 
 let is_some opt =
   match opt with
