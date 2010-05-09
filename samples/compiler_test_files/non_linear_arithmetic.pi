@@ -1,0 +1,5 @@
+@pre true
+@post rv = x * x
+int main(int x) {
+	return x;
+}

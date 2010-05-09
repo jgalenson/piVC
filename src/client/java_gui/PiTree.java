@@ -381,12 +381,13 @@ public class PiTree extends JPanel {
 			return null;
 		}		
 		
-		private ImageIcon valid, invalid, unknown;
+		private ImageIcon valid, invalid, unknown, timeout;
 		
 		public MyTreeCellRenderer() {
 			valid = new ImageIcon(Utils.getURL("images/valid.jpg"));
 			invalid = new ImageIcon(Utils.getURL("images/invalid.jpg"));
 			unknown = new ImageIcon(Utils.getURL("images/unknown.jpg"));
+			timeout = new ImageIcon(Utils.getURL("images/timeout.jpg"));
 	        //setBackgroundNonSelectionColor(Color.WHITE);//this did the trick
 		}
 		
@@ -397,6 +398,8 @@ public class PiTree extends JPanel {
 				return invalid;
 			else if (validity == VerificationResult.validityT.UNKNOWN)
 				return unknown;
+			else if (validity == VerificationResult.validityT.TIMEOUT)
+				return timeout;
 			else throw new RuntimeException("Unrecognized validity");
 		}
 		

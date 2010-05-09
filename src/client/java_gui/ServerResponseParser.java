@@ -73,7 +73,7 @@ public class ServerResponseParser {
 		}		
 		if(result!=null){
 			String status = result.getAttributes().getNamedItem("status").getTextContent();
-			if (status.equals("valid") || status.equals("invalid") || status.equals("unknown")){
+			if (status.equals("valid") || status.equals("invalid") || status.equals("unknown") || status.equals("timeout")){
 				parseNormal(result, filename);
 			}
 			else if (status.equals("error")){
@@ -110,6 +110,8 @@ public class ServerResponseParser {
 			return VerificationResult.validityT.INVALID;
 		else if (validity.equals("unknown"))
 			return VerificationResult.validityT.UNKNOWN;
+		else if (validity.equals("timeout"))
+			return VerificationResult.validityT.TIMEOUT;
 		else
 			throw new RuntimeException("Unrecognized validity type.");
 	}

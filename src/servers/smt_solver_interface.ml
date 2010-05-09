@@ -7,8 +7,9 @@ type solver_interface = {
 }
 
 exception SolverNotFound of string
-exception SolverError of string
-exception NonLinearProblem
+
+let get_filename base_filename =
+  base_filename ^ "_" ^ string_of_int (Unix.getpid ()) ;;
 
 let create () =
   let ip, op = Unix.pipe () in
@@ -22,6 +23,21 @@ let create () =
     else
       config_value
   in
+  (* Ensure that the solver file exists and is executable. *)
+  let can_run_solver () =
+    if not (Sys.file_exists solver_executable) then
+      false
+    else begin
+      try
+	Unix.access solver_executable [Unix.X_OK];
+	true
+      with
+	| Unix.Unix_error(_, _, _) -> false
+    end
+  in
+  if not (can_run_solver ()) then begin
+    raise (SolverNotFound solver_executable)
+  end;
   (* If we're communicating with the SMT solver with a file, we have to
      append the filename to the argument list.  Since the filename includes
      our pid (since we can have many SMT servers at once it must be unique),
@@ -30,16 +46,14 @@ let create () =
     match Smt_solver.get_input_method () with
       | Smt_solver.Stdin ->
 	  Smt_solver.get_arguments()
-      | Smt_solver.File (base_file_name) ->
-	  let file_name = base_file_name ^ "_" ^ string_of_int (Unix.getpid ()) in
-	  Array.append (Smt_solver.get_arguments ()) [| file_name |]
+      | Smt_solver.File (base_filename) ->
+	  let filename = get_filename base_filename in
+	  if not (Sys.file_exists filename) then
+	    failwith ("File " ^ filename ^ " used to communicate with the SMT solver does not exist.");
+	  Array.append (Smt_solver.get_arguments ()) [| filename |]
   in
+  (*print_endline (Array.fold_left (fun acc cur -> if acc = "" then cur else acc ^ " " ^ cur) "" arguments);*)
   let pid = (Unix.create_process solver_executable arguments ip om error_in) in
-  (* Ensure the SMT solver was successfully started. *)
-  let (killed_pid, _) = Unix.waitpid [Unix.WNOHANG; Unix.WUNTRACED] pid in
-  if killed_pid != 0 then begin
-    raise (SolverNotFound solver_executable)
-  end;
   Unix.close ip;
   Unix.close om;
   Unix.close error_in;
@@ -51,22 +65,25 @@ let create () =
     error = error_out;
   }
 
+let write_to_file msg base_filename = 
+  let filename = get_filename base_filename in
+  (* If the file already exists, fail. *)
+  if Sys.file_exists filename then
+    failwith ("File " ^ filename ^ " used to communicate with the SMT solver already exists.");
+  let fd = Unix.openfile filename [Unix.O_WRONLY; Unix.O_CREAT] 0o644 in
+  ignore (Unix.write fd msg 0 (String.length msg));
+  Unix.close fd
+
 let send m msg =
   output_string m.oc (msg ^ "\n");
   flush m.oc
 
-let write_to_file msg base_file_name = 
-  let file_name = base_file_name ^ "_" ^ string_of_int (Unix.getpid ()) in
-  (* If the file already exists, fail. *)
-  if Sys.file_exists file_name then
-    failwith ("File " ^ file_name ^ " used to communiacte with the SMT solver already exists.");
-  let fd = Unix.openfile file_name [Unix.O_WRONLY; Unix.O_CREAT] 0o644 in
-  ignore (Unix.write fd msg 0 (String.length msg));
-  Unix.close fd
-
 let wait m =
   let fd, _ = m.fd in
-  ignore (Unix.select [fd] [] [] (-1.))
+  let timeout = float_of_int (Config.get_value_int "timeout_time") in
+  let can_read, _, _ = Unix.select [fd] [] [] timeout in
+  if (List.length can_read) = 0 then
+    raise Smt_solver.SolverTimeout
 
 let recv m =
   try
@@ -74,11 +91,11 @@ let recv m =
   with
     | End_of_file
     | Sys_blocked_io ->
-	let str = input_line (Unix.in_channel_of_descr m.error) in
-	if str = "Error: feature not supported: non linear problem." then
-	  raise NonLinearProblem
-	else
-	  raise (SolverError str)
+	let get_line_of_error () =
+	  input_line (Unix.in_channel_of_descr m.error)
+	in
+	let error_msg = Smt_solver.parse_error get_line_of_error in
+	raise (Smt_solver.SolverError (error_msg))
 
 let finish m =
   let shutdown_command = Smt_solver.get_shutdown_command () in
@@ -87,9 +104,9 @@ let finish m =
   ignore (Unix.waitpid [] m.pid);
   begin
     match Smt_solver.get_input_method () with
-      | Smt_solver.File (base_file_name) ->
-	  let file_name = base_file_name ^ "_" ^ string_of_int (Unix.getpid ()) in
-	  Sys.remove file_name
+      | Smt_solver.File (base_filename) ->
+	  let filename = get_filename base_filename in
+	  Sys.remove filename
       | _ -> ()
   end;
   let i, o = m.fd in
@@ -105,11 +122,11 @@ let get_response_from_smt_solver input =
      the file even if the server is terminated in the middle of execution. *)
   begin
     match Smt_solver.get_input_method () with
-      | Smt_solver.File (base_file_name) ->
-	  let file_name = base_file_name ^ "_" ^ string_of_int (Unix.getpid ()) in
+      | Smt_solver.File (base_filename) ->
+	  let filename = get_filename base_filename in
 	  let cleanup_on_break_fn () =
-	    if Sys.file_exists file_name then
-	      Sys.remove file_name
+	    if Sys.file_exists filename then
+	      Sys.remove filename
 	  in
 	  at_exit cleanup_on_break_fn
       | _ -> ()
@@ -123,8 +140,8 @@ let get_response_from_smt_solver input =
 	  let s = create () in
 	  send s input;
 	  s
-      | Smt_solver.File (base_file_name) ->
-	  write_to_file input base_file_name;
+      | Smt_solver.File (base_filename) ->
+	  write_to_file input base_filename;
 	  create ()
   in
   (* Wait for and get the response. *)

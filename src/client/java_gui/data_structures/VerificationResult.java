@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class VerificationResult {
 	
-	public enum validityT {VALID, INVALID, UNKNOWN };
+	public enum validityT {VALID, INVALID, UNKNOWN, TIMEOUT };
 	
 	private String filename;
 	private validityT validity;
@@ -41,6 +41,8 @@ public class VerificationResult {
 		}
 		else if(str.equalsIgnoreCase("unknown")){
 			return validityT.UNKNOWN;
+		}else if(str.equalsIgnoreCase("timeout")){
+			return validityT.TIMEOUT;
 		}else{
 			throw new RuntimeException("Unregonized validity: " + str);
 		}

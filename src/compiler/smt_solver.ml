@@ -2,9 +2,13 @@ open Ast ;;
 open Scanner ;;
 
 exception InvalidVC of string ;;
-exception InvalidSMTSolver of string ;;
+exception UnsupportedSMTSolver of string ;;
 exception InvalidSolverResponse of string;;
 exception InvalidSolverCounterexample of string * string ;;
+
+exception SolverError of string
+exception NonLinearProblem
+exception SolverTimeout
 
 (* Counterexample stuff *)
 
@@ -95,7 +99,14 @@ and parse_lval lval var_names rev_var_names =
      We use the var_names hash table to cache these names
      and their associated types. *)
   let rename_and_replace_id ident var_names rev_var_names =
-    let id = id_of_identifier ident in
+    (* TODO: Hack: yices2 does not accept names beginning with an underscore. *)
+    let id =
+      let orig_id = id_of_identifier ident in
+      if String.length orig_id > 0 && orig_id.[0] = '_' then
+	"temp" ^ orig_id
+      else
+	orig_id
+    in
     let new_name = 
       if (Hashtbl.mem var_names id) then
 	fst (Hashtbl.find var_names id)
@@ -138,7 +149,7 @@ let parse_counterexample_helper str rev_var_names parser_fn =
 
 (* Convert a VC to the SMT-LIB format (http://combination.cs.uiowa.edu/smtlib/).
    Note that we currently do not support integer division or modulus. *)
-let smt_lib_transform_input vc =
+let smt_lib_transform_input_helper vc =
   (* Convert our AST to the smt-lib format. *)
   let rec smt_lib_string_of_expr e =
     let rec soe = function
@@ -192,13 +203,30 @@ let smt_lib_transform_input vc =
     | _ -> raise (InvalidVC ("Unimplemented type: " ^ string_of_type t)) (* TODO: Finish *)
   (* Builds a big string out of all the variables we need to define. *)
   and build_define_str id (name, t) cur_string =
-    cur_string ^ ":extrafuns ((" ^ name ^ " " ^ smt_lib_string_of_type t ^ "))\n" 
+    let sep = if cur_string = "" then "" else " " in
+    cur_string ^ sep ^ "(" ^ name ^ " " ^ smt_lib_string_of_type t ^ ")" 
   (* Builds a big string out of all the varDecls in a quantifier we need to define as being specific to that quantifier. *)
   and build_define_string_for_quantifier prev_string cur_decl =
     prev_string ^ "(?" ^ string_of_identifier cur_decl.varName ^ " " ^ smt_lib_string_of_type cur_decl.varType ^ ")"
   in
-  let (defines, vc_string, rev_var_names) = transform_input_helper vc smt_lib_string_of_expr build_define_str in
-  let smt_lib_string = "(benchmark tmp\n:logic AUFLIA\n" ^ defines ^ ":formula\n" ^ vc_string ^ "\n)\n" in
+  transform_input_helper vc smt_lib_string_of_expr build_define_str ;;
+
+let smt_lib_transform_input_normal vc =
+  let (defines, vc_string, rev_var_names) = smt_lib_transform_input_helper vc in
+  let defines_str =
+    if defines = "" then
+      ""
+    else
+      ":extrafuns (" ^ defines ^ ")\n"
+  in
+  let smt_lib_string = "(benchmark tmp\n:logic QF_AUFLIA\n" ^ defines_str ^ ":formula\n" ^ vc_string ^ "\n)\n" in
+  (* print_endline smt_lib_string; *)
+  (smt_lib_string, rev_var_names) ;;
+
+(* For SMTLIBs commandline input format (currently experimental). *)
+let smt_lib_transform_input_commandline vc =
+  let (defines, vc_string, rev_var_names) = smt_lib_transform_input_helper vc in
+  let smt_lib_string = "(declare-funs (" ^ defines ^ "))\n(assert " ^ vc_string ^ ")\n(check-sat)\n(get-info model)\n" in
   (* print_endline smt_lib_string; *)
   (smt_lib_string, rev_var_names) ;;
 
@@ -217,6 +245,9 @@ type smt_solver = {
      The first parameter is the function we should use to get a line of output from the SMT solver.
      The second is a helper function to put a newline between two strings. *)
   parse_output : (unit -> string) -> (string -> string -> string) -> string * string option;
+  (* Parse the SMT solver's error output.  If we know what the error is,
+     we can throw an exception; otherwise, we can return the text of the error.*)
+  parse_error : (unit -> string) -> (string -> string -> string) -> string;
   (* Get the arguments to pass to the SMT solver when we execute it.
      The first argument should be its name. *)
   get_arguments : unit -> string array;
@@ -307,7 +338,7 @@ module Yices =
 
     let transform_input_smt_lib vc =
       (* We have to send eof/CTRL-D to yices's stdin to tell it we're finished. *)
-      let (smt_lib_str, rev_var_names) = smt_lib_transform_input vc in
+      let (smt_lib_str, rev_var_names) = smt_lib_transform_input_normal vc in
       let eof = String.make 1 (Char.chr 4) in
       (smt_lib_str ^ eof, rev_var_names) ;;
 
@@ -363,7 +394,16 @@ module Yices =
 	  let rhs = get_replaced_token scan in
 	  (lhs, rhs)
 	in
-	List.rev_map parse_yices_example parts
+	(* TODO: Handle yices2 counterexample arrays better. *)
+	let real_parts =
+	  let filter_fn s =
+	    let scan = Scanner.create s in
+	    let first_token = Scanner.next_token scan in
+	    first_token <> "MODEL" && first_token <> "---" && first_token <> "default" && first_token <> "----" && first_token <> ""
+	  in
+	  List.filter filter_fn parts
+	in
+	List.rev_map parse_yices_example real_parts
       in
       parse_counterexample_helper str rev_var_names parse_whole_counterexample ;;
 
@@ -387,10 +427,51 @@ module Yices =
       with
 	| End_of_file ->
 	    assert false ;;
+
+    let rec parse_output_yices2 get_line_of_output append =
+      try
+	(* Gets the counterexample by reading until we hit a newline. *)
+	let rec get_counterexample () =
+	  let line =
+	    try
+	      Some (get_line_of_output ())
+	    with
+	      | End_of_file -> None
+	  in
+	  match line with
+	    | Some (x) -> append x (get_counterexample ())
+	    | None -> ""
+	in
+	(* Get (response, counterexample opt) from yices. *)
+	let recv = get_line_of_output () in
+	match recv with
+	  | "sat" -> ("sat", Some (get_counterexample ()))
+          | "unknown" -> ("unknown", None)
+	  | "unsat" -> ("unsat", None)
+	  | "Logical context is inconsistent. Use (pop) to restore the previous state." -> assert false
+	  | "ok" -> parse_output get_line_of_output append
+	  | "" -> ("", None)
+	  | _ -> ("", None)
+      with
+	| End_of_file ->
+	    assert false ;;
+
+    let rec parse_error get_line_of_error append =
+      let str = get_line_of_error () in
+      if str = "Error: feature not supported: non linear problem." then
+	raise NonLinearProblem
+      else if str = "Alarm clock" then
+	raise SolverTimeout
+      else
+	str ;;
     
     let get_arguments () =
-      [| Filename.basename (Config.get_value "smt_solver_path"); "-e" |] ;; (* -e for evidence (return satisfying model) *)
+      (* Note that handling timeouts here is a bit tricky; yices seems to return unknown when it times out sometimes. *)
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-e"(*; "-tm"; Config.get_value "timeout_time"*) |] ;; (* -e for evidence (return satisfying model) *)
 
+    let get_arguments_yices2 () =
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-m" |] ;;
+    
     let get_arguments_smt_lib () =
       Array.append (get_arguments ()) [| "-smt" |] ;;
 
@@ -404,8 +485,19 @@ let yices_solver = {
   transform_input = Yices.transform_input;
   parse_counterexample = Yices.parse_counterexample;
   parse_output = Yices.parse_output;
+  parse_error = Yices.parse_error;
   get_arguments = Yices.get_arguments;
   shutdown_command = Yices.shutdown_command;
+} ;;
+
+let yices2_solver = {
+  input_method = Yices.input_method;
+  transform_input = Yices.transform_input_smt_lib;
+  parse_counterexample = Yices.parse_counterexample;
+  parse_output = Yices.parse_output_yices2;
+  parse_error = Yices.parse_error;
+  get_arguments = Yices.get_arguments_yices2;
+  shutdown_command = None;
 } ;;
 
 (* Yices can use SMT-LIB for input too. *)
@@ -414,6 +506,7 @@ let yices_solver_using_smt_lib = {
   transform_input = Yices.transform_input_smt_lib;
   parse_counterexample = Yices.parse_counterexample;
   parse_output = Yices.parse_output;
+  parse_error = Yices.parse_error;
   get_arguments = Yices.get_arguments_smt_lib;
   shutdown_command = None;
 } ;;
@@ -423,12 +516,16 @@ module Z3 =
 
     let base_file_name = "z3_input" ;;
 
-    let input_method = File (base_file_name) ;;
+    let input_method_file = File (base_file_name) ;;
+    
+    let input_method_stdin = Stdin ;;
 
-    let transform_input vc = smt_lib_transform_input vc ;;
+    let transform_input_file vc = smt_lib_transform_input_normal vc ;;
+
+    let transform_input_stdin vc = smt_lib_transform_input_commandline vc ;;
     
     let parse_counterexample str rev_var_names =
-      let parse_z3_counterexample parts = 
+      (*let parse_old_style_z3_counterexample parts = 
 	let num_map = Hashtbl.create 10 in
 	(* First, build a mapping of numbers to their lines. *)
 	let add_to_map line =
@@ -546,58 +643,98 @@ module Z3 =
 	  examples @ result_list
 	in
 	Hashtbl.fold add_examples example_map []
+      in*)
+      let parse_z3_counterexample parts =
+	let replace_name n =
+	  if (Hashtbl.mem rev_var_names n) then
+	    (Hashtbl.find rev_var_names n).name
+	  else
+	    n
+	in
+	(* Parse one line. *)
+	let parse_z3_example s =
+	  (* TODO: Handle new-style z3 counterexample arrays (they use update notation).  I probably want to use the commented code below instead of the scanner code below that. *)
+	  (*let scan = Scanner.create s in
+	  let lhs_token = Scanner.next_token scan in
+	  print_endline lhs_token;
+	  let lhs = Counterexample.Var (replace_name lhs_token, Hashtbl.find rev_var_names lhs_token) in
+	  assert (Scanner.next_token scan = "->");
+	  let rhs = Scanner.rest_str scan in
+	  (lhs, rhs)*)
+	  let regex = Str.regexp "^\\(.*\\) -> \\(.*\\)$" in
+	  assert (Str.string_match regex s 0);
+	  let lhs_token = Str.matched_group 1 s in
+	  let rhs = Str.matched_group 2 s in
+	  let lhs = Counterexample.Var (replace_name lhs_token, Hashtbl.find rev_var_names lhs_token) in
+	  (lhs, rhs)
+	in
+	(* TODO: Hack to get around Z3's current multi-line output. *)
+	let new_parts = List.fold_left (fun acc cur -> if (try (Str.search_forward (Str.regexp "->") cur 0) >= 0 with | Not_found -> false) then cur :: acc else ((String.sub (List.hd acc) 0 ((String.length (List.hd acc)) - 1)) ^ cur) :: (List.tl acc)) [] parts in
+	List.rev_map parse_z3_example new_parts
       in
+      (*print_endline (Hashtbl.fold (fun k v acc -> acc ^ (if acc = "" then "" else ", ") ^ k ^ " -> " ^ (string_of_identifier v)) rev_var_names "");*)
+      (* Needed for commandline format. *)
+      (*let regex = Str.regexp "^((\"model\" \"\\(\\(.\\|\n\\)*\\)\"))$" in
+      assert (Str.string_match regex str 0);
+      let real_str = Str.matched_group 1 str in*)
       parse_counterexample_helper str rev_var_names parse_z3_counterexample 
 
-    let parse_output get_line_of_output append =
+    let rec parse_output get_line_of_output append =
       let my_get_line_of_output () =
-	let line = get_line_of_output () in
-	Str.global_replace (Str.regexp "\r") "" line
+	try
+	  let line = get_line_of_output () in
+	  Str.global_replace (Str.regexp "\r") "" line
+	with
+	  | End_of_file -> assert false
       in
-      try
-	(* Gets the counterexample by reading until we hit a newline. *)
-	let rec get_counterexample () = match my_get_line_of_output () with
-	  | "sat" -> "" (* It prints out sat at the end. *)
-	  | "function interpretations:" ->
-	      begin
-		try
-		  while true do
-		    print_endline (get_line_of_output ())
-		  done;
-		  assert false
-		with
-		  | _ ->
-		      assert false (* We don't send free functions to the SMT-solver. *)
-	      end
-	  | x -> append x (get_counterexample ())
+	(* Get (response, counterexample opt) from Z3. *)
+	let rec get_output acc = 
+	  let recv = my_get_line_of_output () in
+	  match recv with
+	    | "sat" -> ("sat", Some (acc))
+	    | "unsat" -> ("unsat", None)
+            | "unknown" -> ("unknown", None)
+	    | "success" -> get_output acc
+	    | x -> get_output (append acc x)
 	in
-	(* Get (response, counterexample opt) from Z3.. *)
-	let recv = my_get_line_of_output () in
-	match recv with
-	  | "sat" -> ("sat", None)
-	  | "partitions:" -> ("sat", Some (get_counterexample ())) (* If there is a counterexample, it comes before the sat. *)
-	  | "unsat" -> ("unsat", None)
-          | "unknown" -> ("unknown", None)
-	  | _ -> raise (InvalidSolverResponse recv)
-      with
-	| End_of_file ->
-	    assert false ;;
+	get_output "" ;;
+
+    let rec parse_error get_line_of_error append =
+      get_line_of_error () ;;
 
     (* Note that you have to append the fifo name to this first. *)
-    let get_arguments () =
-      [| Filename.basename (Config.get_value "smt_solver_path"); "/m"; "/smt" |] ;; (* /m for model (return satisfying model) *)
+    let get_arguments_file () =
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-m"; "-smt" |] ;;
     
-    let shutdown_command = None ;;
+    let get_arguments_stdin () =
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-m"; "-smtc"; "-in" |] ;;
+
+    let shutdown_command_file = None ;;
+    
+    let shutdown_command_stdin = 
+      Some ("(exit)\n") ;;
 
   end ;;
 
 let z3_solver = {
-  input_method = Z3.input_method;
-  transform_input = Z3.transform_input;
+  input_method = Z3.input_method_file;
+  transform_input = Z3.transform_input_file;
   parse_counterexample = Z3.parse_counterexample;
   parse_output = Z3.parse_output;
-  get_arguments = Z3.get_arguments;
-  shutdown_command = Z3.shutdown_command;
+  parse_error = Z3.parse_error;
+  get_arguments = Z3.get_arguments_file;
+  shutdown_command = Z3.shutdown_command_file;
+} ;;
+
+(* Currently experimental. *)
+let z3_solver_stdin = {
+  input_method = Z3.input_method_stdin;
+  transform_input = Z3.transform_input_stdin;
+  parse_counterexample = Z3.parse_counterexample;
+  parse_output = Z3.parse_output;
+  parse_error = Z3.parse_error;
+  get_arguments = Z3.get_arguments_stdin;
+  shutdown_command = Z3.shutdown_command_stdin;
 } ;;
 
 (* Functions that call the solvers *)
@@ -606,8 +743,10 @@ let get_smt_solver () =
   let smt_solver_name = Config.get_value "smt_solver_name" in
   match smt_solver_name with
     | "yices" -> yices_solver
+    | "yices2" -> yices2_solver
+    | "yices-smtlib" -> yices_solver_using_smt_lib
     | "z3" -> z3_solver
-    | _ -> raise (InvalidSMTSolver smt_solver_name) ;;
+    | _ -> raise (UnsupportedSMTSolver smt_solver_name) ;;
 
 let get_input_method () =
   let solver = get_smt_solver() in
@@ -628,6 +767,14 @@ let parse_output get_line_of_output =
     if b = "" then a else (a ^ "\n" ^ b)
   in
   solver.parse_output get_line_of_output append ;;
+
+let parse_error get_line_of_output =
+  let solver = get_smt_solver() in
+  (* Check to make sure we don't put \n at end of returned string. *)
+  let append a b =
+    if b = "" then a else (a ^ "\n" ^ b)
+  in
+  solver.parse_error get_line_of_output append ;;
 
 let get_arguments () =
   let solver = get_smt_solver() in

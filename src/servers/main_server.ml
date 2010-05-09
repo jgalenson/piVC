@@ -156,8 +156,8 @@ let rec compile vc_cache_and_lock ic oc =
   in
   begin
       try
-	ignore (Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Main_Server_Timeout)));
-	ignore (Unix.alarm (Config.get_value_int "timeout_time"));
+	(*ignore (Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise Main_Server_Timeout)));
+	ignore (Unix.alarm (Config.get_value_int "timeout_time"));*)
         let xml_str = get_input ic in
         try
           let xml_to_return =
@@ -192,6 +192,10 @@ let rec compile vc_cache_and_lock ic oc =
                               if Verify.contains_unknown_vc verified_program_info then
                                 messages := messages.contents @ [Constants.unknown_message]
                             end;
+                            begin
+                              if Verify.contains_timeout_vc verified_program_info then
+                                messages := messages.contents @ [Constants.timeout_message]
+                            end;
                             xml_of_verified_program verified_program_info messages.contents
                           end
                       | _  -> 
@@ -221,7 +225,7 @@ let rec compile vc_cache_and_lock ic oc =
 	  go_exception pretty_xml_str ex;
       with ex ->  go_exception "No XML is available. The exception occured before the transmission had been fully recieved." ex
   end;
-    Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
+    (*Sys.set_signal Sys.sigalrm Sys.Signal_ignore;*)
     flush stdout;
     flush stderr;
     flush oc;

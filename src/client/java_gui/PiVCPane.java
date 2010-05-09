@@ -101,6 +101,9 @@ public class PiVCPane extends JPanel {
 					else if(curr.status.equals(validityT.INVALID)){
 						color = "red";
 					}
+					else if(curr.status.equals(validityT.TIMEOUT)){
+						color = "gray";
+					}
 					else{
 						color = "yellow";
 					}

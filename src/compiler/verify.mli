@@ -3,7 +3,7 @@ open Ast ;;
 
 type verification_mode = Set_validity | Set_in_core
 
-type validity = Valid | Invalid | Unknown
+type validity = Valid | Invalid | Unknown | Timeout
 
 and termination_result = {
   overall_validity_t : validity;
@@ -84,3 +84,5 @@ val verify_vc : verification_atom_temp *
 val overall_validity_of_function_validity_information_list : function_validity_information list -> validity ;;
 
 val contains_unknown_vc : function_validity_information list -> bool ;;
+
+val contains_timeout_vc : function_validity_information list -> bool ;;

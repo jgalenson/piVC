@@ -6,6 +6,7 @@ module Scanner =
     let punct = Str.regexp "[ ().,;=:{}]"
     let create initial_string = { str = initial_string; index = 0 }
     let has_token s = (s.index < (String.length s.str))
+    let rest_str s = Str.string_after s.str s.index
     let next_token s =
       
       let is_space s = Str.string_match spaces s 0 in
@@ -35,4 +36,5 @@ module Scanner =
 	  cur_str
 	else
 	  cur_str ^ (build_token ())
+
   end ;;

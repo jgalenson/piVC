@@ -7,8 +7,9 @@ let verify ic oc =
   (*print_endline "dp server begin";*)
   begin
     try
-      ignore (Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise DP_Server_Timeout)));
-      ignore (Unix.alarm (Config.get_value_int "timeout_time"));
+      (* Note that timeouts like this sometimes seem to silently kill the server. *)
+      (*ignore (Sys.set_signal Sys.sigalrm (Sys.Signal_handle (fun _ -> raise DP_Server_Timeout)));
+      ignore (Unix.alarm (Config.get_value_int "timeout_time"));*)
       let input = get_input ic in
       Config.print ("dp got input: " ^ input); (* input contains its own endline. *)
       let (response, counterexample_opt) = Smt_solver_interface.get_response_from_smt_solver input in
@@ -19,8 +20,11 @@ let verify ic oc =
       if (response = "sat") then
         send_output oc (Utils.elem_from_opt counterexample_opt)
     with
-      | Smt_solver_interface.NonLinearProblem ->
+      | Smt_solver.NonLinearProblem ->
 	  send_output oc "non-linear"
+      | Smt_solver.SolverTimeout
+      | DP_Server_Timeout ->
+	  send_output oc "timeout";
       | ex ->
 	  begin
 	    let error_str = Exceptions.string_of_exception ex in
@@ -29,7 +33,7 @@ let verify ic oc =
 	  end 
   end;
   (*print_endline "dp server end";*)
-  Sys.set_signal Sys.sigalrm Sys.Signal_ignore;
+  (*Sys.set_signal Sys.sigalrm Sys.Signal_ignore;*)
   flush oc ;;
 
 let start_dp_server () =

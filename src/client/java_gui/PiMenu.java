@@ -171,7 +171,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		});
 		actionsMenu.add(compileMenuItem);
 		
-		cancelCompileMenuItem = new JMenuItem("Cancel compile");
+		cancelCompileMenuItem = new JMenuItem("Abandon compile");
 		cancelCompileMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				piGui.cancelCompile();

@@ -19,4 +19,8 @@ the array property fragment or because they contain non-linear arithmetic.  You
 will need to modify your annotations to remove these problems.  See chapter
 11.2.1 of \"The Calculus Of Computation\" for more information about the array
 property fragment."
-
+let timeout_message =
+"Some of your queries have timed out.  If you are using a public server, its
+load may be unusually high, in which case please be considerate.
+If you are running your own server, you can increase the timeout length.
+In either case, you may want to try to simplify the VC."

@@ -13,7 +13,7 @@ exception Invalid_DP_Response of string ;;
 
 type verification_mode = Set_validity | Set_in_core
 
-type validity = Valid | Invalid | Unknown
+type validity = Valid | Invalid | Unknown | Timeout
         
 and termination_result = {
   overall_validity_t : validity;
@@ -67,7 +67,8 @@ let location_of_vc_conjunct_list_list cons =
 let string_of_validity v = match v with
   | Valid -> "valid"
   | Invalid -> "invalid"
-  | Unknown -> "unknown" ;;
+  | Unknown -> "unknown"
+  | Timeout -> "timeout" ;;
 
 let is_valid v = match v with
   | Valid -> true
@@ -77,11 +78,17 @@ let is_unknown v = match v with
   | Unknown -> true
   | _ -> false ;;
 
+let is_timeout v = match v with
+  | Timeout -> true
+  | _ -> false ;;
+
 let overall_validity validities =
   if (List.for_all is_valid validities) then
     Valid
   else if (List.exists is_unknown validities) then
     Unknown
+  else if (List.exists is_timeout validities) then
+    Timeout
   else
     Invalid ;;
 
@@ -183,6 +190,7 @@ let add_to_cache cache key result =
     ()
   else
     begin
+      (* TODO: Choose better eviction policy?  Hashtbl.length is O(n)? *)
       if (Hashtbl.length cache) = (Config.get_value_int "cache_size") then
 	begin
 	  evict_oldest_member cache
@@ -300,6 +308,8 @@ let verify_vc_expr (vc_with_preds, (vc_cache, cache_lock), program) =
 	          end
 		else if response = "non-linear" then
 		  (Unknown, None)
+		else if response = "timeout" then
+		  (Timeout, None)
                 else
 		  raise (Invalid_DP_Response response)
               in
@@ -316,7 +326,8 @@ let overall_validity_status list_of_things extraction_func =
   let is_validity extraction_func test actual = (test==(extraction_func actual)) in
     if (List.for_all (is_validity extraction_func Valid) list_of_things) then Valid
     else if (List.exists (is_validity extraction_func Invalid) list_of_things) then Invalid
-    else Unknown
+    else if (List.exists (is_validity extraction_func Unknown) list_of_things) then Unknown
+    else Timeout
 ;;
 
 
@@ -374,8 +385,12 @@ let rec overall_validity_of_function_validity_information_list function_validity
   let function_is_unknown vc = 
     vc.overall_validity = Unknown
   in
+  let function_is_timeout vc = 
+    vc.overall_validity = Timeout
+  in
     if List.exists function_is_invalid function_validity_information_list then Invalid
     else if List.exists function_is_unknown function_validity_information_list then Unknown
+    else if List.exists function_is_timeout function_validity_information_list then Timeout
     else Valid
 
 let rec overall_validity_of_vc_detailed_list vc_detailed_list = 
@@ -385,8 +400,12 @@ let rec overall_validity_of_vc_detailed_list vc_detailed_list =
   let vc_is_unknown vc = 
     vc.valid = Unknown
   in
+  let vc_is_timeout vc = 
+    vc.valid = Timeout
+  in
     if List.exists vc_is_invalid vc_detailed_list then Invalid
     else if List.exists vc_is_unknown vc_detailed_list then Unknown
+    else if List.exists vc_is_timeout vc_detailed_list then Timeout
     else Valid
 
 and vc_detailed_of_vc_detailed_temp vc_detailed_temp = 
@@ -397,12 +416,17 @@ and vc_detailed_of_vc_detailed_temp vc_detailed_temp =
   let elem_is_unknown elem = 
     (Utils.elem_from_opt elem.valid_conjunct) = Unknown
   in
+  let elem_is_timeout elem = 
+    (Utils.elem_from_opt elem.valid_conjunct) = Timeout
+  in
   let rhs = List.nth vc_detailed_temp.vc_temp ((List.length vc_detailed_temp.vc_temp)-1) in
   let valid = 
     if List.exists (elem_is_invalid) rhs then
       Invalid
     else if List.exists (elem_is_unknown) rhs then
       Unknown
+    else if List.exists (elem_is_timeout) rhs then
+      Timeout
     else
       Valid
   in
@@ -793,6 +817,8 @@ and verify_program program_info program_ast vc_cache_and_lock options =
                   Invalid
                 else if correctness_result.overall_validity_c = Unknown or termination_result.overall_validity_t = Unknown then
                   Unknown
+                else if correctness_result.overall_validity_c = Timeout or termination_result.overall_validity_t = Timeout then
+                  Timeout
                 else Valid
               end
           | None -> correctness_result.overall_validity_c
@@ -826,6 +852,20 @@ let contains_unknown_vc function_validity_information_list =
                 List.exists atom_contains_unknown term.nonnegative_vcs
   in
     List.exists function_contains_unknown function_validity_information_list
+      
+let contains_timeout_vc function_validity_information_list =
+  let function_contains_timeout function_validity_information = 
+    let atom_contains_timeout atom =
+      atom.valid = Timeout
+    in
+      List.exists atom_contains_timeout function_validity_information.correctness_result.vcs ||
+        match function_validity_information.termination_result with
+            None -> false
+          | Some(term) ->
+              List.exists atom_contains_timeout term.decreasing_paths ||
+                List.exists atom_contains_timeout term.nonnegative_vcs
+  in
+    List.exists function_contains_timeout function_validity_information_list
 
 let inductive_core_good_enough function_validity_information_list =
   let important_vc_implies_all_rhs_conjuncts_in_inductive_core vc = 

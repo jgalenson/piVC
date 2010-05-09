@@ -92,6 +92,7 @@ let go_submit code submission_info user_info options verified_program_info error
                         Valid -> ("valid", None)
                       | Invalid -> ("invalid", Some("verify correctly"))
                       | Unknown -> ("unknown", Some("verify correctly"))
+                      | Timeout -> ("timeout", Some("verify correctly"))
                   end
               | _ -> ("does not compile", Some("compile"))
           in
