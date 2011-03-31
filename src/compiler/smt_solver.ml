@@ -425,8 +425,7 @@ module Yices =
 	  | "" -> ("", None)
 	  | _ -> ("", None)
       with
-	| End_of_file ->
-	    assert false ;;
+	| End_of_file -> raise (SolverError "Unable to parse SMT solver output.") ;; (* TODO: A better approach would be to read the whole string and then parse it and give the failing string on errors like this. *)
 
     let rec parse_output_yices2 get_line_of_output append =
       try
@@ -453,8 +452,7 @@ module Yices =
 	  | "" -> ("", None)
 	  | _ -> ("", None)
       with
-	| End_of_file ->
-	    assert false ;;
+	| End_of_file -> raise (SolverError "Unable to parse SMT solver output.") ;;
 
     let rec parse_error get_line_of_error append =
       let str = get_line_of_error () in
@@ -685,7 +683,7 @@ module Z3 =
 	  let line = get_line_of_output () in
 	  Str.global_replace (Str.regexp "\r") "" line
 	with
-	  | End_of_file -> assert false
+	  | End_of_file -> raise (SolverError "Unable to parse SMT solver output.")
       in
 	(* Get (response, counterexample opt) from Z3. *)
 	let rec get_output acc = 
