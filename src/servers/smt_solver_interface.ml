@@ -153,7 +153,9 @@ let get_response_from_smt_solver input =
 	  kill solver;
 	  raise ex
   end;
-  let get_line_of_output () =
+  let get_line_of_output should_wait =
+    if should_wait then
+      wait solver;
     recv solver
   in
   let (response, counterexample_opt) = Smt_solver.parse_output get_line_of_output in

@@ -242,9 +242,9 @@ type smt_solver = {
   (* Parse the SMT solver's counterexample output. *)
   parse_counterexample : string -> (string, Ast.identifier) Hashtbl.t -> Counterexample.example list;
   (* Parse through the SMT solver's stdout output to return status * counterexample_string option.
-     The first parameter is the function we should use to get a line of output from the SMT solver.
+     The first parameter is the function we should use to get a line of output from the SMT solver.  Its parameter is whether or not to wait for input.
      The second is a helper function to put a newline between two strings. *)
-  parse_output : (unit -> string) -> (string -> string -> string) -> string * string option;
+  parse_output : (bool -> string) -> (string -> string -> string) -> string * string option;
   (* Parse the SMT solver's error output.  If we know what the error is,
      we can throw an exception; otherwise, we can return the text of the error.*)
   parse_error : (unit -> string) -> (string -> string -> string) -> string;
@@ -410,12 +410,12 @@ module Yices =
     let rec parse_output get_line_of_output append =
       try
 	(* Gets the counterexample by reading until we hit a newline. *)
-	let rec get_counterexample () = match get_line_of_output () with
+	let rec get_counterexample () = match get_line_of_output false with
 	  | "" -> ""
 	  | x -> append x (get_counterexample ())
 	in
 	(* Get (response, counterexample opt) from yices. *)
-	let recv = get_line_of_output () in
+	let recv = get_line_of_output false in
 	match recv with
 	  | "sat" -> ("sat", Some (get_counterexample ()))
           | "unknown" -> ("unknown", None)
@@ -433,7 +433,7 @@ module Yices =
 	let rec get_counterexample () =
 	  let line =
 	    try
-	      Some (get_line_of_output ())
+	      Some (get_line_of_output false)
 	    with
 	      | End_of_file -> None
 	  in
@@ -442,7 +442,7 @@ module Yices =
 	    | None -> ""
 	in
 	(* Get (response, counterexample opt) from yices. *)
-	let recv = get_line_of_output () in
+	let recv = get_line_of_output false in
 	match recv with
 	  | "sat" -> ("sat", Some (get_counterexample ()))
           | "unknown" -> ("unknown", None)
@@ -649,6 +649,8 @@ module Z3 =
 	  else
 	    n
 	in
+        let array_names = Hashtbl.create 10 in
+        let cur_arr_name = ref None in
 	(* Parse one line. *)
 	let parse_z3_example s =
 	  (* TODO: Handle new-style z3 counterexample arrays (they use update notation).  I probably want to use the commented code below instead of the scanner code below that. *)
@@ -659,16 +661,40 @@ module Z3 =
 	  assert (Scanner.next_token scan = "->");
 	  let rhs = Scanner.rest_str scan in
 	  (lhs, rhs)*)
-	  let regex = Str.regexp "^\\(.*\\) -> \\(.*\\)$" in
+	  let regex = Str.regexp "^ *(?\\([^)]*\\))? -> (?\\([^)}]*\\))?}?$" in
 	  assert (Str.string_match regex s 0);
 	  let lhs_token = Str.matched_group 1 s in
 	  let rhs = Str.matched_group 2 s in
-	  let lhs = Counterexample.Var (replace_name lhs_token, Hashtbl.find rev_var_names lhs_token) in
-	  (lhs, rhs)
+          (*print_endline ("Line: " ^ s ^ ", lhs: " ^ lhs_token ^ ", rhs: " ^ rhs);*)
+          if rhs = "{" then begin (* Begin an array. *)
+              cur_arr_name := Some(Hashtbl.find array_names lhs_token);
+              None
+            end
+          else if rhs = "}" then begin (* End an array. *)
+              cur_arr_name := None;
+              None
+            end
+          else if (Str.string_match (Str.regexp "_ as-array \\(.*\\)$") rhs 0) then begin (* Remember Z3's internal array names. *)
+              Hashtbl.add array_names (Str.matched_group 1 rhs) lhs_token;
+              None
+            end
+          else if (Utils.is_some !cur_arr_name) then begin (* Array index. *)
+              let name = Utils.elem_from_opt !cur_arr_name in
+	      let inner_var = Counterexample.Var (replace_name name, Hashtbl.find rev_var_names name) in
+              let lhs_index = match lhs_token with
+                | "else" -> "*"
+                | lhs_token -> lhs_token
+              in
+	      Some (Counterexample.ArrayVar (inner_var, lhs_index), rhs)
+            end
+          else (* Normal value. *)
+	    let lhs = Counterexample.Var (replace_name lhs_token, Hashtbl.find rev_var_names lhs_token) in
+	    Some (lhs, rhs)
 	in
 	(* TODO: Hack to get around Z3's current multi-line output. *)
-	let new_parts = List.fold_left (fun acc cur -> if (try (Str.search_forward (Str.regexp "->") cur 0) >= 0 with | Not_found -> false) then cur :: acc else ((String.sub (List.hd acc) 0 ((String.length (List.hd acc)) - 1)) ^ cur) :: (List.tl acc)) [] parts in
-	List.rev_map parse_z3_example new_parts
+	let new_parts = List.rev (List.fold_left (fun acc cur -> if (try (Str.search_forward (Str.regexp "->") cur 0) >= 0 with | Not_found -> false) then cur :: acc else ((String.sub (List.hd acc) 0 ((String.length (List.hd acc)) - 1)) ^ cur) :: (List.tl acc)) [] parts) in
+	let result_opts = List.rev_map parse_z3_example new_parts in
+        List.map (fun opt -> Utils.elem_from_opt opt) (List.filter (fun opt -> Utils.is_some opt) result_opts)
       in
       (*print_endline (Hashtbl.fold (fun k v acc -> acc ^ (if acc = "" then "" else ", ") ^ k ^ " -> " ^ (string_of_identifier v)) rev_var_names "");*)
       (* Needed for commandline format. *)
@@ -678,34 +704,43 @@ module Z3 =
       parse_counterexample_helper str rev_var_names parse_z3_counterexample 
 
     let rec parse_output get_line_of_output append =
-      let my_get_line_of_output () =
-	try
-	  let line = get_line_of_output () in
-	  Str.global_replace (Str.regexp "\r") "" line
-	with
-	  | End_of_file -> raise (SolverError "Unable to parse SMT solver output.")
+      let my_get_line_of_output should_wait =
+	let line = get_line_of_output should_wait in
+	Str.global_replace (Str.regexp "\r") "" line
       in
-	(* Get (response, counterexample opt) from Z3. *)
-	let rec get_output acc = 
-	  let recv = my_get_line_of_output () in
-	  match recv with
-	    | "sat" -> ("sat", Some (acc))
-	    | "unsat" -> ("unsat", None)
-            | "unknown" -> ("unknown", None)
-	    | "success" -> get_output acc
-	    | x -> get_output (append acc x)
+      (* Get the counterexample by reading until we hit the end of input. *)
+      let rec get_counterexample should_wait =
+        try
+          match my_get_line_of_output should_wait with
+	    | "" -> ""
+	    | x -> append x (get_counterexample false)
+        with
+          | End_of_file -> ""
 	in
-	get_output "" ;;
+	(* Get (response, counterexample opt) from Z3. *)
+	let rec get_output () =
+          try
+	    let recv = my_get_line_of_output false in
+	    match recv with
+	      | "sat" -> ("sat", Some (get_counterexample true))
+	      | "unsat" -> ("unsat", None)
+              | "unknown" -> ("unknown", None)
+	      | "success" -> get_output ()
+	      | _ -> ("", None)
+          with
+	    | End_of_file -> raise (SolverError "Unable to parse SMT solver output.")
+	in
+	get_output () ;;
 
     let rec parse_error get_line_of_error append =
       get_line_of_error () ;;
 
     (* Note that you have to append the fifo name to this first. *)
     let get_arguments_file () =
-      [| Filename.basename (Config.get_value "smt_solver_path"); "-m"; "-smt" |] ;;
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-smt" |] ;;
     
     let get_arguments_stdin () =
-      [| Filename.basename (Config.get_value "smt_solver_path"); "-m"; "-smtc"; "-in" |] ;;
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-smt"; "-in" |] ;;
 
     let shutdown_command_file = None ;;
     

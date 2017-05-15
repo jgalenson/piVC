@@ -24,7 +24,7 @@ type inputMethod = Stdin | File of string ;;
 val get_input_method : unit -> inputMethod ;;
 val transform_input : Ast.expr -> string * (string, Ast.identifier) Hashtbl.t ;;
 val parse_counterexample : string -> (string, Ast.identifier) Hashtbl.t -> Counterexample.example list ;;
-val parse_output : (unit -> string) -> string * string option ;;
+val parse_output : (bool -> string) -> string * string option ;;
 val parse_error : (unit -> string) -> string ;;
 val get_arguments : unit -> string array ;;
 val get_shutdown_command : unit -> string option ;;
