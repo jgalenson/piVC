@@ -13,7 +13,7 @@ let get_new_length_identifier expr =
           let ident = identifier_of_array_expr exp in
           let new_ident = Ast.create_length_identifier ("|" ^ ident.name ^ "|") (gdl()) in
           let vd = Ast.create_varDecl (Int(gdl())) new_ident (varDecl_of_identifier ident).location_vd in
-          vd.var_id := Some("length_'_"^id_of_identifier ident);
+          vd.var_id := Some("length_@_"^id_of_identifier ident);
           new_ident.decl := Some(vd);
           new_ident
         end
@@ -63,7 +63,7 @@ let get_new_object_var_identifier object_var program =
           let new_ident_name = id1.name ^ "." ^ id2.name in
           let new_ident_location = location_union id1.location_id id2.location_id in
           let new_ident_identifier = create_identifier new_ident_name new_ident_location in
-          let new_ident_id = "obj_'_" ^ id_of_identifier id1 ^ "_" ^ id2.name in
+          let new_ident_id = "obj_@_" ^ id_of_identifier id1 ^ "_" ^ id2.name in
             
           let member_varDecl =
             let member_decl = get_member_decl object_var program in 

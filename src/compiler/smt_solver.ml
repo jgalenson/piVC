@@ -135,17 +135,20 @@ let transform_input_helper vc vc_transform_fn build_define_str_fn =
   let vc_string = vc_transform_fn new_vc in
   (defines, vc_string, rev_var_names) ;;
 
-(* Function to help parse a counterexample from the SMT solver.
-   It takes in the function that does the actual work. *)
-let parse_counterexample_helper str rev_var_names parser_fn =
-  let parts = Str.split (Str.regexp "\n") str in
-  let data = parser_fn parts in
+let sort_counterexamples data = 
   let sort_fn (lhs1, _) (lhs2, _) =
     String.compare (Counterexample.variable_to_string lhs1) (Counterexample.variable_to_string lhs2)
   in
   let sorted_data = List.sort sort_fn data in
   (* print_endline ("Counterexample: " ^ (Counterexample.counterexample_to_string sorted_data)); *)
   sorted_data ;;
+
+(* Function to help parse a counterexample from the SMT solver.
+   It takes in the function that does the actual work. *)
+let parse_counterexample_helper str rev_var_names parser_fn =
+  let parts = Str.split (Str.regexp "\n") str in
+  let data = parser_fn parts in
+  sort_counterexamples data ;;
 
 (* Convert a VC to the SMT-LIB format (http://combination.cs.uiowa.edu/smtlib/).
    Note that we currently do not support integer division or modulus. *)
@@ -171,8 +174,8 @@ let smt_lib_transform_input_helper vc =
       | Minus (loc, t1, t2) -> "(- " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
       | Times (loc, t1, t2) -> "(* " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
       | Div (loc, t1, t2) -> "(/ " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
-      | IDiv (loc, t1, t2) -> failwith "I do not know how to express integer division in SMT-LIB" (* TODO: Fix. *)
-      | Mod (loc, t1, t2) -> failwith "I do not know how to express modulus in SMT-LIB" (* TODO: Fix. *)
+      | IDiv (loc, t1, t2) -> failwith "I do not know how to express integer division in SMT-LIB 1" (* TODO: Fix. *)
+      | Mod (loc, t1, t2) -> failwith "I do not know how to express modulus in SMT-LIB 1" (* TODO: Fix. *)
       | UMinus (loc, t) -> "(~ " ^ (soe t) ^ ")"
       | ForAll (loc, decls, e) -> "(forall " ^ List.fold_left build_define_string_for_quantifier "" decls ^ " " ^ soe e ^ ")"
       | Exists (loc, decls, e) -> "(exists " ^ List.fold_left build_define_string_for_quantifier "" decls ^ " " ^ soe e ^ ")"
@@ -229,6 +232,162 @@ let smt_lib_transform_input_commandline vc =
   let smt_lib_string = "(declare-funs (" ^ defines ^ "))\n(assert " ^ vc_string ^ ")\n(check-sat)\n(get-info model)\n" in
   (* print_endline smt_lib_string; *)
   (smt_lib_string, rev_var_names) ;;
+
+(* Convert a VC to the SMT-LIB 2 format (http://combination.cs.uiowa.edu/smtlib/).
+   Note that we currently do not support integer division or modulus. *)
+let smt_lib2_transform_input_helper vc =
+  (* Convert our AST to the smt-lib format. *)
+  let rec smt_lib_string_of_expr e =
+    let rec soe = function
+      | Constant (loc, c) ->
+	  begin
+	    match c with
+	      | ConstInt (loc, i) -> string_of_int i
+	      | ConstFloat (loc, f) -> string_of_float f
+	      | ConstBool (loc, b) -> string_of_bool b
+	  end
+      | LValue (loc, lval) ->
+	  begin
+	    match lval with
+	      | NormLval (loc, ident) -> ident.name
+	      | ArrayLval (loc, arr, e) -> "(select " ^ (soe arr) ^ " " ^ (soe e) ^ ")"
+	      | _ -> assert(false)
+	  end
+      | Plus (loc, t1, t2) -> "(+ " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Minus (loc, t1, t2) -> "(- " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Times (loc, t1, t2) -> "(* " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Div (loc, t1, t2) -> "(/ " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | IDiv (loc, t1, t2) -> "(div " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Mod (loc, t1, t2) -> "(mod " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | UMinus (loc, t) -> "(~ " ^ (soe t) ^ ")"
+      | ForAll (loc, decls, e) -> "(forall " ^ List.fold_left build_define_string_for_quantifier "" decls ^ " " ^ soe e ^ ")"
+      | Exists (loc, decls, e) -> "(exists " ^ List.fold_left build_define_string_for_quantifier "" decls ^ " " ^ soe e ^ ")"
+      | ArrayUpdate (loc, exp, assign_to, assign_val) -> "(store " ^ soe exp ^ " " ^ soe assign_to ^ " " ^ soe assign_val ^ ")"
+      | LT (loc, t1, t2) -> "(< " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | LE (loc, t1, t2) -> "(<= " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | GT (loc, t1, t2) -> "(> " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | GE (loc, t1, t2) -> "(>= " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | EQ (loc, t1, t2) -> "(= " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | NE (loc, t1, t2) -> "(not (= " ^ (soe t1) ^ " " ^ (soe t2) ^ "))"
+      | And (loc, t1, t2) -> "(and " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Or (loc, t1, t2) -> "(or " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Not (loc, t) -> "(not " ^ (soe t) ^ ")"
+      | Length (loc, t) -> raise (InvalidVC ("Length not yet implemented."))
+	  (* TODO: Implement.  Make a variable for each array to be its size?
+	     But what if this is the length of say a function that returns an arr or 2d_arr[i]? *)
+      | Iff (loc, t1, t2) -> "(iff " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | Implies (loc, t1, t2) -> "(implies " ^ (soe t1) ^ " " ^ (soe t2) ^ ")"
+      | EmptyExpr -> ""
+      | _ -> raise (InvalidVC ("Unexpected expr type in VC: " ^ (string_of_expr e)))
+    in
+    soe e 
+  and smt_lib_string_of_type t = match t with
+    | Bool (loc) -> "Bool"
+    | Int (loc) -> "Int"
+    | Float (loc) -> "Real"
+    | Array (typ, l) -> "(Array Int " ^ smt_lib_string_of_type typ ^ ")"
+    | _ -> raise (InvalidVC ("Unimplemented type: " ^ string_of_type t)) (* TODO: Finish *)
+  (* Builds a big string out of all the variables we need to define. *)
+  and build_define_str id (name, t) cur_string =
+    let sep = if cur_string = "" then "" else "\n" in
+    cur_string ^ sep ^ "(declare-const " ^ name ^ " " ^ smt_lib_string_of_type t ^ ")" 
+  (* Builds a big string out of all the varDecls in a quantifier we need to define as being specific to that quantifier. *)
+  and build_define_string_for_quantifier prev_string cur_decl =
+    prev_string ^ "(?" ^ string_of_identifier cur_decl.varName ^ " " ^ smt_lib_string_of_type cur_decl.varType ^ ")"
+  in
+  transform_input_helper vc smt_lib_string_of_expr build_define_str ;;
+
+let smt_lib2_transform_input_normal vc =
+  let (defines, vc_string, rev_var_names) = smt_lib2_transform_input_helper vc in
+  let smt_lib_string = "(set-option :produce-models true)\n" ^ defines ^ "\n(assert " ^ vc_string ^ ")\n(check-sat)\n(get-model)\n" in
+  (* print_endline smt_lib_string; *)
+  (smt_lib_string, rev_var_names) ;;
+
+
+let parse_smt_lib2_counterexample str rev_var_names =
+  (* Split the counterexamples by matching parentheses to return a list of each top-level example. *)
+  let split_counterexample str =
+    let rec get_piece str index count =
+      let next_index = Str.search_forward (Str.regexp "[()]") str index in
+      match Str.matched_group 0 str with
+      | "(" -> get_piece str (next_index + 1) (count + 1)
+      | ")" when count > 1 -> get_piece str (next_index + 1) (count - 1)
+      | ")" when count == 1 -> next_index
+      | x -> assert(false)
+    in
+    let rec get_pieces str index =
+      if index = ((String.length str) - 1) then
+        []
+      else
+        let next_index = get_piece str index 0 in
+        let cur_piece = String.sub str index (next_index - index + 1) in
+        (String.trim cur_piece) :: (get_pieces str (next_index + 1))
+    in
+    get_pieces str 0
+  in
+  let parse_smt_lib2_counterexample parts =
+    let replace_name n =
+      if (Hashtbl.mem rev_var_names n) then
+	(Hashtbl.find rev_var_names n).name
+      else
+	n
+    in
+    let array_names = Hashtbl.create 10 in
+    (* Parse one line. *)
+    (* TODO: This parsing code is ugly, since I have to special case parentheses due to using regexes. *)
+    let parse_smt_lib2_example s =
+      let rec parse_array arr_var str =
+        let trimmed_str = String.trim str in
+        if (String.length trimmed_str < 4) || (String.sub trimmed_str 0 4) <> "(ite" then (* Simple value at the end *)
+          [(Counterexample.ArrayVar (arr_var, "*"), Str.global_replace (Str.regexp "[()]") "" trimmed_str)]
+        else begin (* Array *)
+            let (cur_arr_index, second_half) =
+              if (Str.string_match (Str.regexp "(ite (= [^ ]* (\\([^)]*\\))) \\(.*\\))$") trimmed_str 0) then
+                (Str.matched_group 1 trimmed_str, Str.matched_group 2 trimmed_str)
+              else if (Str.string_match (Str.regexp "(ite (= [^ ]* \\([^)]*\\)) \\(.*\\))$") trimmed_str 0) then
+                (Str.matched_group 1 trimmed_str, Str.matched_group 2 trimmed_str)
+              else
+                assert(false)
+            in
+            let (cur_arr_rhs, rest) = 
+              if (Str.string_match (Str.regexp "(\\([^)]*\\)) *\\(.*\\)") second_half 0) then
+                (Str.matched_group 1 second_half, Str.matched_group 2 second_half)
+              else if (Str.string_match (Str.regexp "\\([^ ]*\\) \\(.*\\)") second_half 0) then
+                (Str.matched_group 1 second_half, Str.matched_group 2 second_half)
+              else
+                assert(false)
+            in
+            (Counterexample.ArrayVar (arr_var, cur_arr_index), cur_arr_rhs) :: (parse_array arr_var rest)
+          end
+      in
+      let cleaned_str = Str.global_replace (Str.regexp "\n") "" s in
+      let regex = Str.regexp "^ *(define-fun \\([^ ]*\\) (\\((?[^)]*)?\\)) [^ ][^0-9(]*\\(.*\\))$" in
+      assert (Str.string_match regex cleaned_str 0);
+      let lhs_token = Str.matched_group 1 cleaned_str in
+      let array_name = Str.matched_group 2 cleaned_str in
+      let rhs = Str.matched_group 3 cleaned_str in
+      if (Str.string_match (Str.regexp "(_ as-array \\([^)]*\\)") rhs 0) then begin (* Remember SMTLIB2's internal array names. *)
+          Hashtbl.add array_names (Str.matched_group 1 rhs) lhs_token;
+          []
+        end
+      else if array_name <> "" then begin (* Array *)
+          let cur_arr_name = Hashtbl.find array_names lhs_token in
+	  let inner_var = Counterexample.Var (replace_name cur_arr_name, Hashtbl.find rev_var_names cur_arr_name) in
+          parse_array inner_var rhs
+        end
+      else (* Normal value. *)
+	let lhs = Counterexample.Var (replace_name lhs_token, Hashtbl.find rev_var_names lhs_token) in
+	[(lhs, Str.global_replace (Str.regexp "[()]") "" rhs)]
+    in
+    List.flatten (List.map parse_smt_lib2_example parts)
+  in
+  (*print_endline (Hashtbl.fold (fun k v acc -> acc ^ (if acc = "" then "" else ", ") ^ k ^ " -> " ^ (string_of_identifier v)) rev_var_names "");*)
+  let model_start = Str.search_forward (Str.regexp "(model") str 0 in
+  let model_end = String.rindex str ')' in
+  let short_str = String.sub str (model_start + 6) (model_end - (model_start + 6)) in
+  let parts = split_counterexample short_str in
+  let data = parse_smt_lib2_counterexample parts in
+  sort_counterexamples data ;;
 
 (* The SMT solver interface. *)
 
@@ -520,6 +679,8 @@ module Z3 =
 
     let transform_input_file vc = smt_lib_transform_input_normal vc ;;
 
+    let transform_input_file_smt2 vc = smt_lib2_transform_input_normal vc ;;
+
     let transform_input_stdin vc = smt_lib_transform_input_commandline vc ;;
     
     let parse_counterexample str rev_var_names =
@@ -701,7 +862,7 @@ module Z3 =
       (*let regex = Str.regexp "^((\"model\" \"\\(\\(.\\|\n\\)*\\)\"))$" in
       assert (Str.string_match regex str 0);
       let real_str = Str.matched_group 1 str in*)
-      parse_counterexample_helper str rev_var_names parse_z3_counterexample 
+      parse_counterexample_helper str rev_var_names parse_z3_counterexample
 
     let rec parse_output get_line_of_output append =
       let my_get_line_of_output should_wait =
@@ -713,7 +874,7 @@ module Z3 =
         try
           match my_get_line_of_output should_wait with
 	    | "" -> ""
-	    | x -> append x (get_counterexample false)
+	    | x -> append x (get_counterexample true)
         with
           | End_of_file -> ""
 	in
@@ -739,6 +900,9 @@ module Z3 =
     let get_arguments_file () =
       [| Filename.basename (Config.get_value "smt_solver_path"); "-smt" |] ;;
     
+    let get_arguments_file_smt2 () =
+      [| Filename.basename (Config.get_value "smt_solver_path"); "-smt2" |] ;;
+    
     let get_arguments_stdin () =
       [| Filename.basename (Config.get_value "smt_solver_path"); "-smt"; "-in" |] ;;
 
@@ -756,6 +920,16 @@ let z3_solver = {
   parse_output = Z3.parse_output;
   parse_error = Z3.parse_error;
   get_arguments = Z3.get_arguments_file;
+  shutdown_command = Z3.shutdown_command_file;
+} ;;
+
+let z3_solver_smtlib2 = {
+  input_method = Z3.input_method_file;
+  transform_input = Z3.transform_input_file_smt2;
+  parse_counterexample = parse_smt_lib2_counterexample;
+  parse_output = Z3.parse_output;
+  parse_error = Z3.parse_error;
+  get_arguments = Z3.get_arguments_file_smt2;
   shutdown_command = Z3.shutdown_command_file;
 } ;;
 
@@ -778,7 +952,7 @@ let get_smt_solver () =
     | "yices" -> yices_solver
     | "yices2" -> yices2_solver
     | "yices-smtlib" -> yices_solver_using_smt_lib
-    | "z3" -> z3_solver
+    | "z3" -> z3_solver_smtlib2
     | _ -> raise (UnsupportedSMTSolver smt_solver_name) ;;
 
 let get_input_method () =
