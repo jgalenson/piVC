@@ -26,9 +26,10 @@ Installation Instructions
 -------------------------
 1. "make" from the src directory
 2. Do one of the following.
-   2a. Download the Yices binary from http://yices.csl.sri.com/. Put the binary into the "bin" directory of this piVC distribution.
+   2a. Download the Yices 1 binary from http://yices.csl.sri.com/ (under "Previous releases"). Put the binary into the "bin" directory of this piVC distribution.
 or
-   2b. If you already have Yices on your computer, edit the "yices_path" variable of conf/pivc-dp-server.conf to point to the location of yices. 
+   2b. If you already have Yices 1 on your computer, edit the "yices_path" variable of conf/pivc-dp-server.conf to point to the location of yices.
+   2c. There is experimental support for using Z3.  To enable it, modify the conf/*.conf files to use Z3 for the solver name and path.
 
 Configuration Instructions
 --------------------------
