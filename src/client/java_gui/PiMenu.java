@@ -19,6 +19,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem displayPath;
 	private JMenuItem submit;
 	private JMenuItem compileMenuItem, cancelCompileMenuItem;
+	private JMenuItem increaseFont, decreaseFont;
 	private JCheckBoxMenuItem runtimeAssertions;
 	private JCheckBoxMenuItem findInductiveCore;
         //private JCheckBoxMenuItem showRawXml;
@@ -260,6 +261,32 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 			});
 			settingsMenu.add(serverAddress);
 		}
+		
+		settingsMenu.addSeparator();
+		
+		// Increase and decrease font size menu items
+		increaseFont = new JMenuItem("Increase font size");
+		increaseFont.setMnemonic(KeyEvent.VK_I);
+		increaseFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I, ActionEvent.CTRL_MASK));
+		increaseFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doIncreaseFont();
+			}
+		});
+		settingsMenu.add(increaseFont);
+		
+		decreaseFont = new JMenuItem("Decrease font size");
+		decreaseFont.setMnemonic(KeyEvent.VK_K);
+		decreaseFont.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_K, ActionEvent.CTRL_MASK));
+		decreaseFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				piGui.doDecreaseFont();
+			}
+		});
+		settingsMenu.add(decreaseFont);
+		
+		
+
 		
 		add(settingsMenu);
 	}

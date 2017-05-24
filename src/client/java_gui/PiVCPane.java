@@ -1,4 +1,5 @@
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -164,5 +165,14 @@ public class PiVCPane extends JPanel {
 	         return this;
 	     }
 	 }
+	
+	public void increaseFont() {
+		list.setFont(new Font("Droid Sans", Font.PLAIN, list.getFont().getSize() + 2));		
+	}
+
+	public void decreaseFont() {
+		if (list.getFont().getSize() > 10)
+			list.setFont(new Font("Droid Sans", Font.PLAIN, list.getFont().getSize() - 2));		
+	}
 
 }
