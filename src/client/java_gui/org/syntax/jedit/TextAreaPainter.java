@@ -357,6 +357,15 @@ public class TextAreaPainter extends JComponent implements TabExpander
 		fm = Toolkit.getDefaultToolkit().getFontMetrics(font);
 		textArea.recalculateVisibleLines();
 	}
+	
+	public void increaseFont() {
+		setFont(new Font("Monospaced", Font.PLAIN, this.getFont().getSize() + 2));
+	}
+	
+	public void decreaseFont() {
+		if (this.getFont().getSize() > 10)
+			setFont(new Font("Monospaced", Font.PLAIN, this.getFont().getSize() - 2));
+	}
 
 	/**
 	 * Repaints the text.

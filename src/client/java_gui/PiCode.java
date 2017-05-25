@@ -293,5 +293,14 @@ public class PiCode extends JEditTextArea implements DocumentListener, DirtyChan
 			d.width = getParent().getSize().width;
 		super.setSize(d);
 	}
+	
+	public void increaseFont() {
+		painter.increaseFont();
+	}
+	
+	public void decreaseFont() {
+		painter.decreaseFont();
+	}
+	
 
 }

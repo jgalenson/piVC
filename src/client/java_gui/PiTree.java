@@ -1,5 +1,6 @@
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -541,6 +542,15 @@ public class PiTree extends JPanel {
 			return ((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
 		}
 		
+	}
+	
+	public void increaseFont() {
+		tree.setFont(new Font("Droid Sans", Font.PLAIN, tree.getFont().getSize() + 2));		
+	}
+
+	public void decreaseFont() {
+		if (tree.getFont().getSize() > 10)
+			tree.setFont(new Font("Droid Sans", Font.PLAIN, tree.getFont().getSize() - 2));		
 	}
 
 }

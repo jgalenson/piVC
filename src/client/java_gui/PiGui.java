@@ -58,6 +58,8 @@ public class PiGui extends JFrame {
 	private ArrayList<DirtyChangedListener> dirtyChangedListeners;
 	private JButton compileButton;
 	private JButton submitButton;
+	private JButton increaseFont;
+	private JButton decreaseFont;
 	private JLabel statusBarLabel;
 	private JProgressBar statusProgressBar;
 	private Compiler curCompilation;	
@@ -290,7 +292,22 @@ public class PiGui extends JFrame {
 	
 	public void doSubmit() {
 		new PiSubmit(this);
-	}	
+	}
+
+	public 	void doIncreaseFont() {
+		piCode.increaseFont();
+		piTree.increaseFont();
+		vcPane.increaseFont();
+		piErrorOutput.increaseFont();
+		
+	}
+
+	public 	void doDecreaseFont() {
+		piCode.decreaseFont();
+		piTree.decreaseFont();
+		vcPane.decreaseFont();
+		piErrorOutput.decreaseFont();
+	}
 
 	
 	public void doReport(PiReport.ReportType type) {
@@ -839,9 +856,36 @@ public class PiGui extends JFrame {
 				doSubmit();
 			}
 		});
+		//submitButton.setEnabled(false);
 		box.add(submitButton);		
 		
+
+		box.add(Box.createHorizontalStrut(20));
+		
+		/*
+		// This code adds the font-size-manipulation buttons to the toolbar.
+		increaseFont = new JButton("Font++");
+		increaseFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doIncreaseFont();
+			}
+		});
+		box.add(increaseFont);		
+
+		box.add(Box.createHorizontalStrut(20));
+		
+		decreaseFont = new JButton("Font--");
+		decreaseFont.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				doDecreaseFont();
+			}
+		});
+		box.add(decreaseFont);		
+		*/
+
 		add(box, BorderLayout.NORTH);
+
+
 	}
 	
 	private void installStatusBar() {

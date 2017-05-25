@@ -1,4 +1,5 @@
 import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -120,6 +121,14 @@ public class PiErrorOutput extends JPanel {
 	         setText("<html>"+((PiError)value).getMessage() + "</html>");
 	         return this;
 	     }
-	 }
+	}
+	
+	public void increaseFont() {
+		list.setFont(new Font("Droid Sans", Font.PLAIN, list.getFont().getSize() + 2));	
+	}
 
+	public void decreaseFont() { 
+		if (list.getFont().getSize() > 10)
+			list.setFont(new Font("Droid Sans", Font.PLAIN, list.getFont().getSize() - 2));
+	}
 }
