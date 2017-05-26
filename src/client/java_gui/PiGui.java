@@ -843,6 +843,9 @@ public class PiGui extends JFrame {
 		compileButton = new JButton("Compile");
 		compileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+			    if (Config.getBooleanValue("auto_save_compile"))
+			        save();
+			    
 				doCompile();
 			}
 		});

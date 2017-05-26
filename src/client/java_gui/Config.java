@@ -19,7 +19,8 @@ public class Config {
 								{"show_raw_xml", "false"},
 								{"name", ""},
 								{"email_address", ""},
-								{"submit_to_email_address", ""}
+								{"submit_to_email_address", ""},
+								{"auto_save_compile", "false"},
 	};
 	
 	private static Map<String,String> settings;

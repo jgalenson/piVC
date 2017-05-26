@@ -22,6 +22,7 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 	private JMenuItem increaseFont, decreaseFont;
 	private JCheckBoxMenuItem runtimeAssertions;
 	private JCheckBoxMenuItem findInductiveCore;
+	private JCheckBoxMenuItem autoSaveCompile;
         //private JCheckBoxMenuItem showRawXml;
 	
 	public PiMenu(PiGui piGui) {
@@ -236,6 +237,15 @@ public class PiMenu extends JMenuBar implements DirtyChangedListener {
 		findInductiveCore.setState(Config.getBooleanValue("find_inductive_core"));
 		settingsMenu.add(findInductiveCore);	
 		
+        autoSaveCompile = new JCheckBoxMenuItem("Auto save on compile");
+        autoSaveCompile.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Config.setBooleanValue("auto_save_compile", autoSaveCompile.getState());
+            }
+        });
+        autoSaveCompile.setState(Config.getBooleanValue("auto_save_compile"));
+        settingsMenu.add(autoSaveCompile);    
+        
 		settingsMenu.addSeparator();
 
 		// TODO: Turn this into a command-line option.
