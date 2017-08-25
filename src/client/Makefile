@@ -30,10 +30,12 @@ gui :
 	rm -rf temp_files_for_compilation
 
 executable :
+	mkdir -p ../../bin
 	$(OCAMLC) -c pi_gui.ml
 	$(OCAMLC) -o ../../bin/pi_gui str.cma utils.cmo pi_gui.cmo
 
 executable_opt :
+	mkdir -p ../../bin
 	$(OCAMLOPT) -c pi_gui.ml
 	$(OCAMLOPT) -o ../../bin/pi_gui str.cmxa utils.cmx pi_gui.cmx
 

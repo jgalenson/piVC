@@ -14,9 +14,11 @@ all : depend compiler
 opt : depend compiler_opt
 
 compiler : $(COMPILER_OBJS) test_parser.cmo
+	mkdir -p ../../bin
 	$(OCAMLC) -o ../../bin/test_parser $(COMPILER_INCLUDES) $(UTILS_OBJS) $(LANGUAGE_OBJS) $(COMPILER_OBJS) test_parser.cmo
 
 compiler_opt : $(COMPILER_OBJS_OPT) test_parser.cmx
+	mkdir -p ../../bin
 	$(OCAMLOPT) -o ../../bin/test_parser $(COMPILER_INCLUDES_OPT) $(UTILS_OBJS_OPT) $(LANGUAGE_OBJS_OPT) $(COMPILER_OBJS_OPT) test_parser.cmx
 
 %.cmo : %.ml %.cmi
