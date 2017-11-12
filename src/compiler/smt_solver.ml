@@ -316,7 +316,7 @@ let parse_smt_lib2_counterexample str rev_var_names =
       | x -> assert(false)
     in
     let rec get_pieces str index =
-      if index = ((String.length str) - 1) then
+      if index >= ((String.length str) - 1) then
         []
       else
         let next_index = get_piece str index 0 in
@@ -384,7 +384,7 @@ let parse_smt_lib2_counterexample str rev_var_names =
   (*print_endline (Hashtbl.fold (fun k v acc -> acc ^ (if acc = "" then "" else ", ") ^ k ^ " -> " ^ (string_of_identifier v)) rev_var_names "");*)
   let model_start = Str.search_forward (Str.regexp "(model") str 0 in
   let model_end = String.rindex str ')' in
-  let short_str = String.sub str (model_start + 6) (model_end - (model_start + 6)) in
+  let short_str = String.trim (String.sub str (model_start + 6) (model_end - (model_start + 6))) in
   let parts = split_counterexample short_str in
   let data = parse_smt_lib2_counterexample parts in
   sort_counterexamples data ;;
